@@ -1,19 +1,170 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { attach } from '@adobe/uix-guest';
-import { ASSETS_VIEW_EXTENSION_ID, CONTENT_HUB_EXTENSION_ID } from './constants.js';
-import AssetsViewReg from '../aem-assets-assetsview-1/web-src/src/components/ExtensionRegistration.js';
-import ContentHubReg from '../aem-assets-contenthub-1/web-src/src/components/ExtensionRegistration.js';
+import { attach, register } from '@adobe/uix-guest';
+import { ASSETS_VIEW_EXTENSION_ID } from './constants.js';
 import ContactSheetDialog from './components/ContactSheetDialog.js';
 
 function UnifiedRegistration() {
-  const href = `${window.location.href} ${document.referrer || ''}`.toLowerCase();
-  const isContentHub =
-    href.includes('contenthub') ||
-    href.includes('delivery-') ||
-    new URLSearchParams(window.location.search).has('repo');
+  useEffect(() => {
+    const init = async () => {
+      const guestConnection = await register({
+        id: ASSETS_VIEW_EXTENSION_ID,
+        methods: {
+          // ─── AEM Assets View (`aem/assets/assetsview/1`) namespaces ───
+          headerMenu: {
+            async getButtons({ context, resource }) {
+              if (!['assets', 'collections'].includes(context) || !resource?.id) {
+                return [];
+              }
+              return [
+                {
+                  id: 'create-contact-sheet-header',
+                  label: 'Contact Sheet',
+                  icon: 'Print',
+                  variant: 'secondary',
+                  onClick: async () => {
+                    const source = context === 'collections'
+                      ? { kind: 'collection', id: resource.id, name: resource.path?.split('/').pop() }
+                      : { kind: 'folder', id: resource.id, path: resource.path, includeSubfolders: false };
+                    await guestConnection.host.modal.openDialog({
+                      title: 'Create Contact Sheet',
+                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      type: 'fullscreen',
+                    });
+                  },
+                },
+              ];
+            },
+          },
+          actionBar: {
+            async getActions({ context, resourceSelection }) {
+              const resources = resourceSelection?.resources || [];
+              if (!['assets', 'collections', 'search'].includes(context) || resources.length === 0) {
+                return [];
+              }
+              return [
+                {
+                  id: 'create-contact-sheet-selection',
+                  icon: 'Print',
+                  label: 'Contact Sheet',
+                  onClick: async () => {
+                    let source;
+                    if (
+                      context === 'collections' &&
+                      resources.length === 1 &&
+                      (resources[0].path || '').includes('/collections/')
+                    ) {
+                      source = {
+                        kind: 'collection',
+                        id: resources[0].id,
+                        name: resources[0].path?.split('/').pop(),
+                      };
+                    } else if (
+                      context === 'assets' &&
+                      resources.length === 1 &&
+                      !(resources[0].path || '').split('/').pop().includes('.')
+                    ) {
+                      source = {
+                        kind: 'folder',
+                        id: resources[0].id,
+                        path: resources[0].path,
+                        includeSubfolders: false,
+                      };
+                    } else {
+                      source = {
+                        kind: 'selection',
+                        origin: context,
+                        items: resources.map((r) => ({ id: r.id, path: r.path })),
+                      };
+                    }
+                    await guestConnection.host.modal.openDialog({
+                      title: 'Create Contact Sheet',
+                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      type: 'fullscreen',
+                    });
+                  },
+                },
+              ];
+            },
+            async getHiddenBuiltInActions() {
+              return [];
+            },
+            async overrideBuiltInAction() {
+              return false;
+            },
+          },
+          quickActions: {
+            async getHiddenBuiltInActions() {
+              return [];
+            },
+            async overrideBuiltInAction() {
+              return false;
+            },
+          },
 
-  return isContentHub ? <ContentHubReg /> : <AssetsViewReg />;
+          // ─── Content Hub (`aem/assets/contenthub/1`) namespaces ───
+          card: {
+            getActionButtons(actionContext) {
+              const { context } = actionContext || {};
+              if (context !== 'collections' && context !== 'collection') {
+                return [];
+              }
+              return [
+                {
+                  id: 'create-contact-sheet-collection',
+                  label: 'Create Contact Sheet',
+                  icon: 'Print',
+                },
+              ];
+            },
+            async onActionClick(resourceType, buttonId, resourceId) {
+              if (buttonId === 'create-contact-sheet-collection') {
+                const source = {
+                  kind: 'collection',
+                  id: resourceId,
+                  name: 'Collection',
+                  origin: 'contenthub',
+                };
+                await guestConnection.host.modal.openDialog({
+                  title: 'Create Contact Sheet',
+                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  type: 'fullscreen',
+                });
+              }
+            },
+          },
+          selectionBar: {
+            getActionButtons() {
+              return [
+                {
+                  id: 'create-contact-sheet-bulk',
+                  label: 'Create Contact Sheet',
+                  icon: 'Print',
+                },
+              ];
+            },
+            async onActionClick(buttonId, assetIds) {
+              if (buttonId === 'create-contact-sheet-bulk') {
+                const source = {
+                  kind: 'selection',
+                  origin: 'contenthub',
+                  items: (assetIds || []).map((id) => ({ id })),
+                };
+                await guestConnection.host.modal.openDialog({
+                  title: 'Create Contact Sheet',
+                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  type: 'fullscreen',
+                });
+              }
+            },
+          },
+        },
+      });
+    };
+    init().catch(console.error);
+  }, []);
+
+  return <div>AEM Contact Sheet Extension</div>;
 }
 
 function UnifiedModal({ defaultTier = 'author' }) {
@@ -33,8 +184,7 @@ function UnifiedModal({ defaultTier = 'author' }) {
           : defaultTier);
       setTier(detectedTier);
 
-      const extId = detectedTier === 'delivery' ? CONTENT_HUB_EXTENSION_ID : ASSETS_VIEW_EXTENSION_ID;
-      const conn = await attach({ id: extId });
+      const conn = await attach({ id: ASSETS_VIEW_EXTENSION_ID });
       setGuestConnection(conn);
 
       if (parsedSource) {
