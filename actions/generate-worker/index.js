@@ -17,15 +17,17 @@ import { getPresignedDownloadUrl, loadJob, readFileObject, saveJob, writeFileObj
 import { mapWithConcurrency } from '../lib/utils.js';
 
 export function buildPdfFileName(title = 'contact-sheet', customName = '') {
-  if (customName && customName.trim().endsWith('.pdf')) {
-    return customName.trim().replace(/[^a-zA-Z0-9._-]+/g, '-');
+  const stamp = new Date().toISOString().replace(/[:T.]/g, '-').slice(0, 19);
+  const slug =
+    String(title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'contact-sheet';
+  if (customName && customName.trim().endsWith('.pdf') && !/^contact-sheet_\d{4}-\d{2}-\d{2}\.pdf$/i.test(customName.trim())) {
+    const base = customName.trim().replace(/\.pdf$/i, '').replace(/[^a-zA-Z0-9._-]+/g, '-');
+    return `${base}_${stamp}.pdf`;
   }
-  const slug = String(title)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'contact-sheet';
-  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
   return `${slug}_${stamp}.pdf`;
 }
 
