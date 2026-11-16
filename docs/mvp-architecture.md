@@ -1,6 +1,6 @@
 # AEM Assets Contact Sheets — MVP Architecture and Design
 
-_Status: Draft v1 · Nov 16, 2026 · Owner: pnam_
+_Status: Draft v2 (decisions from Nov 16 review added) · Nov 16, 2026 · Owner: pnam_
 _Background research: [research/contact-sheet-feature-research.md](../research/contact-sheet-feature-research.md)_
 
 ---
@@ -17,6 +17,11 @@ _Background research: [research/contact-sheet-feature-research.md](../research/c
 | Maximum size | **500 assets per sheet** |
 | Sorting | **Two sort levels plus an optional "group by"**, available on common fields **and** on the metadata fields the user chose to print |
 | Saved settings | **Personal presets** only (organization templates come later) |
+| Where the PDF is saved | **The user picks any AEM folder.** The app remembers the last one picked; the first default is `/content/dam/contact-sheets/`. |
+| Content Hub output | **The user gets a download in the UI, and a copy is always saved to AEM Author** (§7.5) |
+| More than 500 assets | **Offer both:** narrow the selection, or use the first 500 after sorting |
+| Logo | **Picked from AEM.** The app remembers the last logo picked and the user can change it. |
+| Metadata fields offered | **Folder source:** the folder's assigned metadata form/schema. **Search, collection or selection:** the **most common fields** across the assets found (§6.1). |
 
 ### 1.2 The 8 MVP requirements
 | ID | Requirement | Short acceptance criterion |
@@ -28,7 +33,7 @@ _Background research: [research/contact-sheet-feature-research.md](../research/c
 | **R5** | **Live preview** of the real layout, with page count and size estimate | Preview uses the same renderer as the PDF (same pages, same order) |
 | **R6** | **Background generation** up to 500 assets, with honest progress | User sees phase and counts; "Done" is only shown once the PDF is confirmed saved |
 | **R7** | **Small PDF**: Screen (~150 ppi) or Print (~300 ppi) quality | A 500-asset Screen sheet is ≤ 25 MB (target) |
-| **R8** | **Save to AEM** (linked to its source) and share | The PDF lands in the output folder with descriptive metadata. The user can open it in AEM or download it. AEM share links work on it. |
+| **R8** | **Save to AEM** (linked to its source) and share | The PDF lands in the **folder the user picked** (or the central Content Hub folder) with descriptive metadata. The user can open it in AEM or download it. AEM share links work on it. |
 
 ### 1.3 Not in the MVP
 - Clickable or QR links back to each asset
@@ -89,12 +94,12 @@ Settings on the left, live preview on the right. Settings stay visible while the
 │   Department [Marketing]        │  │ Source: /Spring Shoot/Selects · 108 assets   │        │
 │   Prepared by [Peter Nam]       │  │ ── Photographer: A. Diaz (42) ────────────── │        │
 │   Project [ ]  Notes [ ]        │  │ [img] [img] [img] [img]                      │        │
-│   Logo [Upload…]                │  │ 001   002   003   004                        │        │
+│   Logo [acme-logo.png][Change…] │  │ 001   002   003   004                        │        │
 │ ▸ FIELDS UNDER EACH IMAGE       │  │ Title Title Title Title                      │        │
 │   ≡ Title        1 line  ☐label │  │ SKU.. SKU.. SKU.. SKU..                      │        │
 │   ≡ SKU          1 line  ☑label │  │ ...                                          │        │
 │   ≡ Description  2 lines ☐label │  │ Page 1 of 9            Generated 11/16 15:42 │        │
-│   [+ Add field ▾]               │   └─────────────────────────────────────────────┘        │
+│   [+ Add field ▾] (ranked)      │   └─────────────────────────────────────────────┘        │
 │ ▸ SORT & GROUP                  │   ◀ 1 / 9 ▶   Zoom [Fit ▾]                            │
 │   Group by [Photographer ▾][A→Z]│                                                          │
 │     ☐ New page per group        │                                                          │
@@ -107,7 +112,7 @@ Settings on the left, live preview on the right. Settings stay visible while the
 │   ☑ Page numbers ☑ Asset numbers│                                                          │
 │ ▸ OUTPUT                        │                                                          │
 │   Quality (•) Screen ( ) Print  │  108 assets · 9 pages · ~11 MB                           │
-│   Save to [/content/dam/contact-sheets/…]                                                  │
+│   Save to [/content/dam/marketing/sheets ▾][Browse…]  (last used)                          │
 │   File name [spring-shoot-selects_2026-11-16.pdf]                                          │
 ├───────────────────────────────┴──────────────────────────────────────────────────────────┤
 │ [Save as preset]                                         [Cancel]  [Generate PDF]         │
@@ -150,7 +155,7 @@ Settings on the left, live preview on the right. Settings stay visible while the
                        │        fields · sort/group · paginate · renderHtml          │
                        ▼                                                             │
               App Builder web actions (require-adobe-auth)                           │
-   POST /resolve  POST /generate  GET /status  GET /thumb  GET|PUT /presets         │
+   POST /resolve  POST /generate  GET /status  GET /thumb  /presets  /prefs  GET /browse│
         │                │                                                           │
         ▼ async invoke    ▼ async invoke                                             │
    resolve-worker     generate-worker ── uses @contactsheet/core (same renderer) ◀───┘
@@ -190,12 +195,15 @@ aemcontactsheet/
 │     └─ ext.config.yaml
 ├─ actions/
 │  ├─ resolve/        (web)        # validate source → create job → async invoke worker
-│  ├─ resolve-worker/ (non-web)    # list/expand source, fetch metadata, write model
+│  ├─ resolve-worker/ (non-web)    # list/expand source, skip earlier sheets, fetch metadata,
+│  │                               #   folder schema lookup, field coverage, write model
 │  ├─ generate/       (web)        # validate config → create job → async invoke worker
 │  ├─ generate-worker/(non-web)    # images → ZIP → PDF Services → upload → verify
 │  ├─ status/         (web)        # job status + presigned result/model URLs
 │  ├─ thumb/          (web)        # preview image proxy for unapproved assets (≤1 MB)
-│  ├─ presets/        (web)        # GET/PUT/DELETE personal presets + logo upload
+│  ├─ presets/        (web)        # GET/PUT/DELETE personal presets
+│  ├─ prefs/          (web)        # GET/PUT last output folder + last logo
+│  ├─ browse/         (web)        # folder browser + image picker (folders, writable flag, images)
 │  └─ lib/                         # aem client, retry/limit, state/files helpers
 ├─ test/fixtures/                  # sample models (10, 108, 500 assets) for offline dev
 └─ docs/
@@ -221,6 +229,8 @@ interface FieldDef {
   type: 'text' | 'number' | 'date' | 'bytes' | 'dimensions' | 'tags' | 'list' | 'boolean';
   common?: boolean;                           // always offered for sort
   groupable?: boolean;
+  coverage?: number;                          // 0..1 share of resolved assets with a non-empty value
+  fromSchema?: boolean; schemaOrder?: number; // folder sources: from the assigned metadata form/schema
 }
 
 interface ResolvedAsset {
@@ -247,7 +257,9 @@ interface SheetModel {
 interface ContactSheetConfig {
   configVersion: 1;
   header: { title: string; date: string; department?: string; preparedBy?: string;
-            project?: string; notes?: string; logoFileKey?: string; showSourceLine: boolean };
+            project?: string; notes?: string;
+            logo?: { assetId: string; path: string; tier: Tier } | null;   // defaults to prefs.lastLogo
+            showSourceLine: boolean };
   fields: { key: string; label: string; maxLines: 1|2|3; showLabel: boolean }[];   // R3, ordered
   sort: { keys: { field: string; dir: 'asc'|'desc' }[];                              // ≤2 (R4)
           groupBy?: { field: string; dir: 'asc'|'desc'; dateBucket?: 'day'|'month'|'year';
@@ -256,7 +268,9 @@ interface ContactSheetConfig {
             columns: 2|3|4|5|6|7|8; rows: 'auto' | number; imageFit: 'fit'|'fill';
             imageAspect: '1:1'|'4:3'|'3:2'|'16:9'; margins: 'narrow'|'normal';
             pageNumbers: boolean; sequenceNumbers: boolean };
-  output: { quality: 'screen'|'print'; fileName: string; saveToAem: boolean; targetFolder?: string };
+  output: { quality: 'screen'|'print'; fileName: string;
+            targetFolder?: { id: string; path: string } };   // Assets view: user-picked, defaults to prefs.lastOutputFolder
+                                                             // Content Hub: ignored (fixed Author copy folder + download)
 }
 
 interface Job {
@@ -271,7 +285,9 @@ interface Job {
 }
 ```
 
-**Presets** store a `ContactSheetConfig` without per-run values (title is kept as a template, the date as "today"). They are kept in App Builder Files at `presets/{orgId}/{sha256(userId)}.json`, with a `default` flag on one preset. Uploaded logos (PNG/SVG, ≤ 1 MB) go to `logos/{orgId}/{userHash}/{uuid}`.
+**Presets** store a `ContactSheetConfig` without per-run values (title is kept as a template, the date as "today"). They are kept in App Builder Files at `presets/{orgId}/{sha256(userId)}.json`, with a `default` flag on one preset.
+
+**User preferences** are stored separately at `prefs/{orgId}/{sha256(userId)}.json`: `{ lastOutputFolder: {id, path}, lastLogo: {assetId, path, tier} }`. The last output folder and last logo are restored every time the dialog opens, whatever preset is applied. The logo is an **AEM asset reference**, never an uploaded copy. The worker fetches its rendition by asset ID at generation time, so a logo updated in AEM is picked up automatically.
 
 ---
 
@@ -294,7 +310,19 @@ The sort field list is **common fields + every field the user chose to print** (
 | Folder | `common:folder` | text | ✓ | derived from the path (useful with subfolders) |
 | Created by | `repo:createdBy` | text | ✓ | repository |
 
-Printed fields can be any field found in the resolved assets' `assetMetadata` (e.g. `dc:description`, `dc:creator`, `xcm:keywords`, `dam:assetStatus`, custom fields such as `brand:sku`). Each gets a type from a hand-maintained list of known fields; otherwise the type is inferred from the values seen (numbers, ISO dates, arrays, or text).
+Printed fields can be any metadata field. How they are offered depends on the source:
+
+| Source | Fields offered in "+ Add field", in this order |
+|---|---|
+| **Folder** | 1) Fields from the **metadata form/schema assigned to the folder** (inherited from the nearest ancestor if not set directly), with the schema's labels and in the schema's tab/field order. 2) Then any other fields found on the assets, ranked by how many assets have them. |
+| **Collection, smart collection, search results, selection** (and Content Hub) | The **most common fields** across the assets found: each field's **coverage** = assets with a non-empty value ÷ total. Fields are ranked by coverage (ties go to curated "useful" fields such as title, description, creator, rights, keywords). The top 12 are shown, then "Show all (N)". |
+
+- Each option shows its coverage, e.g. "Photographer · 92%". Users can see before printing that a field will be blank on some tiles.
+- **Coverage is calculated during the resolve job** and stored on each `FieldDef` (`coverage: 0..1`, `fromSchema: boolean`, `schemaOrder?: number`).
+- **Labels** come from the schema if there is one, then from a curated list of known fields (`dc:title` → "Title", `autogen:title` → "AI title", `xcm:keywords` → "Tags"…), then from the key itself made readable. Users can rename any label for this sheet.
+- **Noisy technical fields are hidden by default** (`tiff:*`, `xmpMM:*`, `exif:*` except a curated few, `dm-*`, `autogen:lastModified`, `hasLocalCrops`) and shown under "Technical fields".
+- **Type** comes from the schema's widget type (date, number, dropdown, tags) when available. Otherwise it is inferred from the values: numbers, ISO dates, arrays, or text.
+- If the folder's schema can't be found (see spike S8), the folder falls back to the "most common" method automatically.
 
 ### 6.2 How comparisons work (`packages/core/sort.js`)
 - **Text:** `Intl.Collator(locale, { numeric: true, sensitivity: 'base' })`. Case-insensitive, with natural number ordering, using the host's locale (`i18n.getLocalizationInfo()`).
@@ -363,22 +391,36 @@ The MVP does not re-encode images: there's no native `sharp` module in the actio
 2. **Images:** fetch images with a concurrency pool of 8. Retry on 429/5xx with jittered backoff (3 tries). Write each to `/tmp/job/img/{seq}.{ext}`. Update progress every 10 images.
 3. **HTML:** `renderHtml(paginate(sortGroup(model, config)), {mode:'pdf'})` → `/tmp/job/index.html`, plus `styles.css`, fonts and logo. Zip it to `/tmp/job/sheet.zip`.
 4. **PDF Services:** upload the ZIP and submit an `HTMLToPDFJob` with `pageLayout` = page size in inches, `includeHeaderFooter: false` and `waitTimeToLoad` ≈ 2000 ms. Poll for the result, then download to `/tmp/job/out.pdf`.
-5. **Save to AEM** (if `saveToAem` is on and the user is on the author tier):
-   - Make sure the target folder exists (`POST /adobe/folders`).
-   - `POST /adobe/assets` → PUT the file to the upload URIs → `completeUpload`.
-   - PATCH metadata:
-     - `dc:title` = sheet title
-     - `dc:description` = "Contact sheet of N assets from {source}"
-     - `dc:source` = source path or collection ID
-     - `dc:creator` = user
-6. **Verify:** `GET /adobe/assets/{newId}/metadata` returns 200 with the expected `repo:size`. Only then is the job marked `succeeded`. Also copy the PDF to App Builder Files and provide a pre-signed download link valid for 24 hours.
+5. **Save to AEM** (always attempted):
+   - **Assets view** (author tier, user's token): upload into the folder the user picked.
+   - **Content Hub** (delivery tier): upload to AEM Author under `/content/dam/contact-sheets/content-hub/{yyyy}/{mm}/` using the app's **AEM technical account** (server-to-server). Content Hub users usually have no author write access.
+   - Steps:
+     - Make sure the target folder exists (`POST /adobe/folders`).
+     - `POST /adobe/assets` → PUT the file to the upload URIs → `completeUpload`.
+     - PATCH metadata:
+       - `dc:title` = sheet title
+       - `dc:description` = "Contact sheet of N assets from {source}"
+       - `dc:source` = source path or collection ID
+       - `dc:creator` = requesting user (name and email)
+       - `xmp:CreatorTool` = `AEM Contact Sheet` (marker, see §7.5)
+6. **Verify:** `GET /adobe/assets/{newId}/metadata` returns 200 with the expected `repo:size`. Only then is the job marked `succeeded`. Also copy the PDF to App Builder Files and provide a pre-signed download link valid for 24 hours. In Content Hub the download link is the main result.
 7. Clean up `/tmp`. Job records expire after 7 days. Scratch files are deleted after 24 hours.
 
 ### 7.5 Where the PDF is saved (R8)
-- **Default:** `/content/dam/contact-sheets/{yyyy}/{mm}/`. This is a single admin-controlled folder, and it is **not** inside the source folder, so later sheets of that folder won't include old PDFs.
+- **Assets view: the user picks any folder.**
+  - "Save to" offers a **folder browser** built on the folder-listing API we already use. It shows only folders the user can write to, plus "New folder…".
+  - The **last folder used is remembered** per user (§5 prefs).
+  - The first-time default is `/content/dam/contact-sheets/`.
+  - If the user can't write to the folder they picked, the worker falls back to download only and explains why. The dialog also checks write access when the folder is picked, if the API allows it (spike S7).
+- **Content Hub:** the user is offered a **download**, and a copy is **always saved to AEM Author** in `/content/dam/contact-sheets/content-hub/{yyyy}/{mm}/` using the technical account. This keeps a record and lets author-side users find and share it. The Content Hub user doesn't pick a folder.
 - **Name:** `{slug(title)}_{yyyy-mm-dd_HHmm}.pdf`. Names never overwrite; a suffix is added on collision.
-- **Fallback:** if the user can't write to the folder, or is in Content Hub (delivery tier), the job still succeeds with **download only** and a notice.
+- **Saving into the source folder** is allowed. The resolve job **leaves out earlier contact sheets** (assets with `xmp:CreatorTool = AEM Contact Sheet`), so they never show up on later sheets of that folder.
 - Once saved, the PDF is a normal AEM asset. The user shares it with AEM's existing share links (expiry, password).
+
+### 7.6 Logo (R4)
+- **"Change…"** opens an **image picker** with the same folder browser, filtered to image assets (PNG, JPEG, SVG). In Content Hub, it lists approved assets from delivery.
+- The choice is saved as `prefs.lastLogo` and **restored by default** next time. The user can change it or choose "No logo".
+- **At generation time** the worker fetches the logo by asset ID: a Dynamic Media delivery image at about 600 px wide if the logo is approved, otherwise the author `cq5dam.web.1280.1280` rendition. It is placed in the ZIP as `logo.{ext}`. If the logo was deleted or can't be read, the sheet is made without it and a warning is shown.
 
 ---
 
@@ -410,12 +452,16 @@ The MVP does not re-encode images: there's no native `sharp` module in the actio
   - Workers receive the token as an invocation parameter. **Tokens are never logged** and never stored in State or Files.
 - **AEM permissions apply:** every AEM call runs with the user's token. The job checks that the user ID in the token matches the job's user ID.
 - **PDF Services credentials** (server-to-server OAuth) live only in the action's environment inputs. They never reach the browser.
-- **Risk of exposing content through the output:** the PDF holds thumbnails and metadata. Anyone who can read the output folder can see it, even without access to the source. Mitigations:
-  - default output folder with restricted permissions;
-  - the dialog shows who can see the destination;
-  - admins may later set the output folder to per-user subfolders.
+- **AEM technical account** (server-to-server, used only for Content Hub copies to Author):
+  - It is used **only** by the generate worker, **only** to create folders and upload under `/content/dam/contact-sheets/content-hub/`.
+  - Its AEM permissions are limited to that folder tree.
+  - Reading source assets in Content Hub still uses the user's own delivery token, so the sheet only contains what that user can see.
+- **Risk of exposing content through the output:** the PDF holds thumbnails and metadata. Anyone who can read the folder it's saved in can see it, even without access to the source. Because users choose any folder, the mitigations are:
+  - the folder browser only lists folders the user can write to;
+  - the dialog shows a notice: "Anyone with access to this folder will be able to see this sheet's thumbnails and metadata";
+  - the Content Hub copy folder is restricted to admins.
 - **Data isolation:** Files and State keys are scoped by org ID and a hash of the user ID. Each user only sees their own jobs and presets.
-- **Production environment:** the prototype targets PROD p59602. The **only writes** are new PDFs in the output folder and creation of that folder. No source asset or metadata is ever modified. Development runs against test folders.
+- **Production environment:** the prototype targets PROD p59602. The **only writes** are new PDFs in the chosen output folder (or the Content Hub copy folder), new folders created through "New folder…", and user preferences and presets in App Builder Files. No source asset or metadata is ever modified. Development runs against test folders.
 
 ---
 
@@ -432,7 +478,10 @@ The MVP does not re-encode images: there's no native `sharp` module in the actio
 | Folders in the selection | Expanded to their direct assets (and subfolders, if chosen). The count shows before generating. |
 | Non-image assets (PDF, video, documents, 3D) | Use AEM's generated thumbnail if there is one, otherwise the file-type placeholder |
 | Duplicate filenames across subfolders | No problem: everything is keyed by asset ID. The Folder field can be printed to tell them apart. |
-| Content Hub (delivery tier) | Approved assets only. Metadata and images come from delivery. Download is the default output. |
+| Content Hub (delivery tier) | Approved assets only. Metadata and images come from delivery. The user gets a download; a copy is saved to Author with the technical account. |
+| Earlier contact sheets inside the source folder | Left out during resolve (`xmp:CreatorTool = AEM Contact Sheet`) |
+| Remembered output folder or logo was deleted or permissions changed | Ignored with a notice; falls back to the default folder or "No logo" |
+| Folder has no metadata schema, or it can't be read | Falls back to "most common fields" ranking |
 
 ---
 
@@ -473,7 +522,7 @@ The MVP does not re-encode images: there's no native `sharp` module in the actio
 
 | Milestone | Scope | Exit criteria |
 |---|---|---|
-| **M0 Spikes** (3–4 days) | S1–S7 below | Each spike has a go / no-go answer written down |
+| **M0 Spikes** (3–5 days) | S1–S10 below | Each spike has a go / no-go answer written down |
 | **M1 Core library** | `fields`, `sort`, `layout`, `render` + fixtures + an offline local harness (renders a fixture to HTML) | Unit and golden tests pass. Sort/group and pagination are correct for all fixtures. |
 | **M2 Resolve + preview** | Assets view extension (header menu + action bar), resolve job, dialog panels R2–R5, live preview | A user can open a folder, configure, and see the correct multi-page preview for 500 assets |
 | **M3 Generate** | Generate worker, PDF Services, Save to AEM + verify, progress UI | Every R6–R8 acceptance criterion met on the test folders |
@@ -487,14 +536,22 @@ The MVP does not re-encode images: there's no native `sharp` module in the actio
 - **S4 · Bulk metadata:** Do the experimental search API's `hits` include enough metadata to skip the per-asset metadata calls?
 - **S5 · Image sources:** Is Dynamic Media OpenAPI enabled on p59602 PROD (delivery host `delivery-p59602-e520244`)? Check sizes of DM JPEG vs `cq5dam.thumbnail.319.319.png` to decide whether re-encoding or a custom rendition is needed.
 - **S6 · Preview images:** Measure `/thumb` proxy latency. Check whether direct CORS to author from the extension origin is possible, which would remove the proxy.
-- **S7 · Write path:** Output folder creation, upload and metadata PATCH with a typical user's token. Confirm the permission story for the default output folder.
+- **S7 · Write path:** Folder creation, upload and metadata PATCH (including `xmp:CreatorTool`) with a typical user's token. Is there a way to check write permission on a folder before generating (for the folder browser)?
+- **S8 · Folder metadata schema:** Find the API that returns the metadata form/schema assigned to a folder (directly or inherited) and its fields (property name, label, widget type, order), for both Assets view metadata forms and the classic schema editor. If there isn't one, rely on the "most common fields" fallback.
+- **S9 · Technical account for Content Hub copies:** Set up a server-to-server credential with AEM write access limited to `/content/dam/contact-sheets/content-hub/`. Confirm uploads work with it.
+- **S10 · Pickers:** Compare our own folder/image browser (built on the folder-listing API) with embedding the AEM Asset Selector in the dialog, for both the output folder and the logo. Criteria: works inside the extension modal iframe, works on both tiers, handles auth, lets us filter to images.
 
 ---
 
-## 14. Open questions
-1. **Output folder:** use `/content/dam/contact-sheets/{yyyy}/{mm}/`, per-user subfolders, or let the user choose any folder (default: next to the source)?
-2. **Content Hub output:** download only, or also save into AEM for users who have author write access?
-3. **Required fields:** is there a customer metadata schema to design around (e.g. SKU, photographer, rights expiry), or should we use the asset's own `dc:*` and custom fields?
-4. **Over 500 assets:** in the MVP, block the sheet, or allow "first 500 after sorting" (current proposal: offer both)?
-5. **Logo:** per-user upload stored with presets (current proposal), or chosen from an AEM folder?
-6. **Credentials:** which Developer Console project/workspace holds PDF Services and App Builder for this prototype? PDF Services' free tier is 500 transactions per month; is that enough for the prototype?
+## 14. Decisions log and open questions
+
+**Decided (Nov 16, 2026):**
+- **Output folder:** the user picks any folder. The last one is remembered; the first default is `/content/dam/contact-sheets/`.
+- **Content Hub:** the user gets a download, and a copy is always saved to Author with the technical account.
+- **More than 500 assets:** offer both "narrow the selection" and "first 500 after sorting".
+- **Logo:** picked from AEM, last choice remembered, can be changed.
+- **Metadata fields:** a folder uses its assigned schema (plus other fields ranked by coverage). Collections, search results and selections offer the most common fields, with coverage shown.
+
+**Still open:**
+1. **Credentials:** which Developer Console project/workspace holds App Builder, PDF Services and the AEM technical account for this prototype? PDF Services' free tier is 500 transactions per month; is that enough?
+2. **Content Hub copy folder:** who should be able to read `/content/dam/contact-sheets/content-hub/` (only admins, or the requesting user too)?
