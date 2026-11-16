@@ -6,27 +6,31 @@ import os from 'node:os';
 const LOCAL_ROOT = path.join(os.tmpdir(), 'aemcontactsheet-store');
 const SEVEN_DAYS_SEC = 7 * 24 * 60 * 60;
 
+function isOpenWhiskRuntime() {
+  return Boolean(process.env.__OW_API_KEY && !process.env.CONTACTSHEET_LOCAL_STORE);
+}
+
 async function getStateClient() {
-  if (process.env.AIO_RUNTIME_NAMESPACE && !process.env.CONTACTSHEET_LOCAL_STORE) {
+  if (isOpenWhiskRuntime()) {
     try {
-      const stateLib = await import('@adobe/aio-lib-state');
-      const init = stateLib.default?.init || stateLib.init;
-      return await init();
-    } catch {
-      // Fall back to local disk store
+      const sdk = await import('@adobe/aio-sdk');
+      const State = sdk.State || sdk.default?.State;
+      return await State.init();
+    } catch (err) {
+      console.error('State.init failed, falling back to Files:', err.message);
     }
   }
   return null;
 }
 
 async function getFilesClient() {
-  if (process.env.AIO_RUNTIME_NAMESPACE && !process.env.CONTACTSHEET_LOCAL_STORE) {
+  if (isOpenWhiskRuntime()) {
     try {
-      const filesLib = await import('@adobe/aio-lib-files');
-      const init = filesLib.default?.init || filesLib.init;
-      return await init();
-    } catch {
-      // Fall back to local disk store
+      const sdk = await import('@adobe/aio-sdk');
+      const Files = sdk.Files || sdk.default?.Files;
+      return await Files.init();
+    } catch (err) {
+      console.error('Files.init failed:', err.message);
     }
   }
   return null;
@@ -36,7 +40,16 @@ export async function saveJob(job) {
   const updated = { ...job, updatedAt: new Date().toISOString() };
   const state = await getStateClient();
   if (state) {
-    await state.put(`job:${job.id}`, JSON.stringify(updated), { ttl: SEVEN_DAYS_SEC });
+    try {
+      await state.put(`job:${job.id}`, JSON.stringify(updated), { ttl: SEVEN_DAYS_SEC });
+      return updated;
+    } catch {
+      // Fall through to Files or local disk
+    }
+  }
+  const files = await getFilesClient();
+  if (files) {
+    await files.write(`jobs/${job.id}.json`, Buffer.from(JSON.stringify(updated), 'utf8'));
     return updated;
   }
   const dir = path.join(LOCAL_ROOT, 'state');
@@ -48,8 +61,21 @@ export async function saveJob(job) {
 export async function loadJob(jobId) {
   const state = await getStateClient();
   if (state) {
-    const res = await state.get(`job:${jobId}`);
-    return res?.value ? JSON.parse(res.value) : null;
+    try {
+      const res = await state.get(`job:${jobId}`);
+      if (res?.value) return JSON.parse(res.value);
+    } catch {
+      // Fall through to Files or local disk
+    }
+  }
+  const files = await getFilesClient();
+  if (files) {
+    try {
+      const buf = await files.read(`jobs/${jobId}.json`);
+      if (buf) return JSON.parse(buf.toString('utf8'));
+    } catch {
+      return null;
+    }
   }
   try {
     const raw = await fs.readFile(path.join(LOCAL_ROOT, 'state', `${jobId}.json`), 'utf8');

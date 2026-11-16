@@ -90,8 +90,9 @@ export async function main(params = {}) {
       maxAssets,
     });
 
+    const modelJsonStr = JSON.stringify(model);
     const modelFileKey = `models/${auth.imsOrg}/${auth.userHash}/${jobId}.json`;
-    await writeFileObject(modelFileKey, JSON.stringify(model));
+    await writeFileObject(modelFileKey, modelJsonStr);
 
     job.status = model.warnings.length ? 'succeeded_with_warnings' : 'succeeded';
     job.phase = 'done';
@@ -99,11 +100,14 @@ export async function main(params = {}) {
     job.warnings = model.warnings;
     job.result = {
       modelFileKey,
-      totalFound: model.totalFound,
+      totalFound: model.assets.length ? model.totalFound : 0,
       resolvedCount: model.assets.length,
       truncated: model.truncated,
     };
     await saveJob(job);
+    if (params.returnModelInline && modelJsonStr.length < 900_000) {
+      return { ...job, inlineModel: model };
+    }
     return job;
   } catch (err) {
     job.status = 'failed';

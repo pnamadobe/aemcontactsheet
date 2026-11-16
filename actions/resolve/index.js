@@ -47,12 +47,20 @@ export async function main(params = {}) {
       auth,
     };
 
-    if (params.sync === true) {
-      await resolveWorkerMain(workerPayload);
-    } else {
-      await invokeWorkerAsync('resolve-worker', workerPayload, resolveWorkerMain);
+    const runSync = params.sync !== false;
+    if (runSync) {
+      const doneJob = await resolveWorkerMain({ ...workerPayload, returnModelInline: true });
+      return jsonResponse(200, {
+        jobId,
+        status: doneJob.status,
+        warnings: doneJob.warnings || [],
+        result: doneJob.result || {},
+        model: doneJob.inlineModel || null,
+        error: doneJob.error || null,
+      });
     }
 
+    await invokeWorkerAsync('resolve-worker', workerPayload, resolveWorkerMain);
     return jsonResponse(202, { jobId, status: job.status });
   } catch (err) {
     return errorResponse(500, 'RESOLVE_INIT_FAILED', err.message || 'Failed starting resolve job', true);

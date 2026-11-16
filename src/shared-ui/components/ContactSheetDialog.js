@@ -114,7 +114,21 @@ export default function ContactSheetDialog({
           };
         });
 
-        // Poll resolve job until succeeded
+        // If /resolve already completed synchronously with inline model, use it immediately
+        if (
+          (resolveRes.status === 'succeeded' || resolveRes.status === 'succeeded_with_warnings') &&
+          resolveRes.model
+        ) {
+          setModel(resolveRes.model);
+          setModelFileKey(resolveRes.result?.modelFileKey || null);
+          setPhase('configure');
+          return;
+        }
+        if (resolveRes.status === 'failed') {
+          throw new Error(resolveRes.error?.message || 'Failed resolving source assets');
+        }
+
+        // Otherwise poll resolve job until succeeded
         const jobId = resolveRes.jobId;
         while (!cancelled) {
           await new Promise((r) => setTimeout(r, 900));
@@ -189,6 +203,7 @@ export default function ContactSheetDialog({
         method: 'POST',
         body: {
           modelFileKey,
+          model,
           config,
           tier,
           aemHost: authCtx?.aemHost,
