@@ -10,8 +10,8 @@ application:
             web: 'yes'
             runtime: nodejs:22
             limits:
-              timeout: 60000
-              memorySize: 512
+              timeout: 180000
+              memorySize: 1024
             inputs:
               LOG_LEVEL: info
               DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
@@ -35,8 +35,8 @@ application:
             web: 'yes'
             runtime: nodejs:22
             limits:
-              timeout: 60000
-              memorySize: 512
+              timeout: 300000
+              memorySize: 2048
             inputs:
               LOG_LEVEL: info
               DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com

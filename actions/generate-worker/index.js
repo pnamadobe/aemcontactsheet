@@ -93,6 +93,8 @@ export async function main(params = {}) {
     await saveJob(job);
 
     // 2. Fetch thumbnails (concurrency 8) keyed by asset.id — never by filename
+    const hasPdfCreds = Boolean(params.PDF_SERVICES_CLIENT_ID && params.PDF_SERVICES_CLIENT_SECRET);
+    const useZipPipeline = hasPdfCreds || pdfConvertImpl !== convertHtmlZipToPdf;
     const imageMap = new Map();
     const imageBuffersByAssetId = new Map();
     const zipEntries = [];
@@ -108,8 +110,11 @@ export async function main(params = {}) {
           const { buffer, ext } = await aem.fetchAssetThumbnailBuffer(asset, { targetPx, quality });
           const zipPath = `img/${asset.sequence}.${ext}`;
           imageMap.set(asset.id, zipPath);
-          imageBuffersByAssetId.set(asset.id, { buffer, ext });
-          zipEntries.push({ name: zipPath, data: buffer });
+          if (useZipPipeline) {
+            zipEntries.push({ name: zipPath, data: buffer });
+          } else {
+            imageBuffersByAssetId.set(asset.id, { buffer, ext });
+          }
         } catch {
           missingImages++;
         }
@@ -138,31 +143,30 @@ export async function main(params = {}) {
         );
         logoZipPath = `img/logo.${ext}`;
         logoEntry = { buffer, ext };
-        zipEntries.push({ name: logoZipPath, data: buffer });
+        if (useZipPipeline) {
+          zipEntries.push({ name: logoZipPath, data: buffer });
+        }
       } catch {
         warnings.push('Selected header logo could not be fetched; generated without logo.');
       }
     }
 
-    // 3. Render HTML & package ZIP with index.html at top level
-    const html = renderHtml(paginated, {
-      mode: 'pdf',
-      model,
-      imageResolver: (asset) => imageMap.get(asset.id) || null,
-      logoUrl: logoZipPath,
-    });
-    zipEntries.unshift({ name: 'index.html', data: Buffer.from(html, 'utf8') });
-    const zipBuffer = buildZipBuffer(zipEntries);
-
-    // 4. Convert to PDF (Adobe PDF Services HTML-to-PDF if credentials configured; otherwise built-in pdf-lib vector renderer)
+    // 3 & 4. Convert to PDF (Adobe PDF Services HTML-to-PDF if credentials configured; otherwise built-in pdf-lib vector renderer)
     job.phase = 'pdf';
     await saveJob(job);
 
     const fileName = buildPdfFileName(paginated.config.header?.title, paginated.config.output?.fileName);
-    const hasPdfCreds = Boolean(params.PDF_SERVICES_CLIENT_ID && params.PDF_SERVICES_CLIENT_SECRET);
     let pdfBuffer = null;
 
-    if (hasPdfCreds || pdfConvertImpl !== convertHtmlZipToPdf) {
+    if (useZipPipeline) {
+      const html = renderHtml(paginated, {
+        mode: 'pdf',
+        model,
+        imageResolver: (asset) => imageMap.get(asset.id) || null,
+        logoUrl: logoZipPath,
+      });
+      zipEntries.unshift({ name: 'index.html', data: Buffer.from(html, 'utf8') });
+      const zipBuffer = buildZipBuffer(zipEntries);
       pdfBuffer = await pdfConvertImpl({
         zipBuffer,
         pageWidthIn: paginated.geometry.pageW,
@@ -177,6 +181,7 @@ export async function main(params = {}) {
         imageBuffersByAssetId,
         logoEntry,
       });
+      imageBuffersByAssetId.clear();
     }
 
     let downloadUrl = null;
