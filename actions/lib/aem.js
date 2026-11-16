@@ -230,16 +230,29 @@ export function createAemClient({
       }
     }
 
-    // Author static rendition path: prefer JPEG rendition for much smaller PDF size unless only PNG thumbnail exists
+    // Author static rendition path:
+    // Use `asset.thumbnailUrl` (pre-signed blob URL for `cq5dam.thumbnail.319.319.png` ~60–110 KB) for Screen quality
+    // so 71 assets is ~5 MB instead of 65 MB!
+    if (quality === 'screen' && asset.thumbnailUrl) {
+      try {
+        const res = await fetchImpl(asset.thumbnailUrl);
+        if (res.ok) {
+          const ab = await res.arrayBuffer();
+          return { buffer: Buffer.from(ab), ext: 'png', mime: 'image/png' };
+        }
+      } catch {
+        // fall through
+      }
+    }
+
     const candidates =
       quality === 'screen'
         ? [
-            { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
             { name: 'cq5dam.thumbnail.319.319.png', ext: 'png', mime: 'image/png' },
+            { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
           ]
         : [
             { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
-            { name: 'cq5dam.zoom.2048.2048.jpeg', ext: 'jpg', mime: 'image/jpeg' },
             { name: 'cq5dam.thumbnail.319.319.png', ext: 'png', mime: 'image/png' },
           ];
 
@@ -284,47 +297,50 @@ export function createAemClient({
     }
 
     const fullPath = `${cleanFolder}/${fileName}`;
-    // 2. Initiate upload (InitiateUploadAsset accepts `path` and `size` — not `mimeType`)
-    let initRes;
-    try {
-      initRes = await requestJson(normAuthor, '/adobe/assets', {
-        method: 'POST',
-        body: {
-          assets: [
-            {
-              path: fullPath,
-              size: pdfBuffer.byteLength,
-            },
-          ],
-        },
-      });
-    } catch {
-      initRes = await requestJson(normAuthor, '/adobe/assets', {
-        method: 'POST',
-        body: {
-          assets: [
-            {
-              path: fullPath,
-            },
-          ],
-        },
-      });
+    // 2. Initiate upload: try candidate payload shapes (`{ path, fileSize }` and `{ path, size }`)
+    const candidateAssetsPayloads = [
+      [{ path: fullPath, fileSize: pdfBuffer.byteLength }],
+      [{ path: fullPath, size: pdfBuffer.byteLength }],
+    ];
+
+    let initRes = null;
+    let uploadInfo = null;
+    let lastErrorDetail = '';
+
+    for (const assetsPayload of candidateAssetsPayloads) {
+      try {
+        initRes = await requestJson(normAuthor, '/adobe/assets', {
+          method: 'POST',
+          body: { assets: assetsPayload },
+        });
+        const valuesObj = initRes?.data?.values || initRes?.data || initRes;
+        const candidate =
+          (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
+          (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
+          (Array.isArray(valuesObj) && valuesObj[0]) ||
+          (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
+          null;
+        if (candidate && (candidate.id || candidate.assetId) && candidate.uploadToken) {
+          uploadInfo = candidate;
+          break;
+        }
+        if (initRes?.errors?.length) {
+          lastErrorDetail = JSON.stringify(initRes.errors[0]);
+        }
+      } catch (e) {
+        lastErrorDetail = e.message;
+      }
     }
 
-    const valuesObj = initRes?.data?.values || initRes?.data || initRes;
-    const uploadInfo =
-      (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
-      (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
-      (Array.isArray(valuesObj) && valuesObj[0]) ||
-      (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
-      valuesObj;
     const assetId = uploadInfo?.id || uploadInfo?.assetId;
     const uploadToken = uploadInfo?.uploadToken;
     const uploadURIs = uploadInfo?.uploadURIs || [];
     const minPartSize = Number(uploadInfo?.minPartSize) || 10 * 1024 * 1024;
     const maxPartSize = Number(uploadInfo?.maxPartSize) || pdfBuffer.byteLength;
     if (!assetId || !uploadToken || !uploadURIs.length) {
-      throw new Error(`AEM initiateUpload response missing upload details: ${JSON.stringify(initRes).slice(0, 240)}`);
+      throw new Error(
+        `AEM initiateUpload failed: ${lastErrorDetail || JSON.stringify(initRes?.errors || initRes)}`
+      );
     }
 
     // 3. PUT binary to pre-signed URI(s) (supports single-part and multi-part uploadURIs)
