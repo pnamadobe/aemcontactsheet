@@ -297,26 +297,31 @@ export function createAemClient({
     }
 
     const fullPath = `${cleanFolder}/${fileName}`;
-    // 2. Initiate upload (`InitiateUploadAsset` accepts `path` and `fileSize`)
-    const initRes = await requestJson(normAuthor, '/adobe/assets', {
-      method: 'POST',
-      body: {
-        assets: [
-          {
-            path: fullPath,
-            fileSize: pdfBuffer.byteLength,
-          },
-        ],
-      },
-    });
+    // 2. Initiate upload (`InitiateUploadAsset` requires `path`, `fileName`, `fileSize`)
+    const candidatePayloads = [
+      { path: fullPath, fileName, fileSize: pdfBuffer.byteLength },
+      { path: cleanFolder, fileName, fileSize: pdfBuffer.byteLength },
+    ];
 
-    const valuesObj = initRes?.data?.values || initRes?.data || initRes;
-    const uploadInfo =
-      (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
-      (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
-      (Array.isArray(valuesObj) && valuesObj[0]) ||
-      (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
-      null;
+    let initRes = null;
+    let uploadInfo = null;
+    for (const itemPayload of candidatePayloads) {
+      initRes = await requestJson(normAuthor, '/adobe/assets', {
+        method: 'POST',
+        body: { assets: [itemPayload] },
+      });
+      const valuesObj = initRes?.data?.values || initRes?.data || initRes;
+      const candidate =
+        (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
+        (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
+        (Array.isArray(valuesObj) && valuesObj[0]) ||
+        (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
+        null;
+      if (candidate && (candidate.id || candidate.assetId) && candidate.uploadToken) {
+        uploadInfo = candidate;
+        break;
+      }
+    }
 
     const assetId = uploadInfo?.id || uploadInfo?.assetId;
     const uploadToken = uploadInfo?.uploadToken;
