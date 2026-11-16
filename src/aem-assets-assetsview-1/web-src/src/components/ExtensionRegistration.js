@@ -30,7 +30,7 @@ export default function ExtensionRegistration() {
                       : { kind: 'folder', id: resource.id, path: resource.path, includeSubfolders: false };
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/#contact-sheet-modal?source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
                       type: 'fullscreen',
                     });
                   },
@@ -73,7 +73,7 @@ export default function ExtensionRegistration() {
                     }
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/#contact-sheet-modal?source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
                       type: 'fullscreen',
                     });
                   },

@@ -39,10 +39,11 @@ export default function ExtensionRegistration() {
                   kind: 'collection',
                   id: resourceId,
                   name: 'Collection',
+                  origin: 'contenthub',
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/#contact-sheet-modal?source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
                   type: 'fullscreen',
                 });
               }
@@ -67,7 +68,7 @@ export default function ExtensionRegistration() {
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/#contact-sheet-modal?source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
                   type: 'fullscreen',
                 });
               }

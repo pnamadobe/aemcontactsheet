@@ -4,5 +4,6 @@ dist/
 .env
 .aio
 *.local.json
+.aws.tmp.creds.json
 547DimSquid-*.json
 .DS_Store
