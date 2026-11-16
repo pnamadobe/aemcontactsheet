@@ -149,20 +149,43 @@ export async function main(params = {}) {
     zipEntries.unshift({ name: 'index.html', data: Buffer.from(html, 'utf8') });
     const zipBuffer = buildZipBuffer(zipEntries);
 
-    // 4. Convert via Adobe PDF Services HTML-to-PDF
+    // 4. Convert via Adobe PDF Services HTML-to-PDF (if credentials configured; otherwise fall back to browser Print/Save PDF)
     job.phase = 'pdf';
     await saveJob(job);
 
-    const pdfBuffer = await pdfConvertImpl({
-      zipBuffer,
-      pageWidthIn: paginated.geometry.pageW,
-      pageHeightIn: paginated.geometry.pageH,
-      clientId: params.PDF_SERVICES_CLIENT_ID,
-      clientSecret: params.PDF_SERVICES_CLIENT_SECRET,
-      fetchImpl,
-    });
-
     const fileName = buildPdfFileName(paginated.config.header?.title, paginated.config.output?.fileName);
+    const hasPdfCreds = Boolean(params.PDF_SERVICES_CLIENT_ID && params.PDF_SERVICES_CLIENT_SECRET);
+    let pdfBuffer = null;
+
+    if (hasPdfCreds || pdfConvertImpl !== convertHtmlZipToPdf) {
+      pdfBuffer = await pdfConvertImpl({
+        zipBuffer,
+        pageWidthIn: paginated.geometry.pageW,
+        pageHeightIn: paginated.geometry.pageH,
+        clientId: params.PDF_SERVICES_CLIENT_ID,
+        clientSecret: params.PDF_SERVICES_CLIENT_SECRET,
+        fetchImpl,
+      });
+    } else {
+      warnings.push(
+        'PDF Services credentials are not configured on 547DimSquid yet; use "Print / Save as PDF" in the preview dialog to save your PDF locally.'
+      );
+      job.status = 'succeeded_with_warnings';
+      job.phase = 'done';
+      job.warnings = warnings;
+      job.result = {
+        clientPrintOnly: true,
+        fileName,
+        pages: paginated.totalPages,
+        assets: paginated.totalAssets,
+        bytes: zipBuffer.byteLength,
+        aemAssetId: null,
+        aemPath: null,
+      };
+      await saveJob(job);
+      return job;
+    }
+
     const pdfFileKey = `pdfs/${auth.imsOrg}/${auth.userHash}/${jobId}/${fileName}`;
     await writeFileObject(pdfFileKey, pdfBuffer);
     const downloadUrl = await getPresignedDownloadUrl(pdfFileKey, 86400);

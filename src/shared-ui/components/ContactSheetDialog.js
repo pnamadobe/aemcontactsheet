@@ -35,8 +35,13 @@ export default function ContactSheetDialog({
   const [addFieldKey, setAddFieldKey] = useState('');
 
   async function callAction(name, { method = 'POST', query = null, body = null } = {}, ctx = authCtx) {
-    const base = (actionBaseUrl || '').replace(/\/+$/, '');
-    const url = new URL(`${base}/${name}`, window.location.origin);
+    let base = (actionBaseUrl || '').replace(/\/+$/, '');
+    if (!base || base.startsWith('/')) {
+      const m = window.location.hostname.match(/^([a-z0-9-]+)\.adobeio-static\.net$/i);
+      const ns = m ? m[1] : '767251-547dimsquid';
+      base = `https://${ns}.adobeioruntime.net/api/v1/web/contactsheet`;
+    }
+    const url = new URL(`${base}/${name}`);
     if (query) {
       for (const [k, v] of Object.entries(query)) {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
@@ -346,12 +351,21 @@ export default function ContactSheetDialog({
             ))}
           </select>
           <button onClick={handleSavePreset}>Save preset</button>
+          <button
+            onClick={() => {
+              const iframe = document.getElementById('cs-live-preview-iframe');
+              iframe?.contentWindow?.focus();
+              iframe?.contentWindow?.print();
+            }}
+          >
+            Print / Save as PDF
+          </button>
           <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Cancel</button>
           <button
             style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}
             onClick={handleGeneratePdf}
           >
-            Generate PDF
+            Generate &amp; Save to AEM
           </button>
         </div>
       </header>
@@ -706,6 +720,7 @@ export default function ContactSheetDialog({
             <span style={{ color: '#b45309' }}>{(paginated?.warnings || []).join(' · ')}</span>
           </div>
           <iframe
+            id="cs-live-preview-iframe"
             title="Live contact sheet preview"
             style={{ flex: 1, border: 'none', width: '100%', background: '#e9ebef' }}
             srcDoc={previewHtml}

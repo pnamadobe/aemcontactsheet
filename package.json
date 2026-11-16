@@ -9,5 +9,13 @@
   "scripts": {
     "test": "node --test packages/core/__tests__/*.test.js actions/__tests__/*.test.js",
     "demo": "node scripts/build-demo.js"
+  },
+  "dependencies": {
+    "@adobe/aio-sdk": "^6",
+    "@adobe/uix-guest": "^0.10.5",
+    "openwhisk": "^3.21.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
   }
 }
