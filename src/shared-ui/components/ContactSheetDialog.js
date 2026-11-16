@@ -33,50 +33,59 @@ export default function ContactSheetDialog({
 
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
-  const [downloading, setDownloading] = useState(false);
+  const [readyDownloadUrl, setReadyDownloadUrl] = useState(null);
+  const [checkingDownload, setCheckingDownload] = useState(false);
 
-  async function handleDirectDownload() {
-    const r = generateJob?.result || {};
-    try {
-      setDownloading(true);
-      if (r.downloadUrl && r.downloadUrl.startsWith('https://')) {
-        window.open(r.downloadUrl, '_blank', 'noopener,noreferrer');
-        return;
-      }
-      if (r.aemAssetId && authCtx?.aemHost) {
-        const seo = encodeURIComponent(r.fileName || 'contact-sheet.pdf');
-        const url = `${authCtx.aemHost.replace(/\/+$/, '')}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/original/as/${seo}`;
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${authCtx.accessToken || ''}`,
-            'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
-            'x-gw-ims-org-id': authCtx.imsOrg || '',
-          },
-        });
-        if (res.ok) {
-          const blob = await res.blob();
-          const objUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = objUrl;
-          a.download = r.fileName || 'contact-sheet.pdf';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
-          return;
-        }
-      }
-      // Fallback: switch back to preview and open browser print/save dialog
-      setPhase('configure');
-      setTimeout(() => {
-        const iframe = document.getElementById('cs-live-preview-iframe');
-        iframe?.contentWindow?.focus();
-        iframe?.contentWindow?.print();
-      }, 150);
-    } finally {
-      setDownloading(false);
+  // Poll until a real, verified https:// download URL is ready before enabling the Download PDF button
+  useEffect(() => {
+    if (phase !== 'done') {
+      setReadyDownloadUrl(null);
+      setCheckingDownload(false);
+      return;
     }
-  }
+    const r = generateJob?.result || {};
+    if (r.downloadUrl && r.downloadUrl.startsWith('https://')) {
+      setReadyDownloadUrl(r.downloadUrl);
+      setCheckingDownload(false);
+      return;
+    }
+    if (!r.aemAssetId) {
+      setCheckingDownload(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingDownload(true);
+    (async () => {
+      for (let attempt = 0; attempt < 15 && !cancelled; attempt++) {
+        try {
+          const check = await callAction('status', {
+            method: 'GET',
+            query: {
+              downloadAssetId: r.aemAssetId,
+              fileName: r.fileName || 'contact-sheet.pdf',
+              aemHost: authCtx?.aemHost || '',
+            },
+          });
+          if (check?.ready && check?.downloadUrl?.startsWith('https://')) {
+            if (!cancelled) {
+              setReadyDownloadUrl(check.downloadUrl);
+              setCheckingDownload(false);
+            }
+            return;
+          }
+        } catch {
+          // keep polling
+        }
+        await new Promise((res) => setTimeout(res, 1500));
+      }
+      if (!cancelled) setCheckingDownload(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, generateJob]);
 
   async function callAction(name, { method = 'POST', query = null, body = null } = {}, ctx = authCtx) {
     let base = (actionBaseUrl || '').replace(/\/+$/, '');
@@ -394,10 +403,18 @@ export default function ContactSheetDialog({
         {(generateJob?.warnings || []).map((w, i) => (
           <p key={i} style={{ color: '#b45309', fontSize: 13 }}>{w}</p>
         ))}
-        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-          <button onClick={handleDirectDownload} disabled={downloading}>
-            {downloading ? 'Downloading…' : 'Download PDF'}
-          </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
+          {readyDownloadUrl ? (
+            <a href={readyDownloadUrl} target="_blank" rel="noreferrer">
+              <button style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}>
+                Download PDF
+              </button>
+            </a>
+          ) : checkingDownload ? (
+            <button disabled style={{ opacity: 0.6, padding: '7px 14px' }}>
+              Preparing download link…
+            </button>
+          ) : null}
           {r.aemPath && tier === 'author' && (
             <button
               onClick={async () => {

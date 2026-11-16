@@ -1,4 +1,5 @@
-// GET /status?jobId=...&includeModel=true — poll resolve or generate job status (scoped to the calling user).
+// GET /status?jobId=...&includeModel=true — poll resolve or generate job status (scoped to the calling user),
+// or proxy-download an AEM asset binary (`?downloadAssetId=urn:aaid:aem:...&fileName=...&aemHost=...`).
 import { errorResponse, extractAuth, jsonResponse } from '../lib/utils.js';
 import { getPresignedDownloadUrl, loadJob, readFileObject } from '../lib/store.js';
 
@@ -7,6 +8,60 @@ export async function main(params = {}) {
     const auth = extractAuth(params);
     if (!auth.bearerToken) {
       return errorResponse(401, 'UNAUTHORIZED', 'Missing IMS Bearer token.');
+    }
+
+    if (params.downloadAssetId) {
+      const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      const fileName = params.fileName || 'contact-sheet.pdf';
+
+      // First try to get a pre-signed blob downloadUrl from AEM search (works for any file size)
+      try {
+        const sRes = await fetch(
+          `${aemHost}/adobe/experimental/aemmcpserver-expires-20991231/search-assets`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${auth.bearerToken}`,
+              'x-api-key': auth.apiKey,
+              'x-gw-ims-org-id': auth.imsOrg,
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
+              limit: 5,
+            }),
+          }
+        );
+        if (sRes.ok) {
+          const sJson = await sRes.json();
+          const match = (sJson?.results || []).find((x) => x.assetId === params.downloadAssetId) || sJson?.results?.[0];
+          if (match?.downloadUrl) {
+            return jsonResponse(200, {
+              ready: true,
+              fileName,
+              downloadUrl: match.downloadUrl,
+            });
+          }
+        }
+      } catch {
+        // Fall through
+      }
+
+      // Check if asset metadata is processed and ready
+      const metaRes = await fetch(
+        `${aemHost}/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/metadata`,
+        {
+          headers: {
+            Authorization: `Bearer ${auth.bearerToken}`,
+            'x-api-key': auth.apiKey,
+            'x-gw-ims-org-id': auth.imsOrg,
+          },
+        }
+      );
+      if (!metaRes.ok) {
+        return jsonResponse(200, { ready: false });
+      }
+      return jsonResponse(200, { ready: false, indexedPending: true });
     }
 
     const jobId = params.jobId;
