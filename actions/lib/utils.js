@@ -18,14 +18,26 @@ export function errorResponse(statusCode, code, message, retryable = false) {
   });
 }
 
+function decodeJwtPayload(token) {
+  try {
+    const parts = String(token || '').split('.');
+    if (parts.length < 2) return null;
+    const json = Buffer.from(parts[1], 'base64url').toString('utf8');
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export function extractAuth(params = {}) {
   const headers = params.__ow_headers || {};
   const rawAuth = headers.authorization || headers.Authorization || params.accessToken || '';
   const bearerToken = rawAuth.replace(/^Bearer\s+/i, '').trim();
-  const imsOrg = headers['x-gw-ims-org-id'] || params.imsOrg || '4A603BC061E191130A495FEF@AdobeOrg';
-  const apiKey = headers['x-api-key'] || params.apiKey || 'aem-assets-frontend-1';
-  const userId = params.userId || headers['x-ims-user-id'] || 'anonymous';
-  const userEmail = params.userEmail || userId;
+  const claims = decodeJwtPayload(bearerToken) || {};
+  const imsOrg = headers['x-gw-ims-org-id'] || params.imsOrg || claims.org || '4A603BC061E191130A495FEF@AdobeOrg';
+  const apiKey = headers['x-api-key'] || params.apiKey || claims.client_id || 'aem-assets-frontend-1';
+  const userId = claims.user_id || claims.sub || params.userId || headers['x-ims-user-id'] || 'anonymous';
+  const userEmail = params.userEmail || claims.email || userId;
   return {
     bearerToken,
     imsOrg,

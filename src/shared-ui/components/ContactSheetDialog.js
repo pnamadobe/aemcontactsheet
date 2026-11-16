@@ -47,6 +47,9 @@ export default function ContactSheetDialog({
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
       }
     }
+    if (method === 'GET' && ctx?.userId && !url.searchParams.has('userId')) {
+      url.searchParams.set('userId', ctx.userId);
+    }
     const res = await fetch(url.toString(), {
       method,
       headers: {
@@ -210,7 +213,20 @@ export default function ContactSheetDialog({
         },
       });
 
-      const jobId = genInit.jobId;
+      if (genInit.status === 'succeeded' || genInit.status === 'succeeded_with_warnings') {
+        setGenerateJob(genInit);
+        setPhase('done');
+        guestConnection?.host?.toast?.display?.({
+          variant: 'positive',
+          message: `Contact sheet "${config.header.title}" is ready.`,
+        });
+        return;
+      }
+      if (genInit.status === 'failed') {
+        throw new Error(genInit.error?.message || 'PDF generation failed');
+      }
+
+      const jobId = genInit.jobId || genInit.id;
       while (true) {
         await new Promise((r) => setTimeout(r, 1200));
         const st = await callAction('status', { method: 'GET', query: { jobId } });

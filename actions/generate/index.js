@@ -56,12 +56,13 @@ export async function main(params = {}) {
       AEM_TECH_SCOPES: params.AEM_TECH_SCOPES || process.env.AEM_TECH_SCOPES,
     };
 
-    if (params.sync === true) {
-      await generateWorkerMain(workerPayload);
-    } else {
-      await invokeWorkerAsync('generate-worker', workerPayload, generateWorkerMain);
+    const runSync = params.sync !== false;
+    if (runSync) {
+      const doneJob = await generateWorkerMain(workerPayload);
+      return jsonResponse(200, doneJob);
     }
 
+    await invokeWorkerAsync('generate-worker', workerPayload, generateWorkerMain);
     return jsonResponse(202, { jobId, status: job.status });
   } catch (err) {
     return errorResponse(500, 'GENERATE_INIT_FAILED', err.message || 'Failed starting generate job', true);
