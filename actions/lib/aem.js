@@ -230,23 +230,31 @@ export function createAemClient({
       }
     }
 
-    // Author static rendition path
-    const rendName = targetPx <= 340 ? 'cq5dam.thumbnail.319.319.png' : 'cq5dam.web.1280.1280.jpeg';
-    const ext = rendName.endsWith('.png') ? 'png' : 'jpg';
-    try {
-      const buf = await requestBuffer(
-        normAuthor,
-        `/adobe/assets/${encodeURIComponent(asset.id)}/renditions/${rendName}/as/${seoName}.${ext}`
-      );
-      return { buffer: buf, ext, mime: ext === 'png' ? 'image/png' : 'image/jpeg' };
-    } catch {
-      // Fallback to 319 thumbnail if web.1280 wasn't present
-      const buf = await requestBuffer(
-        normAuthor,
-        `/adobe/assets/${encodeURIComponent(asset.id)}/renditions/cq5dam.thumbnail.319.319.png/as/${seoName}.png`
-      );
-      return { buffer: buf, ext: 'png', mime: 'image/png' };
+    // Author static rendition path: prefer JPEG rendition for much smaller PDF size unless only PNG thumbnail exists
+    const candidates =
+      quality === 'screen'
+        ? [
+            { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
+            { name: 'cq5dam.thumbnail.319.319.png', ext: 'png', mime: 'image/png' },
+          ]
+        : [
+            { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
+            { name: 'cq5dam.zoom.2048.2048.jpeg', ext: 'jpg', mime: 'image/jpeg' },
+            { name: 'cq5dam.thumbnail.319.319.png', ext: 'png', mime: 'image/png' },
+          ];
+
+    for (const c of candidates) {
+      try {
+        const buf = await requestBuffer(
+          normAuthor,
+          `/adobe/assets/${encodeURIComponent(asset.id)}/renditions/${c.name}/as/${seoName}.${c.ext}`
+        );
+        return { buffer: buf, ext: c.ext, mime: c.mime };
+      } catch {
+        // try next rendition candidate
+      }
     }
+    throw new Error(`No usable rendition found for ${asset.id}`);
   }
 
   /**
@@ -276,39 +284,78 @@ export function createAemClient({
     }
 
     const fullPath = `${cleanFolder}/${fileName}`;
-    // 2. Initiate upload
-    const initRes = await requestJson(normAuthor, '/adobe/assets', {
-      method: 'POST',
-      body: {
-        assets: [
-          {
-            path: fullPath,
-            fileSize: pdfBuffer.byteLength,
-            mimeType: 'application/pdf',
-          },
-        ],
-      },
-    });
+    // 2. Initiate upload (InitiateUploadAsset accepts `path` and `size` — not `mimeType`)
+    let initRes;
+    try {
+      initRes = await requestJson(normAuthor, '/adobe/assets', {
+        method: 'POST',
+        body: {
+          assets: [
+            {
+              path: fullPath,
+              size: pdfBuffer.byteLength,
+            },
+          ],
+        },
+      });
+    } catch {
+      initRes = await requestJson(normAuthor, '/adobe/assets', {
+        method: 'POST',
+        body: {
+          assets: [
+            {
+              path: fullPath,
+            },
+          ],
+        },
+      });
+    }
 
-    const uploadInfo = initRes?.data?.values?.[0] || initRes?.data?.[0] || initRes?.assets?.[0];
+    const valuesObj = initRes?.data?.values || initRes?.data || initRes;
+    const uploadInfo =
+      (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
+      (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
+      (Array.isArray(valuesObj) && valuesObj[0]) ||
+      (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
+      valuesObj;
     const assetId = uploadInfo?.id || uploadInfo?.assetId;
     const uploadToken = uploadInfo?.uploadToken;
     const uploadURIs = uploadInfo?.uploadURIs || [];
+    const minPartSize = Number(uploadInfo?.minPartSize) || 10 * 1024 * 1024;
+    const maxPartSize = Number(uploadInfo?.maxPartSize) || pdfBuffer.byteLength;
     if (!assetId || !uploadToken || !uploadURIs.length) {
-      throw new Error('AEM initiateUpload did not return assetId/uploadToken/uploadURIs');
+      throw new Error(`AEM initiateUpload response missing upload details: ${JSON.stringify(initRes).slice(0, 240)}`);
     }
 
-    // 3. PUT binary to pre-signed URI
-    const putRes = await fetchImpl(uploadURIs[0], {
-      method: 'PUT',
-      headers: { 'content-type': 'application/pdf' },
-      body: pdfBuffer,
-    });
-    if (!putRes.ok) {
-      throw new Error(`Failed uploading binary to pre-signed URL (${putRes.status})`);
+    // 3. PUT binary to pre-signed URI(s) (supports single-part and multi-part uploadURIs)
+    if (uploadURIs.length === 1) {
+      const putRes = await fetchImpl(uploadURIs[0], {
+        method: 'PUT',
+        headers: { 'content-type': 'application/pdf' },
+        body: pdfBuffer,
+      });
+      if (!putRes.ok) {
+        throw new Error(`Failed uploading binary to pre-signed URL (${putRes.status})`);
+      }
+    } else {
+      const partSize = Math.max(minPartSize, Math.min(maxPartSize, Math.ceil(pdfBuffer.byteLength / uploadURIs.length)));
+      for (let i = 0; i < uploadURIs.length; i++) {
+        const start = i * partSize;
+        if (start >= pdfBuffer.byteLength) break;
+        const end = Math.min(pdfBuffer.byteLength, start + partSize);
+        const slice = pdfBuffer.subarray(start, end);
+        const putRes = await fetchImpl(uploadURIs[i], {
+          method: 'PUT',
+          headers: { 'content-type': 'application/pdf' },
+          body: slice,
+        });
+        if (!putRes.ok) {
+          throw new Error(`Failed uploading part ${i + 1} to pre-signed URL (${putRes.status})`);
+        }
+      }
     }
 
-    // 4. Complete upload
+    // 4. Complete upload (CompleteUploadInfo accepts `uploadToken`, `createVersion`, `versionLabel`, `versionComment`)
     await requestJson(normAuthor, `/adobe/assets/${encodeURIComponent(assetId)}/completeUpload`, {
       method: 'POST',
       body: {
