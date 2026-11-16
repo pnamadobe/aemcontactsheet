@@ -4,6 +4,7 @@ import {
   COMMON_FIELDS,
   formatDate,
   formatMimeType,
+  humanizeFieldKey,
   isEmptyValue,
   simplifyTagValue,
 } from './fields.js';
@@ -34,21 +35,23 @@ export function getSortableFields(modelFields = [], printedFieldSpecs = []) {
   for (const spec of printedFieldSpecs) {
     if (!spec?.key || seen.has(spec.key)) continue;
     seen.add(spec.key);
+    const friendly = spec.label && !spec.label.includes(':') ? spec.label : humanizeFieldKey(spec.key);
     const def = byKey.get(spec.key) || {
       key: spec.key,
       source: 'asset',
-      label: spec.label || spec.key,
+      label: friendly,
       type: 'text',
       groupable: true,
     };
-    result.push({ ...def, label: spec.label || def.label, section: 'printed' });
+    result.push({ ...def, label: friendly || def.label, section: 'printed' });
   }
 
   // 3. Remaining non-technical discovered fields
   for (const f of modelFields) {
     if (seen.has(f.key) || f.technical) continue;
     seen.add(f.key);
-    result.push({ ...f, section: 'discovered' });
+    const friendly = f.label && !f.label.includes(':') ? f.label : humanizeFieldKey(f.key);
+    result.push({ ...f, label: friendly, section: 'discovered' });
   }
 
   return result;

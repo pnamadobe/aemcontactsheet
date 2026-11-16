@@ -79,6 +79,15 @@ export async function main(params = {}) {
       throw new Error(`Unsupported source kind: ${source.kind}`);
     }
 
+    // Collect custom assetMetadata keys and query tenant metadata labels on Author
+    const rawMetaKeys = new Set();
+    for (const r of rawAssets.slice(0, 50)) {
+      for (const k of Object.keys(r?.assetMetadata || {})) {
+        rawMetaKeys.add(k);
+      }
+    }
+    const schemaFields = tier === 'author' ? await aem.fetchTenantMetadataFields([...rawMetaKeys]) : [];
+
     const model = buildSheetModel({
       rawAssets,
       source,
@@ -87,6 +96,7 @@ export async function main(params = {}) {
       aemHost,
       deliveryHost,
       resolvedBy: auth.userEmail || auth.userId,
+      schemaFields,
       maxAssets,
     });
 

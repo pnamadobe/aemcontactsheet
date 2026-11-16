@@ -223,4 +223,7 @@ test('smart-crop author fixture resolves 36 assets and formats tags and dimensio
   assert.equal(formatFieldValue(first.values['common:dimensions'], dimDef), '1000 × 662');
   assert.equal(formatFieldValue(first.values['xcm:keywords'], tagDef), 'Landscape');
   assert.equal(humanizeFieldKey('product:appareltype'), 'Apparel type');
+  assert.equal(humanizeFieldKey('xdm:vehicleClass'), 'Vehicle Class');
+  assert.equal(humanizeFieldKey('hertz:modelYear'), 'Model Year');
+  assert.equal(humanizeFieldKey('brand:sku_id'), 'SKU ID');
 });

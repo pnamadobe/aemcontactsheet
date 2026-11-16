@@ -74,24 +74,32 @@ export function isTechnicalField(key) {
   return TECHNICAL_KEY_PATTERNS.some((re) => re.test(key));
 }
 
-/** Turn a raw property key like `product:appareltype` or `brand:sku_id` into a readable label. */
+/** Turn a raw property key like `xdm:vehicleClass`, `product:appareltype`, or `brand:sku_id` into a clean Title Case label (`Vehicle Class`, `Apparel Type`, `SKU ID`). */
 export function humanizeFieldKey(key) {
+  if (!key) return '';
   if (KNOWN_ASSET_FIELDS[key]) return KNOWN_ASSET_FIELDS[key].label;
   const common = COMMON_FIELDS.find((f) => f.key === key);
   if (common) return common.label;
-  const [ns, rawName] = key.includes(':') ? key.split(':', 2) : ['', key];
-  const spaced = rawName
+
+  // Strip any namespace prefix (e.g. `xdm:`, `product:`, `hertz:`, `custom:`)
+  const rawName = key.includes(':') ? key.split(':').pop() : key;
+  const ACRONYMS = new Set(['id', 'sku', 'url', 'uri', 'uuid', 'vin', 'suv', 'ev', 'msrp', 'dpi', 'ppi', 'iso', 'rgb', 'cmyk', 'ai', 'gps']);
+
+  const words = rawName
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .trim();
-  const titled = spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  if (ns && !['dc', 'dam', 'repo', 'common', 'xmp'].includes(ns.toLowerCase())) {
-    const nsCap = ns.charAt(0).toUpperCase() + ns.slice(1);
-    if (!titled.toLowerCase().startsWith(ns.toLowerCase())) {
-      return `${nsCap}: ${titled}`;
-    }
-  }
-  return titled;
+    .replace(/[._/-]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return words
+    .map((w) => {
+      const lower = w.toLowerCase();
+      if (ACRONYMS.has(lower)) return lower.toUpperCase();
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join(' ');
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;

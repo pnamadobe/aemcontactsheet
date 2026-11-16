@@ -344,6 +344,34 @@ export function createAemClient({
     };
   }
 
+  /**
+   * Look up custom tenant metadata field labels (e.g. `xdm:vehicleClass` -> `Vehicle Class`)
+   * from AEM's metadata resolver / schema definitions.
+   */
+  async function fetchTenantMetadataFields(fieldKeys = []) {
+    if (!fieldKeys.length) return [];
+    try {
+      const res = await requestJson(
+        normAuthor,
+        '/adobe/experimental/aemmcpserver-expires-20991231/resolve-asset-metadata',
+        {
+          method: 'POST',
+          body: { query: fieldKeys.slice(0, 30).join(' ') },
+        }
+      );
+      const fields = res?.fields || res?.metadataFields || res?.tenantFields || [];
+      return fields
+        .map((f) => ({
+          key: f.property || f.name || f.key || f.fieldName,
+          label: f.label || f.title || f.displayName,
+          type: f.type,
+        }))
+        .filter((f) => f.key && f.label);
+    } catch {
+      return [];
+    }
+  }
+
   return {
     listFolder,
     resolveFolderAssets,
@@ -351,5 +379,6 @@ export function createAemClient({
     resolveSelectionAssets,
     fetchAssetThumbnailBuffer,
     uploadPdfAndVerify,
+    fetchTenantMetadataFields,
   };
 }
