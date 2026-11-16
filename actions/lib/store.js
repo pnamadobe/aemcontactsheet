@@ -116,7 +116,14 @@ export async function readFileObject(fileKey, asText = true) {
 export async function getPresignedDownloadUrl(fileKey, expirySeconds = 86400) {
   const files = await getFilesClient();
   if (files && typeof files.generatePresignedURL === 'function') {
-    return await files.generatePresignedURL(fileKey, { expiryInSeconds: expirySeconds, permissions: 'r' });
+    try {
+      return await files.generatePresignedURL(fileKey, { expiryInSeconds: expirySeconds, permissions: 'r' });
+    } catch {
+      return null;
+    }
+  }
+  if (process.env.__OW_API_KEY && !process.env.CONTACTSHEET_LOCAL_STORE) {
+    return null;
   }
   return `file://${path.join(LOCAL_ROOT, 'files', fileKey)}`;
 }

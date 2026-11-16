@@ -387,12 +387,32 @@ export function createAemClient({
       // Metadata patch is best-effort; verification below is authoritative
     }
 
-    // 6. Verify asset exists and size matches
+    // 6. Verify asset exists and fetch a signed AEM download URL if available
     const verified = await requestJson(normAuthor, `/adobe/assets/${encodeURIComponent(assetId)}/metadata`);
+    let aemDownloadUrl = null;
+    try {
+      const sRes = await requestJson(
+        normAuthor,
+        '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
+        {
+          method: 'POST',
+          body: {
+            termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
+            limit: 5,
+          },
+        }
+      );
+      const match = (sRes?.results || []).find((x) => x.assetId === assetId) || sRes?.results?.[0];
+      aemDownloadUrl = match?.downloadUrl || null;
+    } catch {
+      // optional
+    }
+
     return {
       assetId,
       path: verified?.repositoryMetadata?.['repo:path'] || fullPath,
       size: verified?.repositoryMetadata?.['repo:size'] || pdfBuffer.byteLength,
+      downloadUrl: aemDownloadUrl,
     };
   }
 

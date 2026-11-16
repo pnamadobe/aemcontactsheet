@@ -263,7 +263,7 @@ export async function main(params = {}) {
     job.warnings = warnings;
     job.result = {
       pdfFileKey,
-      downloadUrl,
+      downloadUrl: uploaded?.downloadUrl || downloadUrl || null,
       fileName,
       pages: paginated.totalPages,
       assets: paginated.totalAssets,

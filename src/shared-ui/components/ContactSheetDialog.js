@@ -33,6 +33,50 @@ export default function ContactSheetDialog({
 
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDirectDownload() {
+    const r = generateJob?.result || {};
+    try {
+      setDownloading(true);
+      if (r.downloadUrl && r.downloadUrl.startsWith('https://')) {
+        window.open(r.downloadUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      if (r.aemAssetId && authCtx?.aemHost) {
+        const seo = encodeURIComponent(r.fileName || 'contact-sheet.pdf');
+        const url = `${authCtx.aemHost.replace(/\/+$/, '')}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/original/as/${seo}`;
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${authCtx.accessToken || ''}`,
+            'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
+            'x-gw-ims-org-id': authCtx.imsOrg || '',
+          },
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const objUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objUrl;
+          a.download = r.fileName || 'contact-sheet.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+          return;
+        }
+      }
+      // Fallback: switch back to preview and open browser print/save dialog
+      setPhase('configure');
+      setTimeout(() => {
+        const iframe = document.getElementById('cs-live-preview-iframe');
+        iframe?.contentWindow?.focus();
+        iframe?.contentWindow?.print();
+      }, 150);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function callAction(name, { method = 'POST', query = null, body = null } = {}, ctx = authCtx) {
     let base = (actionBaseUrl || '').replace(/\/+$/, '');
@@ -351,14 +395,15 @@ export default function ContactSheetDialog({
           <p key={i} style={{ color: '#b45309', fontSize: 13 }}>{w}</p>
         ))}
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-          {r.downloadUrl && (
-            <a href={r.downloadUrl} target="_blank" rel="noreferrer">
-              <button>Download PDF</button>
-            </a>
-          )}
+          <button onClick={handleDirectDownload} disabled={downloading}>
+            {downloading ? 'Downloading…' : 'Download PDF'}
+          </button>
           {r.aemPath && tier === 'author' && (
             <button
-              onClick={() => guestConnection?.host?.router?.navigateToAssetDetails?.({ assetPath: r.aemPath })}
+              onClick={async () => {
+                await guestConnection?.host?.modal?.closeDialog?.().catch(() => {});
+                await guestConnection?.host?.router?.navigateToAssetDetails?.({ assetPath: r.aemPath });
+              }}
             >
               Open in AEM
             </button>
