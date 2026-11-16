@@ -112,7 +112,12 @@ export default function ContactSheetDialog({
             },
             output: {
               ...base.output,
-              targetFolder: prefsRes?.lastOutputFolder || base.output.targetFolder,
+              targetFolder:
+                prefsRes?.lastOutputFolder?.id && prefsRes?.lastOutputFolder?.path
+                  ? prefsRes.lastOutputFolder
+                  : source?.kind === 'folder' && source?.path
+                    ? { id: source.id || '', path: source.path }
+                    : prefsRes?.lastOutputFolder || base.output.targetFolder,
             },
           };
         });

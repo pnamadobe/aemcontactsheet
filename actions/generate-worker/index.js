@@ -234,7 +234,14 @@ export async function main(params = {}) {
         });
       } else {
         // Assets View: upload to user's chosen folder using user's own token
-        const targetFolder = paginated.config.output?.targetFolder?.path || `/content/dam/contact-sheets/${yyyy}/${mm}`;
+        let targetFolder = paginated.config.output?.targetFolder?.path;
+        if (!targetFolder || targetFolder === '/content/dam/contact-sheets') {
+          if (model?.source?.kind === 'folder' && model?.source?.path) {
+            targetFolder = model.source.path;
+          } else {
+            targetFolder = `/content/dam/contact-sheets/${yyyy}/${mm}`;
+          }
+        }
         job.phase = 'verify';
         await saveJob(job);
         uploaded = await aem.uploadPdfAndVerify({
