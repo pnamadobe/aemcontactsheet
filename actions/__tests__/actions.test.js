@@ -5,12 +5,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildZipBuffer } from '../lib/zip.js';
+import { renderNativePdfBuffer } from '../lib/pdf-native.js';
 import { main as resolveWorkerMain } from '../resolve-worker/index.js';
 import { main as generateWorkerMain } from '../generate-worker/index.js';
 import { main as statusMain } from '../status/index.js';
 import { main as presetsMain } from '../presets/index.js';
 import { main as prefsMain } from '../prefs/index.js';
-import { createDefaultConfig } from '../../packages/core/layout.js';
+import { buildSheetModel, createDefaultConfig, paginate } from '../../packages/core/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.resolve(__dirname, '../../test/fixtures');
@@ -189,4 +190,23 @@ test('presets and prefs actions persist per-user settings', async () => {
   assert.equal(putPreset.statusCode, 200);
   assert.equal(putPreset.body.presets.length, 1);
   assert.equal(putPreset.body.presets[0].isDefault, true);
+});
+
+test('renderNativePdfBuffer produces a valid multi-page PDF Buffer from real fixture data', async () => {
+  const model = buildSheetModel({
+    rawAssets: collegeRaw.slice(0, 10),
+    sourceLabel: 'Collection: College Branded',
+    resolvedBy: 'pnam@adobe.com',
+  });
+  const config = createDefaultConfig({
+    header: { title: 'Hertz Fall Shoot Contact Sheet', department: 'Brand Creative' },
+    fields: [
+      { key: 'common:title', label: 'Title', maxLines: 1, showLabel: false },
+      { key: 'product:team', label: 'Team', maxLines: 1, showLabel: true },
+    ],
+  });
+  const paginated = paginate(model, config);
+  const pdfBuf = await renderNativePdfBuffer(paginated, { model });
+  assert.ok(pdfBuf.byteLength > 1000);
+  assert.equal(pdfBuf.subarray(0, 5).toString('utf8'), '%PDF-');
 });

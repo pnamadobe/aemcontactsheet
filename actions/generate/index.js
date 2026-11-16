@@ -59,7 +59,7 @@ export async function main(params = {}) {
     const runSync = params.sync !== false;
     if (runSync) {
       const doneJob = await generateWorkerMain(workerPayload);
-      return jsonResponse(200, doneJob);
+      return jsonResponse(200, { ...doneJob, jobId: doneJob.id || jobId });
     }
 
     await invokeWorkerAsync('generate-worker', workerPayload, generateWorkerMain);

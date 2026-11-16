@@ -12,6 +12,7 @@ import { renderHtml } from '../../packages/core/render.js';
 import { createAemClient } from '../lib/aem.js';
 import { buildZipBuffer } from '../lib/zip.js';
 import { convertHtmlZipToPdf, getServerToServerToken } from '../lib/pdf-services.js';
+import { renderNativePdfBuffer } from '../lib/pdf-native.js';
 import { getPresignedDownloadUrl, loadJob, readFileObject, saveJob, writeFileObject } from '../lib/store.js';
 import { mapWithConcurrency } from '../lib/utils.js';
 
@@ -93,6 +94,7 @@ export async function main(params = {}) {
 
     // 2. Fetch thumbnails (concurrency 8) keyed by asset.id — never by filename
     const imageMap = new Map();
+    const imageBuffersByAssetId = new Map();
     const zipEntries = [];
     const targetPx = paginated.geometry.targetImagePx;
     const quality = paginated.config.output?.quality || 'screen';
@@ -106,6 +108,7 @@ export async function main(params = {}) {
           const { buffer, ext } = await aem.fetchAssetThumbnailBuffer(asset, { targetPx, quality });
           const zipPath = `img/${asset.sequence}.${ext}`;
           imageMap.set(asset.id, zipPath);
+          imageBuffersByAssetId.set(asset.id, { buffer, ext });
           zipEntries.push({ name: zipPath, data: buffer });
         } catch {
           missingImages++;
@@ -125,6 +128,7 @@ export async function main(params = {}) {
 
     // Optional header logo from AEM (R4, §7.6)
     let logoZipPath = null;
+    let logoEntry = null;
     const logoRef = paginated.config.header?.logo;
     if (logoRef?.assetId) {
       try {
@@ -133,6 +137,7 @@ export async function main(params = {}) {
           { targetPx: 600, quality: 'print' }
         );
         logoZipPath = `img/logo.${ext}`;
+        logoEntry = { buffer, ext };
         zipEntries.push({ name: logoZipPath, data: buffer });
       } catch {
         warnings.push('Selected header logo could not be fetched; generated without logo.');
@@ -149,7 +154,7 @@ export async function main(params = {}) {
     zipEntries.unshift({ name: 'index.html', data: Buffer.from(html, 'utf8') });
     const zipBuffer = buildZipBuffer(zipEntries);
 
-    // 4. Convert via Adobe PDF Services HTML-to-PDF (if credentials configured; otherwise fall back to browser Print/Save PDF)
+    // 4. Convert to PDF (Adobe PDF Services HTML-to-PDF if credentials configured; otherwise built-in pdf-lib vector renderer)
     job.phase = 'pdf';
     await saveJob(job);
 
@@ -167,28 +172,24 @@ export async function main(params = {}) {
         fetchImpl,
       });
     } else {
-      warnings.push(
-        'PDF Services credentials are not configured on 547DimSquid yet; use "Print / Save as PDF" in the preview dialog to save your PDF locally.'
-      );
-      job.status = 'succeeded_with_warnings';
-      job.phase = 'done';
-      job.warnings = warnings;
-      job.result = {
-        clientPrintOnly: true,
-        fileName,
-        pages: paginated.totalPages,
-        assets: paginated.totalAssets,
-        bytes: zipBuffer.byteLength,
-        aemAssetId: null,
-        aemPath: null,
-      };
-      await saveJob(job);
-      return job;
+      pdfBuffer = await renderNativePdfBuffer(paginated, {
+        model,
+        imageBuffersByAssetId,
+        logoEntry,
+      });
     }
 
+    let downloadUrl = null;
     const pdfFileKey = `pdfs/${auth.imsOrg}/${auth.userHash}/${jobId}/${fileName}`;
-    await writeFileObject(pdfFileKey, pdfBuffer);
-    const downloadUrl = await getPresignedDownloadUrl(pdfFileKey, 86400);
+    try {
+      await writeFileObject(pdfFileKey, pdfBuffer);
+      downloadUrl = await getPresignedDownloadUrl(pdfFileKey, 86400);
+    } catch {
+      // If App Builder Files isn't provisioned yet, provide a base64 data URL if under 700 KB
+      if (pdfBuffer.byteLength < 700_000) {
+        downloadUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+      }
+    }
 
     // 5 & 6. Save to AEM Author + verify (§7.4 steps 5–6 and §7.5)
     job.phase = 'upload';
