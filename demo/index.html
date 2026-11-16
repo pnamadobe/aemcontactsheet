@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AEM Assets Contact Sheet — Interactive Preview Harness</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 52px;
+      background: #111827;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-title { font-weight: 700; font-size: 15px; }
+    .topbar-sub { font-size: 12px; color: #9ca3af; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: 0;
+    }
+    .sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .section {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #374151;
+      margin: 0 0 10px 0;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    input[type="text"], input[type="date"], select {
+      width: 100%;
+      margin-top: 3px;
+      padding: 6px 8px;
+      font-size: 12.5px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #ffffff;
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: 1fr 90px; gap: 6px; align-items: end; }
+    .field-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .field-chip {
+      display: grid;
+      grid-template-columns: 1fr 68px 64px 24px;
+      gap: 6px;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .field-chip-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn {
+      padding: 7px 12px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #1473e6;
+      border-color: #1473e6;
+      color: #ffffff;
+    }
+    .btn-icon {
+      border: none;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+    }
+    .preview-pane {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .preview-toolbar {
+      height: 40px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      font-size: 12.5px;
+      color: #374151;
+      flex-shrink: 0;
+    }
+    .preview-frame {
+      flex: 1;
+      border: none;
+      width: 100%;
+      background: #e9ebef;
+    }
+    .inline-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Create Contact Sheet</span>
+      <span class="topbar-sub" id="sourceSummary">Loading…</span>
+    </div>
+    <div class="topbar-right">
+      <span>Dataset:</span>
+      <select id="datasetSelect" style="width:auto">
+        <option value="college">Collection: College Branded (47 assets · Delivery)</option>
+        <option value="smartCrop">Folder: /content/dam/smart-crop (36 assets · Author)</option>
+      </select>
+      <button class="btn btn-primary" id="printBtn">Print / Save PDF</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="section">
+        <div class="section-title">1 · Header (R2)</div>
+        <label>Title * <input type="text" id="hdrTitle" value="College Branded Collection — Fall Lookbook" /></label>
+        <div class="row2">
+          <label>Date <input type="date" id="hdrDate" value="2026-11-16" /></label>
+          <label>Department <input type="text" id="hdrDept" value="Collegiate Marketing" /></label>
+        </div>
+        <div class="row2">
+          <label>Prepared by <input type="text" id="hdrPrep" value="Peter Nam" /></label>
+          <label>Project <input type="text" id="hdrProj" value="NCAA 2026" /></label>
+        </div>
+        <label>Notes <input type="text" id="hdrNotes" placeholder="Optional header notes" /></label>
+      </div>
+
+      <div class="section">
+        <div class="section-title">2 · Metadata Fields Below Each Thumbnail (R3)</div>
+        <div class="field-list" id="selectedFieldsList"></div>
+        <div class="row3">
+          <select id="addFieldSelect"></select>
+          <button class="btn" id="addFieldBtn">+ Add</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">3 · Sort &amp; Group (R4)</div>
+        <div class="row3">
+          <label>Group by <select id="groupByField"></select></label>
+          <label>Order
+            <select id="groupByDir">
+              <option value="asc">A → Z</option>
+              <option value="desc">Z → A</option>
+            </select>
+          </label>
+        </div>
+        <label class="inline-check"><input type="checkbox" id="newPagePerGroup" /> Start each group on a new page</label>
+        <div class="row3">
+          <label>Sort by <select id="sort1Field"></select></label>
+          <label>Direction
+            <select id="sort1Dir">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </label>
+        </div>
+        <div class="row3">
+          <label>Then by <select id="sort2Field"></select></label>
+          <label>Direction
+            <select id="sort2Dir">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">4 · Page Layout &amp; Quality (R4, R7)</div>
+        <div class="row2">
+          <label>Page size
+            <select id="pageSize">
+              <option value="letter" selected>Letter (8.5 × 11 in)</option>
+              <option value="a4">A4 (210 × 297 mm)</option>
+              <option value="legal">Legal (8.5 × 14 in)</option>
+              <option value="tabloid">Tabloid (11 × 17 in)</option>
+              <option value="a3">A3 (297 × 420 mm)</option>
+            </select>
+          </label>
+          <label>Orientation
+            <select id="orientation">
+              <option value="landscape" selected>Landscape</option>
+              <option value="portrait">Portrait</option>
+            </select>
+          </label>
+        </div>
+        <div class="row2">
+          <label>Columns
+            <select id="columns">
+              <option value="2">2 columns</option>
+              <option value="3">3 columns</option>
+              <option value="4" selected>4 columns</option>
+              <option value="5">5 columns</option>
+              <option value="6">6 columns</option>
+            </select>
+          </label>
+          <label>Rows per page
+            <select id="rows">
+              <option value="auto" selected>Auto fit</option>
+              <option value="2">2 rows</option>
+              <option value="3">3 rows</option>
+              <option value="4">4 rows</option>
+              <option value="5">5 rows</option>
+            </select>
+          </label>
+        </div>
+        <div class="row2">
+          <label>Image fit
+            <select id="imageFit">
+              <option value="fit" selected>Contain (full image)</option>
+              <option value="fill">Cover (crop to frame)</option>
+            </select>
+          </label>
+          <label>Frame aspect
+            <select id="imageAspect">
+              <option value="1:1">1:1 Square</option>
+              <option value="4:3" selected>4:3 Standard</option>
+              <option value="3:2">3:2 Photo</option>
+              <option value="16:9">16:9 Wide</option>
+              <option value="3:4">3:4 Portrait</option>
+            </select>
+          </label>
+        </div>
+        <div class="row2">
+          <label>Quality
+            <select id="quality">
+              <option value="screen" selected>Screen (150 ppi)</option>
+              <option value="print">Print (300 ppi)</option>
+            </select>
+          </label>
+          <div>
+            <label class="inline-check"><input type="checkbox" id="pageNumbers" checked /> Page numbers</label>
+            <label class="inline-check"><input type="checkbox" id="seqNumbers" checked /> Asset #</label>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="preview-pane">
+      <div class="preview-toolbar">
+        <span id="statsBar">—</span>
+        <span id="warningsBar" style="color:#b45309"></span>
+      </div>
+      <iframe class="preview-frame" id="previewFrame" title="Contact sheet live preview"></iframe>
+    </section>
+  </div>
+
+  <script src="./models-data.js"></script>
+  <script type="module">
+    import {
+      formatBytes,
+      getSortableFields,
+      paginate,
+      renderHtml,
+    } from '../packages/core/index.js';
+
+    let currentDatasetKey = 'college';
+    let selectedFields = [
+      { key: 'common:title', label: 'Title', maxLines: 1, showLabel: false },
+      { key: 'product:team', label: 'Team', maxLines: 1, showLabel: true },
+      { key: 'product:appareltype', label: 'Apparel type', maxLines: 1, showLabel: true },
+      { key: 'dc:description', label: 'Description', maxLines: 2, showLabel: false },
+    ];
+
+    function svgThumb(asset) {
+      const palettes = [
+        ['#1b4332', '#d8f3dc'],
+        ['#1d3557', '#e0fbfc'],
+        ['#7f1d1d', '#fee2e2'],
+        ['#312e81', '#e0e7ff'],
+        ['#78350f', '#fef3c7'],
+        ['#064e3b', '#d1fae5'],
+      ];
+      const [fg, bg] = palettes[(asset.sequence || 1) % palettes.length];
+      const top = (asset.values['product:appareltype'] || asset.values['common:orientation'] || 'ASSET').toString().slice(0, 18);
+      const mid = (asset.values['product:team'] || asset.values['common:title'] || asset.name || '').toString().slice(0, 24);
+      const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360">
+        <rect width="480" height="360" fill="${bg}"/>
+        <circle cx="240" cy="135" r="46" fill="${fg}" fill-opacity="0.14"/>
+        <text x="240" y="142" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="20" font-weight="700" fill="${fg}">${esc(top.toUpperCase())}</text>
+        <text x="240" y="240" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="17" font-weight="600" fill="${fg}">${esc(mid)}</text>
+        <text x="240" y="272" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="13" fill="${fg}" fill-opacity="0.72">${esc(asset.name)}</text>
+      </svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    function currentModel() {
+      return window.MODELS[currentDatasetKey];
+    }
+
+    function syncFieldSelectors() {
+      const model = currentModel();
+      document.getElementById('sourceSummary').textContent =
+        `${model.sourceLabel} · ${model.assets.length} assets`;
+
+      // Render active fields list
+      const listEl = document.getElementById('selectedFieldsList');
+      listEl.innerHTML = '';
+      selectedFields.forEach((f, idx) => {
+        const row = document.createElement('div');
+        row.className = 'field-chip';
+        row.innerHTML = `
+          <span class="field-chip-name" title="${f.key}">${f.label}</span>
+          <select data-idx="${idx}" class="lines-sel">
+            <option value="1" ${f.maxLines === 1 ? 'selected' : ''}>1 line</option>
+            <option value="2" ${f.maxLines === 2 ? 'selected' : ''}>2 lines</option>
+            <option value="3" ${f.maxLines === 3 ? 'selected' : ''}>3 lines</option>
+          </select>
+          <label class="inline-check" style="margin:0"><input type="checkbox" data-idx="${idx}" class="lbl-chk" ${f.showLabel ? 'checked' : ''}/> label</label>
+          <button class="btn-icon" data-idx="${idx}" title="Remove">✕</button>
+        `;
+        listEl.appendChild(row);
+      });
+
+      listEl.querySelectorAll('.lines-sel').forEach((el) => {
+        el.onchange = (e) => {
+          selectedFields[Number(e.target.dataset.idx)].maxLines = Number(e.target.value);
+          renderPreview();
+        };
+      });
+      listEl.querySelectorAll('.lbl-chk').forEach((el) => {
+        el.onchange = (e) => {
+          selectedFields[Number(e.target.dataset.idx)].showLabel = e.target.checked;
+          renderPreview();
+        };
+      });
+      listEl.querySelectorAll('.btn-icon').forEach((el) => {
+        el.onclick = (e) => {
+          selectedFields.splice(Number(e.target.dataset.idx), 1);
+          syncFieldSelectors();
+          renderPreview();
+        };
+      });
+
+      // Populate +Add field dropdown with coverage %
+      const addSel = document.getElementById('addFieldSelect');
+      const activeKeys = new Set(selectedFields.map((s) => s.key));
+      addSel.innerHTML = '';
+      model.fields
+        .filter((f) => !activeKeys.has(f.key) && !f.technical)
+        .forEach((f) => {
+          const opt = document.createElement('option');
+          opt.value = f.key;
+          const pct = Math.round((f.coverage ?? 1) * 100);
+          opt.textContent = `${f.label} (${pct}%)`;
+          addSel.appendChild(opt);
+        });
+
+      // Populate Sort & Group dropdowns (common + printed + discovered)
+      const sortable = getSortableFields(model.fields, selectedFields);
+      const groupByEl = document.getElementById('groupByField');
+      const sort1El = document.getElementById('sort1Field');
+      const sort2El = document.getElementById('sort2Field');
+      const prevGroup = groupByEl.value || (currentDatasetKey === 'college' ? 'product:appareltype' : '');
+      const prevSort1 = sort1El.value || (currentDatasetKey === 'college' ? 'product:team' : 'repo:name');
+      const prevSort2 = sort2El.value || 'repo:name';
+
+      groupByEl.innerHTML = '<option value="">(None)</option>';
+      sort1El.innerHTML = '';
+      sort2El.innerHTML = '<option value="">(None)</option>';
+
+      sortable.forEach((f) => {
+        const tag = f.section === 'printed' ? ' ★' : '';
+        if (f.groupable) {
+          const gOpt = document.createElement('option');
+          gOpt.value = f.key;
+          gOpt.textContent = `${f.label}${tag}`;
+          groupByEl.appendChild(gOpt);
+        }
+        const s1 = document.createElement('option');
+        s1.value = f.key;
+        s1.textContent = `${f.label}${tag}`;
+        sort1El.appendChild(s1);
+
+        const s2 = document.createElement('option');
+        s2.value = f.key;
+        s2.textContent = `${f.label}${tag}`;
+        sort2El.appendChild(s2);
+      });
+
+      groupByEl.value = prevGroup;
+      sort1El.value = prevSort1;
+      sort2El.value = prevSort2;
+    }
+
+    function readConfigFromUI() {
+      const groupField = document.getElementById('groupByField').value;
+      const sort1 = document.getElementById('sort1Field').value || 'repo:name';
+      const sort2 = document.getElementById('sort2Field').value;
+      const keys = [{ field: sort1, dir: document.getElementById('sort1Dir').value }];
+      if (sort2) keys.push({ field: sort2, dir: document.getElementById('sort2Dir').value });
+      const rowsVal = document.getElementById('rows').value;
+
+      return {
+        header: {
+          title: document.getElementById('hdrTitle').value,
+          date: document.getElementById('hdrDate').value,
+          department: document.getElementById('hdrDept').value,
+          preparedBy: document.getElementById('hdrPrep').value,
+          project: document.getElementById('hdrProj').value,
+          notes: document.getElementById('hdrNotes').value,
+          showSourceLine: true,
+        },
+        fields: selectedFields,
+        sort: {
+          groupBy: groupField
+            ? {
+                field: groupField,
+                dir: document.getElementById('groupByDir').value,
+                newPagePerGroup: document.getElementById('newPagePerGroup').checked,
+              }
+            : null,
+          keys,
+        },
+        layout: {
+          pageSize: document.getElementById('pageSize').value,
+          orientation: document.getElementById('orientation').value,
+          columns: Number(document.getElementById('columns').value),
+          rows: rowsVal === 'auto' ? 'auto' : Number(rowsVal),
+          imageFit: document.getElementById('imageFit').value,
+          imageAspect: document.getElementById('imageAspect').value,
+          pageNumbers: document.getElementById('pageNumbers').checked,
+          sequenceNumbers: document.getElementById('seqNumbers').checked,
+        },
+        output: {
+          quality: document.getElementById('quality').value,
+        },
+      };
+    }
+
+    function renderPreview() {
+      const model = currentModel();
+      const cfg = readConfigFromUI();
+      const paginated = paginate(model, cfg);
+      const html = renderHtml(paginated, {
+        mode: 'preview',
+        model,
+        imageResolver: (asset) => asset.thumbnailUrl || svgThumb(asset),
+      });
+      const frame = document.getElementById('previewFrame');
+      frame.srcdoc = html;
+
+      const g = paginated.geometry;
+      document.getElementById('statsBar').textContent =
+        `${paginated.totalAssets} assets · ${paginated.totalPages} pages (${g.cols} × ${g.rowsPerPage} = ${g.perPageCapacity}/page, ${g.targetImagePx}px target) · Est. PDF ${formatBytes(paginated.estimatedBytes)}`;
+      document.getElementById('warningsBar').textContent = paginated.warnings.join(' · ');
+    }
+
+    document.getElementById('addFieldBtn').onclick = () => {
+      const sel = document.getElementById('addFieldSelect');
+      const key = sel.value;
+      if (!key) return;
+      const def = currentModel().fields.find((f) => f.key === key);
+      selectedFields.push({
+        key,
+        label: def?.label || key,
+        maxLines: 1,
+        showLabel: true,
+      });
+      syncFieldSelectors();
+      renderPreview();
+    };
+
+    document.getElementById('datasetSelect').onchange = (e) => {
+      currentDatasetKey = e.target.value;
+      if (currentDatasetKey === 'smartCrop') {
+        document.getElementById('hdrTitle').value = 'Smart Crop Demo Folder — Asset Sheet';
+        selectedFields = [
+          { key: 'common:title', label: 'Title', maxLines: 1, showLabel: false },
+          { key: 'common:dimensions', label: 'Dimensions', maxLines: 1, showLabel: true },
+          { key: 'xcm:keywords', label: 'Tags', maxLines: 1, showLabel: true },
+          { key: 'autogen:description', label: 'AI description', maxLines: 2, showLabel: false },
+        ];
+        document.getElementById('groupByField').value = 'common:orientation';
+        document.getElementById('sort1Field').value = 'repo:name';
+      } else {
+        document.getElementById('hdrTitle').value = 'College Branded Collection — Fall Lookbook';
+        selectedFields = [
+          { key: 'common:title', label: 'Title', maxLines: 1, showLabel: false },
+          { key: 'product:team', label: 'Team', maxLines: 1, showLabel: true },
+          { key: 'product:appareltype', label: 'Apparel type', maxLines: 1, showLabel: true },
+          { key: 'dc:description', label: 'Description', maxLines: 2, showLabel: false },
+        ];
+        document.getElementById('groupByField').value = 'product:appareltype';
+        document.getElementById('sort1Field').value = 'product:team';
+      }
+      syncFieldSelectors();
+      renderPreview();
+    };
+
+    document.getElementById('printBtn').onclick = () => {
+      const frame = document.getElementById('previewFrame');
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+    };
+
+    document.querySelectorAll('input, select').forEach((el) => {
+      if (['datasetSelect', 'addFieldSelect'].includes(el.id)) return;
+      el.addEventListener('input', renderPreview);
+      el.addEventListener('change', renderPreview);
+    });
+
+    syncFieldSelectors();
+    renderPreview();
+  </script>
+</body>
+</html>

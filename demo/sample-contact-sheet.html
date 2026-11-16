@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>College Branded Collection — Fall Lookbook</title>
+  <style>@page {
+  size: 11in 8.5in;
+  margin: 0;
+}
+* {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "Source Sans 3", "Adobe Clean", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1d1d1f;
+  background: #ffffff;
+}
+.cs-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+}
+.page {
+  position: relative;
+  width: 11in;
+  height: 8.5in;
+  background: #ffffff;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+  
+}
+.page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+.page-header {
+  position: absolute;
+  top: 0.55in;
+  left: 0.55in;
+  width: 9.9in;
+  height: 0.8200000000000001in;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.18in;
+  border-bottom: 1.5px solid #222222;
+  padding-bottom: 0.06in;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.14in;
+  min-width: 0;
+  flex: 1;
+}
+.header-logo {
+  max-height: 0.68in;
+  max-width: 1.4in;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.header-titles {
+  min-width: 0;
+  flex: 1;
+}
+.header-title {
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #111111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-meta {
+  font-size: 8.5pt;
+  color: #4b5563;
+  margin-top: 2pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-source {
+  font-size: 7.5pt;
+  color: #6b7280;
+  margin-top: 2pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-right {
+  text-align: right;
+  font-size: 8.5pt;
+  color: #374151;
+  flex-shrink: 0;
+  line-height: 1.35;
+}
+.header-date {
+  font-weight: 600;
+  color: #111111;
+}
+.page-body {
+  position: absolute;
+  top: 1.49in;
+  left: 0.55in;
+  width: 9.9in;
+  height: 6.04in;
+  display: flex;
+  flex-direction: column;
+}
+.group-band {
+  width: 100%;
+  height: 0.32in;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f3f4f6;
+  border-left: 3px solid #1473e6;
+  padding: 0 0.1in;
+  font-size: 9pt;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 0.14in;
+}
+.group-band.first-block {
+  margin-top: 0;
+}
+.group-band-count {
+  font-size: 8pt;
+  font-weight: 600;
+  color: #4b5563;
+}
+.grid-row {
+  display: grid;
+  grid-template-columns: repeat(4, 2.355in);
+  column-gap: 0.16in;
+  height: 2.7913in;
+  margin-top: 0.14in;
+}
+.grid-row.first-block {
+  margin-top: 0;
+}
+.grid-row.after-band {
+  margin-top: 0.06in;
+}
+.cell {
+  width: 2.355in;
+  height: 2.7913in;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.thumb-frame {
+  position: relative;
+  width: 2.355in;
+  height: 1.7663in;
+  background: #f8f9fb;
+  border: 1px solid #e5e7eb;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.thumb-frame img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.thumb-frame.fit img {
+  object-fit: contain;
+}
+.thumb-frame.fill img {
+  object-fit: cover;
+}
+.thumb-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 8pt;
+  text-align: center;
+  padding: 6px;
+}
+.thumb-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 700;
+  font-size: 7.5pt;
+  margin-bottom: 3px;
+}
+.caption {
+  height: 1.025in;
+  padding-top: 0.04in;
+  overflow: hidden;
+}
+.seq-line {
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: #6b7280;
+  line-height: 0.14in;
+  letter-spacing: 0.02em;
+}
+.field-line {
+  font-size: 8pt;
+  line-height: 0.155in;
+  color: #1f2937;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+.field-line.primary {
+  font-weight: 600;
+  color: #111827;
+}
+.field-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+.field-empty {
+  color: #9ca3af;
+}
+.page-footer {
+  position: absolute;
+  bottom: 0.55in;
+  left: 0.55in;
+  width: 9.9in;
+  height: 0.32in;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.05in;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 7.5pt;
+  color: #6b7280;
+}</style>
+</head>
+<body>
+  <main class="cs-pages">
+    <section class="page" data-page="1">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="group-band first-block">
+            <span class="group-band-title">Apparel type: hoodie</span>
+            <span class="group-band-count">15 assets</span>
+          </div><div class="grid-row after-band"><article class="cell" data-asset-id="urn:aaid:aem:619b12d0-fae7-4f4a-ae2b-80293f5b465f">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3EAdams%20State%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Eadams%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="adams hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#001</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Adams State Green Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Adams State</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This green hoodie features the Adams State logo prominently, designed by New Balance. Ideal for casual wear or supporting your favorite team, it combines comfort and style effortlessly.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:6e198a8c-d244-4e9a-b559-09dda8e26225">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3EBoston%20College%20Eagles%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Ebc%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="bc hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#002</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Boston College Eagles Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Boston College Eagles</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A comfortable, stylish Boston College Eagles hoodie by New Balance, perfect for showing team spirit and staying warm. Features a neutral color with maroon and gold accents.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:d2f70655-99d7-43c3-b9c8-c0a0cefb1399">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3EBryant%20Bulldogs%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Ebryant%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="bryant hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#003</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Bryant Bulldogs Black Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Bryant Bulldogs</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish black hoodie featuring the Bryant Bulldogs logo, perfect for showing team spirit and staying warm. Made by New Balance, it combines comfort with athletic style.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:0051cdaa-4859-4f9d-bcdd-dce026618ba3">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3ECincinnati%20Bearcats%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Ecinn%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="cinn hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#004</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Cincinnati Bearcats New Balance Red and Black Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Cincinnati Bearcats</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This Cincinnati Bearcats hoodie features a bold red and black design with the team logo and New Balance branding, perfect for fans and sports enthusiasts.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 1 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="2">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:f154b454-e7c2-45d1-8fc1-e84cb7ca3348">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EColorado%20Buffaloes%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Ecol%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="col hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#005</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Colorado Buffaloes New Balance Tan Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Colorado Buffaloes</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This hoodie features the Colorado Buffaloes logo and New Balance branding, offering comfort and style for sports enthusiasts and fans. Ideal for casual wear and supporting your favorite team.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:ecc50a2f-cefb-4e41-a318-f8defed8c12b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3EColumbia%20Lions%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Ecolumbia%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="columbia hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#006</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Columbia Lions Light Blue New Balance Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Columbia Lions</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A light blue and white Columbia Lions hoodie featuring New Balance branding, designed for comfort and style, ideal for sports enthusiasts and fans of the Columbia Lions team.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:6a0ce384-a6c4-42d2-880e-60b6568a8e4b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3EGeorgia%20Tech%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Ega%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ga hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#007</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Georgia Tech New Balance Hoodie for Fans</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Georgia Tech</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish Georgia Tech hoodie featuring the New Balance logo, designed for comfort and warmth. Perfect for fans and students, showcasing school pride with a sleek, modern design.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:b7a4e892-89e8-4809-91e4-8821aa6e0d89">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3EKansas%20State%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Ekansas%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="kansas hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#008</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Kansas State Purple Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Kansas State</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This purple Kansas State hoodie by New Balance features the university&#39;s logo and mascot, offering comfort and style for fans and students alike. Ideal for casual wear and sports events.</div></div>
+            </article></div><div class="grid-row"><article class="cell" data-asset-id="urn:aaid:aem:23171ed5-a103-4755-8159-788cc16775f3">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3EMaine%20Black%20Bears%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Emaine%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="maine hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#009</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Maine Black Bears Blue Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Maine Black Bears</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A blue hoodie featuring the Maine Black Bears logo, designed by New Balance. Ideal for sports enthusiasts and fans of the team, offering comfort and style for casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:e0f0efb2-0395-4f1b-a42d-8fc330f3f5df">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EMerrimack%20Warriors%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Emerr%20hoddie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="merr hoddie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#010</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Merrimack Warriors New Balance Navy Blue Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Merrimack Warriors</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish navy blue hoodie featuring the Merrimack Warriors logo and New Balance branding, perfect for sports fans and casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:036b51c8-288d-4cca-baaf-0dce88b5bc92">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3ENew%20Hampshire%20Wildcats%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Enh%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="nh hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#011</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Hampshire Wildcats New Balance Team Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>New Hampshire Wildcats</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A New Hampshire Wildcats hoodie by New Balance, featuring a blue and gray color scheme with a bold team logo and comfortable design.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:8ebe8430-f3e3-4911-9203-ba87ef6a287a">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3ENortheastern%20Huskies%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Ene%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ne hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#012</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Northeastern Huskies New Balance Team Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Northeastern Huskies</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This Northeastern Huskies hoodie by New Balance features a bold red and black design, perfect for showcasing team spirit and staying warm during chilly game days.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 2 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="3">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:65397031-f186-4d78-8277-4f419b625b26">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3EProvidence%20Friars%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Eprov%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="prov hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#013</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Providence Friars New Balance Hoodie in Black and Gray</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Providence Friars</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance hoodie features a Providence Friars design, combining comfort and style. The black and gray color scheme is perfect for fans and casual wear, showcasing team pride effortlessly.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:3fb11fd0-659e-4352-ad0b-e1dea457b48e">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3ETemple%20Owls%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Etemple%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="temple hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#014</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Temple Owls Maroon Hoodie by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Temple Owls</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A maroon New Balance hoodie featuring Temple Owls branding, perfect for sports fans and casual wear. Comfortable and stylish, it showcases team spirit with a bold design and quality material.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:8ba21f59-5a8d-4f81-8ada-738a84e749d0">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3EHOODIE%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3EUMass%20Minutemen%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Eumass%20hoodie.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="umass hoodie.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#015</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">UMass Minutemen New Balance Hoodie</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>UMass Minutemen</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>hoodie</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This UMass Minutemen hoodie features a maroon and white design, showcasing the team logo prominently. Made by New Balance, it offers comfort and style for sports enthusiasts and fans alike.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 3 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="4">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="group-band first-block">
+            <span class="group-band-title">Apparel type: sneaker</span>
+            <span class="group-band-count">18 assets</span>
+          </div><div class="grid-row after-band"><article class="cell" data-asset-id="urn:aaid:aem:b468ad00-5109-4c60-8ae7-033814d462ec">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EGeorgia%20Tech%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Ega.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ga.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#016</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance GT White and Gold Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Georgia Tech</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish New Balance sneaker featuring a white and gold color scheme, designed for athletic performance and comfort. Ideal for sports enthusiasts and casual wearers alike.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:d75e5f94-9bfa-4f9f-b1e6-deb6fade916e">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EMerrimack%20Warriors%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Emerr.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="merr.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#017</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Merrimack Warriors Navy Gold Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Merrimack Warriors</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance sneaker features a navy and gold design, showcasing Merrimack Warriors branding. Ideal for sports enthusiasts, it combines style and performance with a comfortable fit and durable construction.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:addce1bd-8df7-471b-b4ed-4ab96afeb5aa">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3ENortheastern%20Huskies%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Ene.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ne.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#018</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Northeastern Huskies New Balance Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Northeastern Huskies</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This vibrant red and black sneaker features the Northeastern Huskies logo, designed by New Balance for athletic performance and style. Ideal for sports enthusiasts and fans of the Huskies team.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:84af9f53-19ee-4e45-a47a-1ad3cd0ebad0">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3EProvidence%20Friars%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Eprovi.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="provi.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#019</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Providence Friars New Balance Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Providence Friars</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance sneaker features a sleek black and white design with Providence Friars branding, ideal for sports enthusiasts seeking style and performance. The shoe offers comfort and durability for athletic activities.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 4 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="5">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:9d5c6adf-6607-4faa-8725-d765897de46b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3ESoutheastern%20Louisiana%20U%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Eadams.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="adams.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#020</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Southeastern Louisiana University Lions Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Southeastern Louisiana University Lions</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">Green and yellow New Balance sneaker featuring Southeastern Louisiana University Lions logo.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:dc0a8789-3a0f-425b-ba8a-fdc612ffc595">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3ETemple%20University%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Etemple.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="temple.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#021</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Temple University New Balance Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Temple University</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance sneaker features a red and white design with Temple University branding, ideal for sports enthusiasts and fans. The shoe combines style and performance for athletic activities.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:744ff4a3-932b-43af-b2db-96ceb7959fb4">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EUMass%20Minutemen%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Eumass.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="umass.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#022</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance UMass Minutemen Team Spirit Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>UMass Minutemen</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This is a New Balance sneaker designed for UMass Minutemen fans, featuring a white and maroon color scheme with the UMass logo prominently displayed, ideal for sports and casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:9e054a3d-3dac-4ad5-a537-56fe90eb118b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EUniversity%20of%20Maine%20Blac%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Emaine%20.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="maine .png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#023</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Maine Black Bears Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>University of Maine Black Bears</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish New Balance sneaker in white and blue, featuring the University of Maine Black Bears logo, designed for athletic performance and comfort.</div></div>
+            </article></div><div class="grid-row"><article class="cell" data-asset-id="urn:aaid:aem:291152cb-af21-48fc-ab79-75f61eed1a66">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3EVermont%20Catamounts%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Eva.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="va.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#024</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Green and Yellow Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Vermont Catamounts</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This sneaker features a vibrant green and yellow color scheme, designed for athletic performance and style. The New Balance logo is prominently displayed, indicating quality and brand recognition.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:2a4ee8cc-5ce7-4561-af55-06d1cb3c2f2c">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3ENew%20Balance%20Red%20and%20Blac%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Ecinn.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="cinn.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#025</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Red and Black Basketball Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">The New Balance basketball sneaker features a bold red and black design, offering comfort and performance for athletes. Its high-top style provides ankle support, making it ideal for intense sports activities.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:17007053-ca20-4a97-a3df-40a9666dd8a8">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3ENew%20Balance%20Black%20and%20Go%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Ecol.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="col.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#026</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Black and Gold Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish New Balance sneaker in black and gold, designed for sports enthusiasts seeking comfort and performance. The shoe features a sleek design with a prominent logo and durable sole.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:cbb96fec-2b84-48b1-b75a-bcb2ec23d2b2">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3ENew%20Balance%20Light%20Blue%20A%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Ecolumbia.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="columbia.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#027</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Light Blue Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance sneaker features a sleek design with light blue and white color scheme, ideal for sports enthusiasts seeking comfort and style. The shoe is perfect for athletic activities.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 5 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="6">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:1de9c621-480f-4bd9-a57a-052eb75e9ef3">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3ERed%20New%20Balance%20Athletic%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Ehuskies.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="huskies.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#028</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Red New Balance Athletic Performance Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A vibrant red New Balance sneaker designed for athletic performance, featuring a breathable mesh upper, cushioned sole, and durable outsole for enhanced traction. Ideal for sports and casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:1ffe6c55-35ed-4951-bbdd-82ed646b24bf">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3ENew%20Balance%20Purple%20and%20W%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Ekansas.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="kansas.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#029</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Purple and White Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish New Balance sneaker in purple and white, designed for athletic performance and comfort. Ideal for sports enthusiasts seeking quality footwear with a modern aesthetic.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:64654e44-b657-4686-be6c-c8a11d7c2303">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3ENew%20Balance%20Blue%20and%20Whi%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Enh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="nh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#030</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Blue and White Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">The New Balance sneaker features a dynamic design with blue and white colors, offering comfort and style for athletic activities. Ideal for sports enthusiasts seeking performance and aesthetic appeal.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:455fb9c9-306b-40a5-b73c-e079911aa63b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3ENew%20Balance%20Black%20and%20Go%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Evand.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="vand.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#031</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Black and Gold Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This sleek black and gold sneaker by New Balance features a bold &#39;V&#39; logo, designed for athletic performance and style, perfect for sports enthusiasts and casual wearers alike.</div></div>
+            </article></div><div class="grid-row"><article class="cell" data-asset-id="urn:aaid:aem:8e601f5a-8792-459e-97a4-91638a113af7">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3ENew%20Balance%20Maroon%20and%20O%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Evirg.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="virg.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#032</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Maroon and Orange Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">The New Balance sneaker features a vibrant maroon and orange color scheme, designed for athletic performance and style. Ideal for sports enthusiasts seeking comfort and durability in their footwear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:1936e8e0-9988-4226-b7ce-ee434cb3a14a">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3ESNEAKER%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3ENew%20Balance%20Black%20and%20Go%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Ewakef.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="wakef.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#033</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Balance Black and Gold Athletic Sneaker</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span><span class="field-empty">—</span></div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneaker</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">The image showcases a stylish New Balance sneaker, featuring a black and gold color scheme, designed for athletic performance and casual wear. The shoe highlights comfort and modern aesthetics.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 6 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="7">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="group-band first-block">
+            <span class="group-band-title">Apparel type: sneakers</span>
+            <span class="group-band-count">1 asset</span>
+          </div><div class="grid-row after-band"><article class="cell" data-asset-id="urn:aaid:aem:adeb506f-afab-4d65-89b3-dd2477b07c30">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESNEAKERS%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EBoston%20College%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Ebc.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="bc.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#034</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Boston College New Balance Maroon Gold Sneakers</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Boston College</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sneakers</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">These maroon and gold New Balance sneakers feature Boston College branding, designed for athletic performance and style. Ideal for sports enthusiasts and fans of the Boston College team.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 7 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="8">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="group-band first-block">
+            <span class="group-band-title">Apparel type: sweatshirt</span>
+            <span class="group-band-count">13 assets</span>
+          </div><div class="grid-row after-band"><article class="cell" data-asset-id="urn:aaid:aem:dc371fdc-fa10-48d8-af73-f04cc7098b34">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EBoston%20College%20Eagles%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Ebc%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="bc sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#035</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Boston College Eagles Beige Sweatshirt by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Boston College Eagles</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A beige Boston College Eagles sweatshirt featuring the New Balance logo, ideal for sports fans and casual wear, showcasing team spirit and comfort.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:f918e474-9f2f-4246-90ff-17fa75fc2206">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3EBryant%20Bulldogs%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Ebryant%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="bryant sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#036</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Bryant Bulldogs New Balance Black Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Bryant Bulldogs</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This black New Balance sweatshirt features the Bryant Bulldogs logo prominently, showcasing team spirit and athletic style. Ideal for sports fans and casual wear, it combines comfort with a bold design.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:e1f56e64-9aba-4ece-946a-fc845f6907df">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3ECincinnati%20Bearcats%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Ecinn%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="cinn sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#037</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Cincinnati Bearcats New Balance Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Cincinnati Bearcats</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A stylish red and black Cincinnati Bearcats sweatshirt by New Balance, perfect for sports fans and casual wear. Features bold team logo and comfortable fit.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:559ad7af-a0cc-4464-8324-a753f538bd70">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3EColorado%20Buffaloes%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Ecol%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="col sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#038</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Colorado Buffaloes New Balance Team Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Colorado Buffaloes</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This New Balance sweatshirt features the Colorado Buffaloes logo, showcasing team pride in a stylish, comfortable design. Ideal for sports fans and casual wear, it combines functionality with collegiate spirit.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 8 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="9">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:b7b72762-2e78-464c-bb56-0e199c971ed0">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3EGeorgia%20Tech%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Ega%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ga sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#039</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Georgia Tech White Sweatshirt by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Georgia Tech</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A white Georgia Tech sweatshirt with gold accents, featuring the New Balance logo on the sleeve. Ideal for fans and casual wear, showcasing school pride and comfort.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:9d03434e-dd9b-4bd9-bfa8-887b640eccc3">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EKansas%20State%20Wildcats%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Ekansas%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="kansas sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#040</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Kansas State Wildcats Team Sweatshirt by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Kansas State Wildcats</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This Kansas State sweatshirt features a bold purple and white design, showcasing the team&#39;s logo and name. Ideal for fans and supporters, it combines comfort with team spirit.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:95db023d-660b-4879-b9d8-20da80f242ca">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EMaine%20Black%20Bears%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Emaine%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="maine sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#041</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Maine Black Bears Blue New Balance Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Maine Black Bears</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A blue New Balance sweatshirt featuring the Maine Black Bears logo, ideal for sports fans and casual wear. Comfortable and stylish, perfect for supporting your favorite team.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:edb11477-64bc-46b8-9525-609bb9f25504">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d8f3dc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231b4332%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231b4332%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231b4332%22%3EMerrimack%20Warriors%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231b4332%22%20fill-opacity%3D%220.7%22%3Emerr%20sweats.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="merr sweats.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#042</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Merrimack Warriors New Balance Navy Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Merrimack Warriors</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This navy blue sweatshirt features the Merrimack Warriors logo prominently on the chest, showcasing team pride. Made by New Balance, it combines comfort and style for sports enthusiasts and fans.</div></div>
+            </article></div><div class="grid-row"><article class="cell" data-asset-id="urn:aaid:aem:fbbe5b55-00fb-40b2-853b-7e7830e6cf10">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0fbfc%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%231d3557%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%231d3557%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%231d3557%22%3ENew%20Hampshire%20Wildcats%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%231d3557%22%20fill-opacity%3D%220.7%22%3Enh%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="nh sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#043</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">New Hampshire Wildcats Blue Sweatshirt by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>New Hampshire Wildcats</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This blue New Hampshire Wildcats sweatshirt by New Balance features a bold team logo and name, perfect for fans and casual wear. Comfortable and stylish for everyday use or sporting events.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:91397122-f70d-455a-a79f-a65d7944cc5e">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fee2e2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%237f1d1d%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%237f1d1d%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%237f1d1d%22%3ENortheastern%20Huskies%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%237f1d1d%22%20fill-opacity%3D%220.7%22%3Ene%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="ne sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#044</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Northeastern Huskies Red and Black Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Northeastern Huskies</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A vibrant red and black Northeastern Huskies sweatshirt by New Balance, featuring the team logo and name prominently on the front, perfect for sports fans and casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:0f26be4f-6604-4fa4-a833-aafe9aa5e37b">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23e0e7ff%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23312e81%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23312e81%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23312e81%22%3ETemple%20University%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23312e81%22%20fill-opacity%3D%220.7%22%3Etemple%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="temple sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#045</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Temple University New Balance Sweatshirt in White</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Temple University</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">This white and maroon sweatshirt features the Temple University logo and is branded by New Balance, ideal for sports fans and casual wear.</div></div>
+            </article><article class="cell" data-asset-id="urn:aaid:aem:52068397-d1fe-428a-892f-f5794ac41c51">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23fef3c7%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%2378350f%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%2378350f%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%2378350f%22%3EUMass%20Minutemen%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%2378350f%22%20fill-opacity%3D%220.7%22%3Eumass%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="umass sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#046</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">UMass Minutemen New Balance Sweatshirt</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>UMass Minutemen</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">A maroon and white UMass Minutemen sweatshirt featuring New Balance branding, ideal for fans and casual wear.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 9 of 10</span>
+      </footer>
+    </section>
+<section class="page" data-page="10">
+      <header class="page-header">
+        <div class="header-left">
+          
+          <div class="header-titles">
+            <div class="header-title">College Branded Collection — Fall Lookbook</div>
+            <div class="header-meta">Collegiate Sports Marketing · Prepared by Peter Nam · Project: NCAA 2026 Merch Assortment</div>
+            <div class="header-source">Source: Collection: College Branded (p59602) · 47 assets</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-date">2026-11-16</div>
+          <div>47 assets</div>
+        </div>
+      </header>
+      <div class="page-body"><div class="grid-row first-block"><article class="cell" data-asset-id="urn:aaid:aem:4a771dbd-4d5f-4fc5-b518-19f655506901">
+              <div class="thumb-frame fit"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22480%22%20height%3D%22360%22%20viewBox%3D%220%200%20480%20360%22%3E%0A%20%20%20%20%3Crect%20width%3D%22480%22%20height%3D%22360%22%20fill%3D%22%23d1fae5%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2220%22%20width%3D%22440%22%20height%3D%22320%22%20rx%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23064e3b%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22240%22%20cy%3D%22145%22%20r%3D%2252%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22152%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2222%22%20font-weight%3D%22700%22%20fill%3D%22%23064e3b%22%3ESWEATSHIRT%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22255%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22600%22%20fill%3D%22%23064e3b%22%3EVermont%20Catamounts%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20x%3D%22240%22%20y%3D%22285%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2Csans-serif%22%20font-size%3D%2213%22%20fill%3D%22%23064e3b%22%20fill-opacity%3D%220.7%22%3Eva%20sweatsh.png%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="va sweatsh.png" loading="lazy" /></div>
+              <div class="caption"><div class="seq-line">#047</div><div class="field-line primary" style="-webkit-line-clamp:1;max-height:0.155in">Vermont Catamounts Green Sweatshirt by New Balance</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Team: </span>Vermont Catamounts</div><div class="field-line" style="-webkit-line-clamp:1;max-height:0.155in"><span class="field-label">Apparel: </span>sweatshirt</div><div class="field-line" style="-webkit-line-clamp:2;max-height:0.31in">Green Vermont Catamounts sweatshirt by New Balance, featuring bold lettering and logo, ideal for sports fans and casual wear.</div></div>
+            </article></div></div>
+      <footer class="page-footer">
+        <span>Generated 2026-11-16 21:19 UTC · pnam@adobe.com</span>
+        <span>Page 10 of 10</span>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

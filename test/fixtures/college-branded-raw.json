@@ -1,0 +1,3195 @@
+[
+  {
+    "assetId": "urn:aaid:aem:619b12d0-fae7-4f4a-ae2b-80293f5b465f",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 318782,
+      "repo:scene7File": "ajhcom/adams hoodie",
+      "repo:createDate": "2025-10-17T18:18:49.900Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "adams hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-23T17:57:32.331Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Adams State Green Hoodie by New Balance",
+      "dc:description": "This green hoodie features the Adams State logo prominently, designed by New Balance. Ideal for casual wear or supporting your favorite team, it combines comfort and style effortlessly.",
+      "dc:subject": [
+        "hoodie",
+        "Adams State",
+        "New Balance",
+        "green",
+        "sportswear",
+        "casual",
+        "team apparel",
+        "logo",
+        "comfortable",
+        "stylish",
+        "athletic",
+        "college",
+        "fashion",
+        "branding"
+      ],
+      "autogen:title": "Green Adams State hoodie with logo design",
+      "autogen:description": "A forest green hoodie featuring the Adams State text and mascot logo prominently on the chest. The garment includes a front pocket and adjustable drawstrings, with subtle yellow accents on the sides. The New Balance logo is visible on the sleeve and chest, adding a sporty touch.",
+      "autogen:subject": [
+        "hoodie",
+        "green",
+        "Adams State",
+        "mascot",
+        "logo",
+        "New Balance",
+        "forest green",
+        "yellow accents",
+        "adjustable drawstrings",
+        "front pocket"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Adams State",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:d2f70655-99d7-43c3-b9c8-c0a0cefb1399",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 246660,
+      "repo:scene7File": "DynamicMediaNA/bryant hoodie",
+      "repo:createDate": "2025-10-17T18:18:49.485Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "bryant hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:30.329Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Bryant Bulldogs Black Hoodie by New Balance",
+      "dc:description": "A stylish black hoodie featuring the Bryant Bulldogs logo, perfect for showing team spirit and staying warm. Made by New Balance, it combines comfort with athletic style.",
+      "dc:subject": [
+        "Bryant Bulldogs",
+        "hoodie",
+        "black",
+        "New Balance",
+        "team spirit",
+        "sportswear",
+        "athletic",
+        "comfortable",
+        "stylish",
+        "logo",
+        "apparel",
+        "university",
+        "college",
+        "yellow accents",
+        "casual"
+      ],
+      "autogen:title": "Bryant Bulldogs black and gold hoodie",
+      "autogen:description": "A black hoodie featuring the Bryant Bulldogs logo and text prominently on the chest. The design includes gold accents on the sleeves and a kangaroo pocket for functionality. Ideal for casual wear or sports settings, showcasing team spirit.",
+      "autogen:subject": [
+        "hoodie",
+        "black",
+        "gold",
+        "Bryant Bulldogs",
+        "sportswear",
+        "team apparel",
+        "kangaroo pocket",
+        "casual",
+        "logo text"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Bryant Bulldogs",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:ecc50a2f-cefb-4e41-a318-f8defed8c12b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 301093,
+      "repo:scene7File": "DynamicMediaNA/columbia hoodie",
+      "repo:createDate": "2025-10-17T18:18:49.448Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "columbia hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:30.271Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Columbia Lions Light Blue New Balance Hoodie",
+      "dc:description": "A light blue and white Columbia Lions hoodie featuring New Balance branding, designed for comfort and style, ideal for sports enthusiasts and fans of the Columbia Lions team.",
+      "dc:subject": [
+        "Columbia Lions",
+        "hoodie",
+        "New Balance",
+        "light blue",
+        "white",
+        "sportswear",
+        "team apparel",
+        "comfortable",
+        "stylish",
+        "athletic",
+        "branding",
+        "fan gear",
+        "unisex",
+        "casual",
+        "fashion"
+      ],
+      "autogen:title": "Light blue Columbia Lions hoodie by New Balance",
+      "autogen:description": "A light blue hoodie featuring the Columbia Lions branding prominently on the chest, designed by New Balance. The hoodie includes white sleeves with subtle New Balance logos and a front pocket. Ideal for casual wear or sports settings, the design is clean and sporty.",
+      "autogen:subject": [
+        "hoodie",
+        "Columbia Lions",
+        "New Balance",
+        "light blue",
+        "white sleeves",
+        "casual wear",
+        "sportswear",
+        "front pocket"
+      ],
+      "product:brand": "New Balance, Columbia",
+      "product:team": "Columbia Lions",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:d75e5f94-9bfa-4f9f-b1e6-deb6fade916e",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 301650,
+      "repo:scene7File": "DynamicMediaNA/merr",
+      "repo:createDate": "2025-10-17T18:18:50.235Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "merr.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:30.224Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Merrimack Warriors Navy Gold Sneaker",
+      "dc:description": "This New Balance sneaker features a navy and gold design, showcasing Merrimack Warriors branding. Ideal for sports enthusiasts, it combines style and performance with a comfortable fit and durable construction.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "Merrimack Warriors",
+        "navy",
+        "gold",
+        "sports",
+        "athletic",
+        "footwear",
+        "branding",
+        "comfortable",
+        "durable",
+        "performance",
+        "mesh",
+        "lace-up",
+        "team"
+      ],
+      "autogen:title": "New Balance Merrimack Warriors navy sneakers",
+      "autogen:description": "A pair of navy and yellow athletic sneakers featuring the New Balance logo and Merrimack Warriors branding. The shoes showcase a mesh upper design with a sturdy sole for sports or casual wear. The text 'Merrimack Warriors' and 'New Balance' are clearly visible on the tongue and side.",
+      "autogen:subject": [
+        "sneakers",
+        "athletic",
+        "navy",
+        "yellow",
+        "mesh",
+        "Merrimack Warriors",
+        "New Balance",
+        "shoes",
+        "sportswear",
+        "footwear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Merrimack Warriors",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:e0f0efb2-0395-4f1b-a42d-8fc330f3f5df",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 350254,
+      "repo:scene7File": "DynamicMediaNA/merr hoddie",
+      "repo:createDate": "2025-10-17T18:18:50.228Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "merr hoddie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:30.118Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Merrimack Warriors New Balance Navy Blue Hoodie",
+      "dc:description": "A stylish navy blue hoodie featuring the Merrimack Warriors logo and New Balance branding, perfect for sports fans and casual wear.",
+      "dc:subject": [
+        "hoodie",
+        "Merrimack Warriors",
+        "New Balance",
+        "sportswear",
+        "navy blue",
+        "casual",
+        "athletic",
+        "team logo",
+        "comfortable",
+        "fashion",
+        "apparel",
+        "branding",
+        "college sports",
+        "warm",
+        "stylish"
+      ],
+      "autogen:title": "Merrimack Warriors navy hoodie by New Balance",
+      "autogen:description": "A navy blue hoodie featuring the Merrimack Warriors logo and text prominently displayed on the chest. The design includes yellow accents and branding from New Balance on the sleeve. The hoodie is styled with a front pocket and drawstring hood, ideal for casual or athletic settings.",
+      "autogen:subject": [
+        "hoodie",
+        "navy blue",
+        "Merrimack Warriors",
+        "New Balance",
+        "yellow accents",
+        "drawstring hood",
+        "front pocket",
+        "athletic wear",
+        "casual wear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Merrimack Warriors",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:edb11477-64bc-46b8-9525-609bb9f25504",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 328061,
+      "repo:scene7File": "DynamicMediaNA/merr sweats",
+      "repo:createDate": "2025-10-17T18:18:50.174Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "merr sweats.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:30.060Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Merrimack Warriors New Balance Navy Sweatshirt",
+      "dc:description": "This navy blue sweatshirt features the Merrimack Warriors logo prominently on the chest, showcasing team pride. Made by New Balance, it combines comfort and style for sports enthusiasts and fans.",
+      "dc:subject": [
+        "Merrimack Warriors",
+        "New Balance",
+        "sweatshirt",
+        "navy blue",
+        "team apparel",
+        "sportswear",
+        "logo",
+        "comfortable",
+        "stylish",
+        "athletic",
+        "fan gear",
+        "college team",
+        "branding"
+      ],
+      "autogen:title": "Merrimack Warriors navy sweatshirt by New Balance",
+      "autogen:description": "A navy sweatshirt featuring the Merrimack Warriors logo prominently on the chest. Designed by New Balance, the sweatshirt includes yellow accents and branding on the sleeves and hem. Ideal for casual wear or supporting the team, the design is sporty and bold.",
+      "autogen:subject": [
+        "sweatshirt",
+        "navy",
+        "Merrimack Warriors",
+        "New Balance",
+        "yellow accents",
+        "casual wear",
+        "sporty",
+        "team apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Merrimack Warriors",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:65397031-f186-4d78-8277-4f419b625b26",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 299720,
+      "repo:scene7File": "DynamicMediaNA/prov hoodie",
+      "repo:createDate": "2025-10-17T18:18:50.100Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "prov hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:29.946Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Providence Friars New Balance Hoodie in Black and Gray",
+      "dc:description": "This New Balance hoodie features a Providence Friars design, combining comfort and style. The black and gray color scheme is perfect for fans and casual wear, showcasing team pride effortlessly.",
+      "dc:subject": [
+        "New Balance",
+        "Providence Friars",
+        "hoodie",
+        "sportswear",
+        "black",
+        "gray",
+        "team apparel",
+        "comfortable",
+        "casual",
+        "fashion",
+        "athletic",
+        "logo",
+        "branding",
+        "college sports",
+        "fan gear"
+      ],
+      "autogen:title": "Providence Friars New Balance hoodie",
+      "autogen:description": "A gray and black hoodie featuring the Providence Friars logo and New Balance branding. The design includes a front pocket and adjustable drawstrings, ideal for casual or athletic wear. The hoodie combines a sleek two-tone palette with comfortable fabric for everyday use.",
+      "autogen:subject": [
+        "hoodie",
+        "Providence Friars",
+        "New Balance",
+        "gray",
+        "black",
+        "casual",
+        "athletic",
+        "drawstrings",
+        "front pocket",
+        "comfortable",
+        "two-tone"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Providence Friars",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:cbb96fec-2b84-48b1-b75a-bcb2ec23d2b2",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 241556,
+      "repo:scene7File": "DynamicMediaNA/columbia",
+      "repo:createDate": "2025-10-17T18:18:50.089Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "columbia.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:29.909Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Light Blue Athletic Sneaker",
+      "dc:description": "This New Balance sneaker features a sleek design with light blue and white color scheme, ideal for sports enthusiasts seeking comfort and style. The shoe is perfect for athletic activities.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "light blue",
+        "white",
+        "athletic",
+        "sports",
+        "comfort",
+        "style",
+        "footwear",
+        "mesh",
+        "lace-up",
+        "branding",
+        "casual",
+        "performance",
+        "design"
+      ],
+      "autogen:title": "Light blue athletic sneaker with mesh design",
+      "autogen:description": "A light blue and white athletic sneaker featuring a breathable mesh design and sturdy sole. The shoe displays a prominent 'N' logo on the side and additional branding on the tongue and heel. Designed for sports or casual wear, it combines style and functionality.",
+      "autogen:subject": [
+        "sneaker",
+        "athletic",
+        "light blue",
+        "white",
+        "mesh",
+        "breathable",
+        "sturdy sole",
+        "sports",
+        "casual",
+        "shoe"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:84af9f53-19ee-4e45-a47a-1ad3cd0ebad0",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 224155,
+      "repo:scene7File": "DynamicMediaNA/provi",
+      "repo:createDate": "2025-10-17T18:18:50.323Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "provi.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:29.832Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Providence Friars New Balance Athletic Sneaker",
+      "dc:description": "This New Balance sneaker features a sleek black and white design with Providence Friars branding, ideal for sports enthusiasts seeking style and performance. The shoe offers comfort and durability for athletic activities.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "Providence Friars",
+        "black",
+        "white",
+        "athletic",
+        "sports",
+        "performance",
+        "comfort",
+        "durability",
+        "branding",
+        "design",
+        "footwear",
+        "style",
+        "team"
+      ],
+      "autogen:title": "Black and white athletic shoe with logo",
+      "autogen:description": "A black and white athletic shoe featuring the New Balance logo prominently on the side. The tongue displays 'Providence Friars' text, adding a unique branding element. The shoe is designed for sports or casual wear, with a sleek and modern aesthetic.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "black",
+        "white",
+        "New Balance",
+        "Providence Friars",
+        "sports",
+        "casual",
+        "modern",
+        "sleek"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Providence Friars",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:f918e474-9f2f-4246-90ff-17fa75fc2206",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 249186,
+      "repo:scene7File": "DynamicMediaNA/bryant sweatsh",
+      "repo:createDate": "2025-10-17T18:18:49.475Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "bryant sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:29.816Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Bryant Bulldogs New Balance Black Sweatshirt",
+      "dc:description": "This black New Balance sweatshirt features the Bryant Bulldogs logo prominently, showcasing team spirit and athletic style. Ideal for sports fans and casual wear, it combines comfort with a bold design.",
+      "dc:subject": [
+        "sweatshirt",
+        "Bryant Bulldogs",
+        "New Balance",
+        "black",
+        "yellow",
+        "team apparel",
+        "sportswear",
+        "athletic",
+        "casual",
+        "logo",
+        "comfortable",
+        "fashion",
+        "unisex",
+        "bold design",
+        "team spirit"
+      ],
+      "autogen:title": "Bryant Bulldogs black sweatshirt by New Balance",
+      "autogen:description": "A black sweatshirt featuring 'Bryant Bulldogs' text and logo prominently on the chest. Designed with yellow accents and made by New Balance, the sweatshirt combines sporty style with comfort. Ideal for casual wear or supporting the team.",
+      "autogen:subject": [
+        "sweatshirt",
+        "black",
+        "Bryant Bulldogs",
+        "New Balance",
+        "yellow accents",
+        "casual wear",
+        "team apparel",
+        "sportswear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Bryant Bulldogs",
+      "product:appareltype": "sweatshirt",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:9d5c6adf-6607-4faa-8725-d765897de46b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 307654,
+      "repo:scene7File": "DynamicMediaNA/adams",
+      "repo:createDate": "2025-10-17T18:18:49.519Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "adams.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:20:29.731Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Southeastern Louisiana University Lions Sneaker",
+      "dc:description": "Green and yellow New Balance sneaker featuring Southeastern Louisiana University Lions logo.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "green",
+        "yellow",
+        "athletic",
+        "Southeastern Louisiana University",
+        "Lions",
+        "sports",
+        "footwear",
+        "logo",
+        "team",
+        "basketball",
+        "mesh",
+        "lace-up",
+        "comfort"
+      ],
+      "autogen:title": "Green New Balance athletic shoe with lion logo",
+      "autogen:description": "A green athletic shoe by New Balance featuring a bold yellow 'N' logo and a lion emblem on the side. The shoe has a perforated design for breathability and a yellow outsole with textured grip. Ideal for sports or casual wear, the design combines vibrant green and yellow tones for a striking look.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "green",
+        "yellow",
+        "lion",
+        "New Balance",
+        "perforated",
+        "textured grip",
+        "sports",
+        "casual"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Southeastern Louisiana University Lions",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:0f26be4f-6604-4fa4-a833-aafe9aa5e37b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 251075,
+      "repo:scene7File": "DynamicMediaNA/temple sweatsh",
+      "repo:createDate": "2025-10-17T17:57:18.017Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "temple sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:15:14.039Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Temple University New Balance Sweatshirt in White",
+      "dc:description": "This white and maroon sweatshirt features the Temple University logo and is branded by New Balance, ideal for sports fans and casual wear.",
+      "dc:subject": [
+        "Temple University",
+        "sweatshirt",
+        "New Balance",
+        "white",
+        "maroon",
+        "sportswear",
+        "casual",
+        "logo",
+        "apparel",
+        "university",
+        "owl",
+        "team spirit",
+        "comfortable",
+        "fashion",
+        "athletic"
+      ],
+      "autogen:title": "White Temple sweatshirt with red accents",
+      "autogen:description": "A white sweatshirt featuring the word 'TEMPLE' in bold red text across the chest, accompanied by a logo of an owl. The garment includes red accents on the cuffs, hem, and neckline. The sleeve displays the 'New Balance' logo in red text.",
+      "autogen:subject": [
+        "sweatshirt",
+        "white",
+        "red",
+        "Temple",
+        "owl logo",
+        "New Balance",
+        "apparel",
+        "clothing",
+        "long sleeve",
+        "casual wear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Temple University",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:52068397-d1fe-428a-892f-f5794ac41c51",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 344145,
+      "repo:scene7File": "DynamicMediaNA/umass sweatsh",
+      "repo:createDate": "2025-10-17T18:00:56.841Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "umass sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.553Z"
+    },
+    "assetMetadata": {
+      "dc:title": "UMass Minutemen New Balance Sweatshirt",
+      "dc:description": "A maroon and white UMass Minutemen sweatshirt featuring New Balance branding, ideal for fans and casual wear.",
+      "dc:subject": [
+        "UMass",
+        "Minutemen",
+        "sweatshirt",
+        "New Balance",
+        "maroon",
+        "white",
+        "apparel",
+        "sportswear",
+        "university",
+        "team",
+        "casual",
+        "fashion",
+        "comfortable",
+        "athletic",
+        "fan gear"
+      ],
+      "autogen:title": "UMass Minutemen maroon and white sweatshirt",
+      "autogen:description": "A maroon and white sweatshirt featuring the UMass Minutemen logo prominently on the chest. The design includes contrasting white sleeves with maroon accents and the New Balance logo on the sleeve and hem. Ideal for casual wear or supporting the UMass Minutemen team.",
+      "autogen:subject": [
+        "UMass",
+        "Minutemen",
+        "sweatshirt",
+        "maroon",
+        "white",
+        "New Balance",
+        "casual wear",
+        "team apparel",
+        "sportswear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "UMass Minutemen",
+      "product:appareltype": "sweatshirt",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:dc371fdc-fa10-48d8-af73-f04cc7098b34",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 325077,
+      "repo:scene7File": "DynamicMediaNA/bc sweatsh",
+      "repo:createDate": "2025-10-17T18:00:56.073Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "bc sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.490Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Boston College Eagles Beige Sweatshirt by New Balance",
+      "dc:description": "A beige Boston College Eagles sweatshirt featuring the New Balance logo, ideal for sports fans and casual wear, showcasing team spirit and comfort.",
+      "dc:subject": [
+        "Boston College",
+        "Eagles",
+        "sweatshirt",
+        "New Balance",
+        "beige",
+        "sportswear",
+        "team apparel",
+        "college",
+        "fashion",
+        "casual",
+        "comfortable",
+        "logo",
+        "athletic",
+        "fan gear",
+        "unisex"
+      ],
+      "autogen:title": "Boston College Eagles beige sweatshirt",
+      "autogen:description": "A beige sweatshirt featuring the Boston College Eagles logo and text prominently displayed on the front. The design includes maroon accents and the New Balance logo on the sleeve. The sweatshirt is styled with a crew neck and ribbed cuffs, ideal for casual wear or sports settings.",
+      "autogen:subject": [
+        "sweatshirt",
+        "beige",
+        "Boston College",
+        "Eagles",
+        "maroon accents",
+        "crew neck",
+        "ribbed cuffs",
+        "casual wear",
+        "sportswear",
+        "New Balance"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Boston College Eagles",
+      "product:appareltype": "sweatshirt",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:8ba21f59-5a8d-4f81-8ada-738a84e749d0",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 316928,
+      "repo:scene7File": "DynamicMediaNA/umass hoodie",
+      "repo:createDate": "2025-10-17T18:00:56.786Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "umass hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.445Z"
+    },
+    "assetMetadata": {
+      "dc:title": "UMass Minutemen New Balance Hoodie",
+      "dc:description": "This UMass Minutemen hoodie features a maroon and white design, showcasing the team logo prominently. Made by New Balance, it offers comfort and style for sports enthusiasts and fans alike.",
+      "dc:subject": [
+        "UMass Minutemen",
+        "hoodie",
+        "New Balance",
+        "maroon",
+        "white",
+        "sports apparel",
+        "team logo",
+        "comfortable",
+        "stylish",
+        "fan gear",
+        "college sports",
+        "athletic wear"
+      ],
+      "autogen:title": "UMass Minutemen hoodie with maroon accents",
+      "autogen:description": "A white and maroon hoodie featuring the UMass Minutemen logo prominently on the chest. The design includes maroon sleeves with white stripe accents and a front pocket. Visible branding includes 'UMass Minutemen' text and 'US' logo, along with New Balance logos on the sleeve and chest.",
+      "autogen:subject": [
+        "hoodie",
+        "UMass",
+        "Minutemen",
+        "maroon",
+        "white",
+        "New Balance",
+        "logo",
+        "sweatshirt",
+        "apparel",
+        "sportswear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "UMass Minutemen",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:9e054a3d-3dac-4ad5-a537-56fe90eb118b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 268611,
+      "repo:scene7File": "DynamicMediaNA/maine",
+      "repo:createDate": "2025-10-17T18:00:56.260Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "maine .png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.328Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Maine Black Bears Athletic Sneaker",
+      "dc:description": "A stylish New Balance sneaker in white and blue, featuring the University of Maine Black Bears logo, designed for athletic performance and comfort.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "athletic",
+        "blue",
+        "white",
+        "University of Maine",
+        "Black Bears",
+        "sportswear",
+        "footwear",
+        "comfortable",
+        "performance",
+        "logo",
+        "mesh",
+        "lace-up",
+        "branding"
+      ],
+      "autogen:title": "White and blue athletic sneaker by New Balance",
+      "autogen:description": "A white and blue athletic sneaker featuring the unmistakable New Balance logo on the side and tongue. The shoe is designed with a breathable mesh upper and sturdy sole for sports or casual wear. The text 'MAINE BLACK BEARS' is visible on the tongue, adding a unique touch to the design.",
+      "autogen:subject": [
+        "sneaker",
+        "athletic",
+        "white",
+        "blue",
+        "New Balance",
+        "Maine Black Bears",
+        "mesh",
+        "sports",
+        "casual",
+        "shoe"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "University of Maine Black Bears",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:23171ed5-a103-4755-8159-788cc16775f3",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 364930,
+      "repo:scene7File": "DynamicMediaNA/maine hoodie",
+      "repo:createDate": "2025-10-17T18:00:56.309Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "maine hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.218Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Maine Black Bears Blue Hoodie by New Balance",
+      "dc:description": "A blue hoodie featuring the Maine Black Bears logo, designed by New Balance. Ideal for sports enthusiasts and fans of the team, offering comfort and style for casual wear.",
+      "dc:subject": [
+        "hoodie",
+        "Maine Black Bears",
+        "New Balance",
+        "blue",
+        "sportswear",
+        "team apparel",
+        "comfortable",
+        "casual",
+        "logo",
+        "fashion",
+        "athletic",
+        "fan gear",
+        "university",
+        "branding",
+        "clothing"
+      ],
+      "autogen:title": "Blue Maine Black Bears Hoodie with Logo",
+      "autogen:description": "A blue hoodie featuring the 'Maine Black Bears' text and logo prominently on the chest. The design includes a front pocket and a hood, with additional 'New Balance' branding visible on the sleeves. The hoodie is styled for casual wear and showcases a sporty aesthetic.",
+      "autogen:subject": [
+        "hoodie",
+        "blue",
+        "Maine Black Bears",
+        "sportswear",
+        "casual",
+        "New Balance",
+        "logo",
+        "sweatshirt",
+        "apparel",
+        "clothing",
+        "sporty"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Maine Black Bears",
+      "product:appareltype": "hoodie",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:4a771dbd-4d5f-4fc5-b518-19f655506901",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 281555,
+      "repo:scene7File": "DynamicMediaNA/va sweatsh",
+      "repo:createDate": "2025-10-17T18:00:57.032Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "va sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.176Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Vermont Catamounts Green Sweatshirt by New Balance",
+      "dc:description": "Green Vermont Catamounts sweatshirt by New Balance, featuring bold lettering and logo, ideal for sports fans and casual wear.",
+      "dc:subject": [
+        "Vermont Catamounts",
+        "sweatshirt",
+        "New Balance",
+        "green",
+        "sportswear",
+        "casual",
+        "team apparel",
+        "college sports",
+        "comfortable",
+        "athletic",
+        "fashion",
+        "logo",
+        "bold lettering"
+      ],
+      "autogen:title": "Green Vermont Catamounts Sweatshirt by New Balance",
+      "autogen:description": "A green crewneck sweatshirt featuring 'Vermont Catamounts' text and logo prominently displayed on the front. The design includes a yellow stripe on the sleeve and the New Balance logo on the chest and cuff. Ideal for casual wear or supporting the Vermont Catamounts team.",
+      "autogen:subject": [
+        "sweatshirt",
+        "green",
+        "Vermont",
+        "Catamounts",
+        "New Balance",
+        "crewneck",
+        "yellow stripe",
+        "sportswear",
+        "casual",
+        "team apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Vermont Catamounts",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:64654e44-b657-4686-be6c-c8a11d7c2303",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 295789,
+      "repo:scene7File": "DynamicMediaNA/nh",
+      "repo:createDate": "2025-10-17T18:00:56.855Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "nh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.128Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Blue and White Athletic Sneaker",
+      "dc:description": "The New Balance sneaker features a dynamic design with blue and white colors, offering comfort and style for athletic activities. Ideal for sports enthusiasts seeking performance and aesthetic appeal.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "athletic",
+        "blue",
+        "white",
+        "comfortable",
+        "stylish",
+        "performance",
+        "sports",
+        "footwear",
+        "design",
+        "dynamic",
+        "mesh",
+        "lace-up",
+        "brand"
+      ],
+      "autogen:title": "Blue and white athletic New Balance shoe",
+      "autogen:description": "A New Balance athletic shoe featuring a blue and white color scheme. The shoe is designed with a textured sole and breathable mesh upper, ideal for sports or active wear. The New Balance logo is prominently displayed on the tongue and side. The design includes zigzag accents and a sturdy heel structure.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "New Balance",
+        "blue",
+        "white",
+        "sports",
+        "mesh",
+        "textured sole",
+        "zigzag",
+        "active wear"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:fbbe5b55-00fb-40b2-853b-7e7830e6cf10",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 318396,
+      "repo:scene7File": "DynamicMediaNA/nh sweatsh",
+      "repo:createDate": "2025-10-17T18:00:56.819Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "nh sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.054Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Hampshire Wildcats Blue Sweatshirt by New Balance",
+      "dc:description": "This blue New Hampshire Wildcats sweatshirt by New Balance features a bold team logo and name, perfect for fans and casual wear. Comfortable and stylish for everyday use or sporting events.",
+      "dc:subject": [
+        "New Hampshire Wildcats",
+        "sweatshirt",
+        "blue",
+        "New Balance",
+        "team apparel",
+        "sportswear",
+        "logo",
+        "comfortable",
+        "casual",
+        "fan gear",
+        "athletic",
+        "stylish",
+        "bold design"
+      ],
+      "autogen:title": "Blue New Hampshire sweatshirt by New Balance",
+      "autogen:description": "A blue sweatshirt featuring 'New Hampshire' text and a wildcat graphic prominently on the front. The New Balance logo is visible on the sleeve and lower hem. Designed for casual wear, the sweatshirt has a sporty and comfortable style.",
+      "autogen:subject": [
+        "sweatshirt",
+        "blue",
+        "New Hampshire",
+        "wildcat",
+        "New Balance",
+        "casual",
+        "sporty",
+        "comfortable",
+        "apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "New Hampshire Wildcats",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:1de9c621-480f-4bd9-a57a-052eb75e9ef3",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 300204,
+      "repo:scene7File": "DynamicMediaNA/huskies",
+      "repo:createDate": "2025-10-17T18:00:56.206Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "huskies.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:39.021Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Red New Balance Athletic Performance Sneaker",
+      "dc:description": "A vibrant red New Balance sneaker designed for athletic performance, featuring a breathable mesh upper, cushioned sole, and durable outsole for enhanced traction. Ideal for sports and casual wear.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "red",
+        "athletic",
+        "performance",
+        "mesh",
+        "cushioned",
+        "durable",
+        "traction",
+        "sports",
+        "casual",
+        "footwear",
+        "fashion",
+        "comfort",
+        "style"
+      ],
+      "autogen:title": "Red athletic shoe with New Balance logo",
+      "autogen:description": "A vibrant red athletic shoe featuring the unmistakable New Balance logo on the tongue and side. The shoe has a mesh upper for breathability, black accents, and a textured sole designed for performance. Ideal for sports or casual wear, it combines style and functionality.",
+      "autogen:subject": [
+        "shoe",
+        "sneaker",
+        "athletic",
+        "red",
+        "New Balance",
+        "mesh",
+        "black accents",
+        "textured sole",
+        "sports",
+        "casual"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:744ff4a3-932b-43af-b2db-96ceb7959fb4",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 255219,
+      "repo:scene7File": "DynamicMediaNA/umass",
+      "repo:createDate": "2025-10-17T18:00:56.844Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "umass.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:38.947Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance UMass Minutemen Team Spirit Sneaker",
+      "dc:description": "This is a New Balance sneaker designed for UMass Minutemen fans, featuring a white and maroon color scheme with the UMass logo prominently displayed, ideal for sports and casual wear.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "UMass Minutemen",
+        "white",
+        "maroon",
+        "athletic",
+        "sportswear",
+        "footwear",
+        "university",
+        "team spirit",
+        "logo",
+        "mesh",
+        "comfortable",
+        "stylish",
+        "supportive"
+      ],
+      "autogen:title": "White and maroon athletic sneaker with UMass logo",
+      "autogen:description": "A white and maroon athletic sneaker featuring the unmistakable UMass branding on the tongue and heel. The shoe has a mesh upper for breathability and a sturdy sole designed for performance. The design highlights sharp maroon accents and bold 'UMass' text, making it ideal for sports or casual wear.",
+      "autogen:subject": [
+        "sneaker",
+        "athletic",
+        "white",
+        "maroon",
+        "UMass",
+        "shoe",
+        "mesh",
+        "performance",
+        "sports",
+        "footwear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "UMass Minutemen",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:95db023d-660b-4879-b9d8-20da80f242ca",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 373453,
+      "repo:scene7File": "DynamicMediaNA/maine sweatsh",
+      "repo:createDate": "2025-10-17T18:00:56.204Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "maine sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:38.920Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Maine Black Bears Blue New Balance Sweatshirt",
+      "dc:description": "A blue New Balance sweatshirt featuring the Maine Black Bears logo, ideal for sports fans and casual wear. Comfortable and stylish, perfect for supporting your favorite team.",
+      "dc:subject": [
+        "sweatshirt",
+        "blue",
+        "New Balance",
+        "Maine Black Bears",
+        "sportswear",
+        "casual",
+        "team logo",
+        "comfortable",
+        "stylish",
+        "fan apparel"
+      ],
+      "autogen:title": "Maine Black Bears blue sweatshirt",
+      "autogen:description": "A blue sweatshirt featuring the Maine Black Bears logo prominently on the chest. The design includes white stripes on the sleeves and the New Balance logo on the left sleeve. The sweatshirt has a casual and sporty style, ideal for fans or casual wear.",
+      "autogen:subject": [
+        "sweatshirt",
+        "blue",
+        "Maine Black Bears",
+        "New Balance",
+        "logo",
+        "casual",
+        "sporty",
+        "white stripes"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Maine Black Bears",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:036b51c8-288d-4cca-baaf-0dce88b5bc92",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 366811,
+      "repo:scene7File": "DynamicMediaNA/nh hoodie",
+      "repo:createDate": "2025-10-17T18:00:56.794Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "nh hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:38.835Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Hampshire Wildcats New Balance Team Hoodie",
+      "dc:description": "A New Hampshire Wildcats hoodie by New Balance, featuring a blue and gray color scheme with a bold team logo and comfortable design.",
+      "dc:subject": [
+        "New Hampshire Wildcats",
+        "hoodie",
+        "New Balance",
+        "sportswear",
+        "team apparel",
+        "blue",
+        "gray",
+        "comfortable",
+        "casual",
+        "athletic",
+        "logo",
+        "fashion",
+        "university",
+        "fan gear"
+      ],
+      "autogen:title": "New Hampshire Wildcats hoodie by New Balance",
+      "autogen:description": "A gray and blue hoodie featuring the New Hampshire Wildcats logo and text prominently displayed on the chest. Made by New Balance, the design includes a front pocket and drawstring hood. The hoodie showcases a sporty and casual style suitable for fans and outdoor activities.",
+      "autogen:subject": [
+        "hoodie",
+        "New Hampshire Wildcats",
+        "New Balance",
+        "gray",
+        "blue",
+        "sportswear",
+        "casual",
+        "logo",
+        "drawstring",
+        "front pocket"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "New Hampshire Wildcats",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:291152cb-af21-48fc-ab79-75f61eed1a66",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 267552,
+      "repo:scene7File": "DynamicMediaNA/va",
+      "repo:createDate": "2025-10-17T18:00:57.367Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "va.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T18:02:38.835Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Green and Yellow Athletic Sneaker",
+      "dc:description": "This sneaker features a vibrant green and yellow color scheme, designed for athletic performance and style. The New Balance logo is prominently displayed, indicating quality and brand recognition.",
+      "dc:subject": [
+        "sneaker",
+        "athletic",
+        "green",
+        "yellow",
+        "New Balance",
+        "performance",
+        "footwear",
+        "sports",
+        "style",
+        "comfort",
+        "durability",
+        "mesh",
+        "rubber sole",
+        "lace-up",
+        "branding"
+      ],
+      "autogen:title": "Green and Yellow New Balance Athletic Shoe",
+      "autogen:description": "A green and yellow athletic shoe by New Balance, featuring a mesh upper and bold 'N' logo on the side. The shoe is designed for sports or casual wear, with a durable sole and lace-up closure. Visible text includes 'New Balance' and 'Front Court'.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "green",
+        "yellow",
+        "New Balance",
+        "mesh",
+        "lace-up",
+        "sports",
+        "casual",
+        "durable",
+        "Front Court"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Vermont Catamounts",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:8e601f5a-8792-459e-97a4-91638a113af7",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 261075,
+      "repo:scene7File": "DynamicMediaNA/virg",
+      "repo:createDate": "2025-10-17T17:57:18.543Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "virg.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.933Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Maroon and Orange Athletic Sneaker",
+      "dc:description": "The New Balance sneaker features a vibrant maroon and orange color scheme, designed for athletic performance and style. Ideal for sports enthusiasts seeking comfort and durability in their footwear.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "maroon",
+        "orange",
+        "athletic",
+        "performance",
+        "comfort",
+        "durability",
+        "sports",
+        "footwear",
+        "style",
+        "mesh",
+        "lace-up",
+        "branding"
+      ],
+      "autogen:title": "New Balance maroon athletic shoe with orange accents",
+      "autogen:description": "A maroon athletic shoe featuring bold orange accents and mesh detailing, unmistakably branded as New Balance. The shoe is designed for sports or casual wear, with a textured sole for grip and comfort. Visible text includes 'NB' and 'new balance' on the shoe.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "maroon",
+        "orange",
+        "New Balance",
+        "mesh",
+        "sports",
+        "casual",
+        "NB",
+        "new balance"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:addce1bd-8df7-471b-b4ed-4ab96afeb5aa",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 358967,
+      "repo:scene7File": "DynamicMediaNA/ne",
+      "repo:createDate": "2025-10-17T17:57:17.962Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ne.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.640Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Northeastern Huskies New Balance Athletic Sneaker",
+      "dc:description": "This vibrant red and black sneaker features the Northeastern Huskies logo, designed by New Balance for athletic performance and style. Ideal for sports enthusiasts and fans of the Huskies team.",
+      "dc:subject": [
+        "sneaker",
+        "red",
+        "black",
+        "Northeastern Huskies",
+        "New Balance",
+        "athletic",
+        "performance",
+        "sports",
+        "team",
+        "logo",
+        "mesh",
+        "lace-up",
+        "comfortable",
+        "stylish",
+        "footwear"
+      ],
+      "autogen:title": "Red athletic shoe with Northeastern branding",
+      "autogen:description": "A vibrant red athletic shoe featuring Northeastern Huskies branding on the tongue and side. The shoe has a breathable mesh upper, black accents, and a sturdy sole designed for performance. The 'New Balance' logo is prominently displayed on the side, along with visible text 'Northeastern Huskies'. Ideal for sports or casual wear.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "red",
+        "Northeastern Huskies",
+        "New Balance",
+        "mesh",
+        "black accents",
+        "performance",
+        "sports",
+        "casual"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Northeastern Huskies",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:6a0ce384-a6c4-42d2-880e-60b6568a8e4b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 307523,
+      "repo:scene7File": "DynamicMediaNA/ga hoodie",
+      "repo:createDate": "2025-10-17T17:57:17.522Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ga hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.553Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Georgia Tech New Balance Hoodie for Fans",
+      "dc:description": "A stylish Georgia Tech hoodie featuring the New Balance logo, designed for comfort and warmth. Perfect for fans and students, showcasing school pride with a sleek, modern design.",
+      "dc:subject": [
+        "Georgia Tech",
+        "hoodie",
+        "New Balance",
+        "sportswear",
+        "college apparel",
+        "gray",
+        "logo",
+        "comfortable",
+        "warm",
+        "stylish",
+        "school pride",
+        "modern design"
+      ],
+      "autogen:title": "Georgia Tech gray hoodie with New Balance logo",
+      "autogen:description": "A gray hoodie featuring the Georgia Tech logo prominently on the chest, paired with visible New Balance branding on the shoulders and sleeve. The design includes a front pocket and a drawstring hood, ideal for casual or athletic settings. The color palette is neutral gray with gold accents, creating a sporty yet versatile look.",
+      "autogen:subject": [
+        "hoodie",
+        "Georgia Tech",
+        "New Balance",
+        "gray",
+        "gold",
+        "athletic",
+        "casual",
+        "drawstring",
+        "pocket",
+        "sweatshirt",
+        "unisex"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Georgia Tech",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:1ffe6c55-35ed-4951-bbdd-82ed646b24bf",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 270220,
+      "repo:scene7File": "DynamicMediaNA/kansas",
+      "repo:createDate": "2025-10-17T17:57:17.877Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "kansas.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.498Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Purple and White Athletic Sneaker",
+      "dc:description": "A stylish New Balance sneaker in purple and white, designed for athletic performance and comfort. Ideal for sports enthusiasts seeking quality footwear with a modern aesthetic.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "purple",
+        "white",
+        "athletic",
+        "footwear",
+        "sports",
+        "performance",
+        "comfort",
+        "modern",
+        "design",
+        "fashion",
+        "style",
+        "brand",
+        "logo"
+      ],
+      "autogen:title": "Purple and white New Balance athletic shoe",
+      "autogen:description": "A New Balance athletic shoe featuring a purple and white color scheme. The shoe is designed with a textured sole and mesh upper for breathability. The New Balance logo is prominently displayed on the tongue and side. A small purple mascot logo is visible above the shoe.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "New Balance",
+        "purple",
+        "white",
+        "mesh",
+        "textured sole",
+        "logo",
+        "mascot"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:b468ad00-5109-4c60-8ae7-033814d462ec",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 225160,
+      "repo:scene7File": "DynamicMediaNA/ga",
+      "repo:createDate": "2025-10-17T17:57:17.469Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ga.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.307Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance GT White and Gold Athletic Sneaker",
+      "dc:description": "A stylish New Balance sneaker featuring a white and gold color scheme, designed for athletic performance and comfort. Ideal for sports enthusiasts and casual wearers alike.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "athletic",
+        "white",
+        "gold",
+        "sports",
+        "footwear",
+        "comfortable",
+        "stylish",
+        "performance",
+        "casual",
+        "GT",
+        "Georgia Tech",
+        "mesh",
+        "rubber sole"
+      ],
+      "autogen:title": "White and gold New Balance tennis shoe",
+      "autogen:description": "A white and gold tennis shoe by New Balance featuring a sleek design with visible branding on the side and tongue. The shoe is set against a plain white background, highlighting its textured sole and modern athletic style. Ideal for sports or casual wear, the shoe combines performance and aesthetics.",
+      "autogen:subject": [
+        "shoe",
+        "tennis",
+        "white",
+        "gold",
+        "New Balance",
+        "athletic",
+        "sports",
+        "casual",
+        "textured sole"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Georgia Tech",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:455fb9c9-306b-40a5-b73c-e079911aa63b",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 281483,
+      "repo:scene7File": "DynamicMediaNA/vand",
+      "repo:createDate": "2025-10-17T17:57:18.422Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "vand.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.210Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Black and Gold Athletic Sneaker",
+      "dc:description": "This sleek black and gold sneaker by New Balance features a bold 'V' logo, designed for athletic performance and style, perfect for sports enthusiasts and casual wearers alike.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "black",
+        "gold",
+        "athletic",
+        "performance",
+        "style",
+        "V logo",
+        "footwear",
+        "sports",
+        "casual",
+        "comfort",
+        "design",
+        "branding",
+        "fashion"
+      ],
+      "autogen:title": "Black and gold athletic shoe with logo",
+      "autogen:description": "A sleek black athletic shoe featuring gold accents and a visible 'V' logo on the tongue. The shoe is designed with textured soles for enhanced grip and performance. The side displays a bold 'N' emblem, adding to the sporty aesthetic. Ideal for indoor or outdoor activities.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "black",
+        "gold",
+        "textured sole",
+        "V logo",
+        "N emblem",
+        "performance",
+        "sports",
+        "footwear"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:8ebe8430-f3e3-4911-9203-ba87ef6a287a",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 339923,
+      "repo:scene7File": "DynamicMediaNA/ne hoodie",
+      "repo:createDate": "2025-10-17T17:57:17.892Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ne hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.191Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Northeastern Huskies New Balance Team Hoodie",
+      "dc:description": "This Northeastern Huskies hoodie by New Balance features a bold red and black design, perfect for showcasing team spirit and staying warm during chilly game days.",
+      "dc:subject": [
+        "Northeastern Huskies",
+        "hoodie",
+        "New Balance",
+        "red",
+        "black",
+        "team apparel",
+        "sportswear",
+        "college team",
+        "logo",
+        "comfortable",
+        "warm",
+        "athletic",
+        "fashion",
+        "branding",
+        "casual"
+      ],
+      "autogen:title": "Red and black Northeastern Huskies hoodie",
+      "autogen:description": "A stylish red and black hoodie featuring the Northeastern Huskies logo and text prominently on the chest. The design includes a drawstring hood and kangaroo pocket, ideal for casual wear or sports activities. Visible branding includes 'New Balance' logos on the sleeve and chest.",
+      "autogen:subject": [
+        "hoodie",
+        "Northeastern Huskies",
+        "red",
+        "black",
+        "drawstring",
+        "kangaroo pocket",
+        "New Balance",
+        "sportswear",
+        "casual",
+        "logo"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Northeastern Huskies",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:3fb11fd0-659e-4352-ad0b-e1dea457b48e",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 340500,
+      "repo:scene7File": "DynamicMediaNA/temple hoodie",
+      "repo:createDate": "2025-10-17T17:57:18.032Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "temple hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.105Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Temple Owls Maroon Hoodie by New Balance",
+      "dc:description": "A maroon New Balance hoodie featuring Temple Owls branding, perfect for sports fans and casual wear. Comfortable and stylish, it showcases team spirit with a bold design and quality material.",
+      "dc:subject": [
+        "hoodie",
+        "Temple Owls",
+        "New Balance",
+        "sportswear",
+        "maroon",
+        "team spirit",
+        "casual wear",
+        "comfortable",
+        "stylish",
+        "bold design",
+        "quality material"
+      ],
+      "autogen:title": "Temple Owls red hoodie by New Balance",
+      "autogen:description": "A red hoodie featuring the Temple Owls logo and text prominently displayed on the chest. The design includes a kangaroo pocket and white accents on the sleeves. The New Balance logo is visible on the chest and sleeve, adding brand authenticity.",
+      "autogen:subject": [
+        "hoodie",
+        "red",
+        "Temple Owls",
+        "New Balance",
+        "kangaroo pocket",
+        "white accents",
+        "sportswear",
+        "casual",
+        "logo",
+        "apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Temple Owls",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:91397122-f70d-455a-a79f-a65d7944cc5e",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 307296,
+      "repo:scene7File": "DynamicMediaNA/ne sweatsh",
+      "repo:createDate": "2025-10-17T17:57:18.032Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ne sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:15.083Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Northeastern Huskies Red and Black Sweatshirt",
+      "dc:description": "A vibrant red and black Northeastern Huskies sweatshirt by New Balance, featuring the team logo and name prominently on the front, perfect for sports fans and casual wear.",
+      "dc:subject": [
+        "Northeastern Huskies",
+        "sweatshirt",
+        "New Balance",
+        "red",
+        "black",
+        "sportswear",
+        "team apparel",
+        "college sports",
+        "casual wear",
+        "athletic",
+        "fashion",
+        "logo",
+        "comfortable",
+        "stylish",
+        "fan gear"
+      ],
+      "autogen:title": "Red Northeastern Huskies sweatshirt by New Balance",
+      "autogen:description": "A vibrant red sweatshirt featuring 'Northeastern Huskies' text and logo prominently displayed on the chest. The design includes black sleeves with red accents and the New Balance logo on both sleeves. Ideal for casual wear or supporting the Northeastern Huskies team.",
+      "autogen:subject": [
+        "sweatshirt",
+        "red",
+        "Northeastern Huskies",
+        "New Balance",
+        "black sleeves",
+        "casual wear",
+        "team apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Northeastern Huskies",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:dc0a8789-3a0f-425b-ba8a-fdc612ffc595",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 269168,
+      "repo:scene7File": "DynamicMediaNA/temple",
+      "repo:createDate": "2025-10-17T17:57:18.064Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "temple.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:14.855Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Temple University New Balance Athletic Sneaker",
+      "dc:description": "This New Balance sneaker features a red and white design with Temple University branding, ideal for sports enthusiasts and fans. The shoe combines style and performance for athletic activities.",
+      "dc:subject": [
+        "New Balance",
+        "sneaker",
+        "red",
+        "white",
+        "Temple University",
+        "athletic",
+        "sports",
+        "footwear",
+        "branding",
+        "performance",
+        "style",
+        "university",
+        "team",
+        "logo",
+        "design"
+      ],
+      "autogen:title": "Red and white athletic shoe by New Balance",
+      "autogen:description": "A red and white athletic shoe featuring the New Balance logo prominently on the side. The shoe includes Temple branding on the tongue and is designed with a textured sole for enhanced grip. Ideal for sports or casual wear, the shoe showcases a bold color palette and sleek design.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "red",
+        "white",
+        "New Balance",
+        "Temple",
+        "textured sole",
+        "sports",
+        "casual",
+        "footwear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Temple University",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:1936e8e0-9988-4226-b7ce-ee434cb3a14a",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 293586,
+      "repo:scene7File": "DynamicMediaNA/wakef",
+      "repo:createDate": "2025-10-17T17:57:18.912Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "wakef.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:14.808Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Black and Gold Athletic Sneaker",
+      "dc:description": "The image showcases a stylish New Balance sneaker, featuring a black and gold color scheme, designed for athletic performance and casual wear. The shoe highlights comfort and modern aesthetics.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "black",
+        "gold",
+        "athletic",
+        "performance",
+        "casual",
+        "footwear",
+        "modern",
+        "stylish",
+        "comfort",
+        "design",
+        "sports",
+        "fashion"
+      ],
+      "autogen:title": "Black and gold athletic sneaker by New Balance",
+      "autogen:description": "A sleek black and gold athletic sneaker featuring the unmistakable New Balance logo on the tongue and side. The shoe showcases a breathable mesh upper and a cushioned sole with visible air support. Designed for performance and style, it is ideal for sports or casual wear.",
+      "autogen:subject": [
+        "sneaker",
+        "athletic",
+        "black",
+        "gold",
+        "New Balance",
+        "mesh",
+        "cushioned sole",
+        "air support",
+        "performance",
+        "casual"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:9d03434e-dd9b-4bd9-bfa8-887b640eccc3",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 298944,
+      "repo:scene7File": "DynamicMediaNA/kansas sweatsh",
+      "repo:createDate": "2025-10-17T17:57:17.450Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "kansas sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:09.207Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Kansas State Wildcats Team Sweatshirt by New Balance",
+      "dc:description": "This Kansas State sweatshirt features a bold purple and white design, showcasing the team's logo and name. Ideal for fans and supporters, it combines comfort with team spirit.",
+      "dc:subject": [
+        "Kansas State",
+        "sweatshirt",
+        "purple",
+        "white",
+        "team logo",
+        "New Balance",
+        "apparel",
+        "sportswear",
+        "fan gear",
+        "college team",
+        "comfortable",
+        "long sleeve",
+        "athletic",
+        "casual",
+        "fashion"
+      ],
+      "autogen:title": "Kansas State Wildcats purple sweatshirt",
+      "autogen:description": "A stylish Kansas State Wildcats sweatshirt featuring a bold purple and white design. The front displays the team name and logo prominently, with additional branding visible on the sleeve. Perfect for casual wear or supporting your team during events.",
+      "autogen:subject": [
+        "sweatshirt",
+        "Kansas State",
+        "Wildcats",
+        "purple",
+        "white",
+        "team apparel",
+        "casual wear",
+        "sportswear",
+        "long sleeves"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Kansas State Wildcats",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:e1f56e64-9aba-4ece-946a-fc845f6907df",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 310536,
+      "repo:scene7File": "DynamicMediaNA/cinn sweatsh",
+      "repo:createDate": "2025-10-17T17:57:16.622Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "cinn sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:09.103Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Cincinnati Bearcats New Balance Sweatshirt",
+      "dc:description": "A stylish red and black Cincinnati Bearcats sweatshirt by New Balance, perfect for sports fans and casual wear. Features bold team logo and comfortable fit.",
+      "dc:subject": [
+        "Cincinnati Bearcats",
+        "sweatshirt",
+        "New Balance",
+        "red",
+        "black",
+        "sportswear",
+        "team logo",
+        "casual wear",
+        "comfortable",
+        "fashion",
+        "athletic",
+        "fan apparel"
+      ],
+      "autogen:title": "Cincinnati Bearcats red sweatshirt by New Balance",
+      "autogen:description": "A vibrant red sweatshirt featuring the Cincinnati Bearcats logo prominently displayed on the chest. The design includes black sleeves and the New Balance logo on the left sleeve. Perfect for casual wear or supporting the team during sports events.",
+      "autogen:subject": [
+        "sweatshirt",
+        "Cincinnati Bearcats",
+        "red",
+        "black sleeves",
+        "New Balance",
+        "sportswear",
+        "team apparel",
+        "casual wear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Cincinnati Bearcats",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:0051cdaa-4859-4f9d-bcdd-dce026618ba3",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 300049,
+      "repo:scene7File": "DynamicMediaNA/cinn hoodie",
+      "repo:createDate": "2025-10-17T17:57:16.863Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "cinn hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:09.045Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Cincinnati Bearcats New Balance Red and Black Hoodie",
+      "dc:description": "This Cincinnati Bearcats hoodie features a bold red and black design with the team logo and New Balance branding, perfect for fans and sports enthusiasts.",
+      "dc:subject": [
+        "Cincinnati Bearcats",
+        "hoodie",
+        "sportswear",
+        "New Balance",
+        "red",
+        "black",
+        "team logo",
+        "apparel",
+        "fan gear",
+        "comfortable",
+        "athletic",
+        "casual",
+        "fashion",
+        "unisex",
+        "college sports"
+      ],
+      "autogen:title": "Cincinnati Bearcats red and black hoodie",
+      "autogen:description": "A stylish hoodie featuring the Cincinnati Bearcats logo and text prominently displayed on the chest. The design combines red and black panels with a comfortable fit and front pocket. New Balance branding is visible on the sleeve, adding a sporty touch.",
+      "autogen:subject": [
+        "hoodie",
+        "Cincinnati Bearcats",
+        "red",
+        "black",
+        "New Balance",
+        "sportswear",
+        "logo",
+        "comfortable",
+        "casual",
+        "apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Cincinnati Bearcats",
+      "product:appareltype": "hoodie",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:6e198a8c-d244-4e9a-b559-09dda8e26225",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 419525,
+      "repo:scene7File": "DynamicMediaNA/bc hoodie",
+      "repo:createDate": "2025-10-17T17:57:16.706Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "bc hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.985Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Boston College Eagles Hoodie by New Balance",
+      "dc:description": "A comfortable, stylish Boston College Eagles hoodie by New Balance, perfect for showing team spirit and staying warm. Features a neutral color with maroon and gold accents.",
+      "dc:subject": [
+        "Boston College",
+        "Eagles",
+        "hoodie",
+        "New Balance",
+        "sportswear",
+        "team spirit",
+        "comfortable",
+        "stylish",
+        "neutral color",
+        "maroon",
+        "gold",
+        "apparel",
+        "college",
+        "athletic"
+      ],
+      "autogen:title": "Boston College Eagles hoodie by New Balance",
+      "autogen:description": "A beige hoodie featuring 'Boston College Eagles' text prominently on the chest, designed by New Balance. The hoodie includes a front pocket and drawstring hood, with maroon and gold accents. The New Balance logo is visible on the sleeve, adding a sporty touch.",
+      "autogen:subject": [
+        "hoodie",
+        "beige",
+        "Boston College",
+        "Eagles",
+        "New Balance",
+        "maroon",
+        "gold",
+        "drawstring",
+        "front pocket",
+        "sportswear",
+        "college apparel"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Boston College Eagles",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:f154b454-e7c2-45d1-8fc1-e84cb7ca3348",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 376822,
+      "repo:scene7File": "DynamicMediaNA/col hoodie",
+      "repo:createDate": "2025-10-17T17:57:16.683Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "col hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.951Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Colorado Buffaloes New Balance Tan Hoodie",
+      "dc:description": "This hoodie features the Colorado Buffaloes logo and New Balance branding, offering comfort and style for sports enthusiasts and fans. Ideal for casual wear and supporting your favorite team.",
+      "dc:subject": [
+        "hoodie",
+        "Colorado Buffaloes",
+        "New Balance",
+        "sportswear",
+        "team apparel",
+        "casual",
+        "comfortable",
+        "tan color",
+        "logo",
+        "athletic",
+        "fan gear"
+      ],
+      "autogen:title": "Colorado Buffalos tan hoodie by New Balance",
+      "autogen:description": "Tan hoodie featuring 'Colorado Buffalos' text and logo prominently on the chest. Made by New Balance, with the brand's logo visible on the sleeve and hem. Designed with a front pocket and drawstring hood, ideal for casual or athletic wear.",
+      "autogen:subject": [
+        "hoodie",
+        "tan",
+        "Colorado Buffalos",
+        "New Balance",
+        "logo",
+        "front pocket",
+        "drawstring hood",
+        "athletic wear",
+        "casual wear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Colorado Buffaloes",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:adeb506f-afab-4d65-89b3-dd2477b07c30",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 321516,
+      "repo:scene7File": "DynamicMediaNA/bc",
+      "repo:createDate": "2025-10-17T17:57:16.583Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "bc.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.893Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Boston College New Balance Maroon Gold Sneakers",
+      "dc:description": "These maroon and gold New Balance sneakers feature Boston College branding, designed for athletic performance and style. Ideal for sports enthusiasts and fans of the Boston College team.",
+      "dc:subject": [
+        "sneakers",
+        "New Balance",
+        "Boston College",
+        "maroon",
+        "gold",
+        "athletic",
+        "sports",
+        "footwear",
+        "performance",
+        "team",
+        "college",
+        "branding",
+        "fashion",
+        "style",
+        "comfort"
+      ],
+      "autogen:title": "Boston College New Balance sneakers in maroon",
+      "autogen:description": "A pair of maroon athletic sneakers featuring the unmistakable New Balance logo and Boston College branding. The shoes showcase gold accents on the logo, laces, and sole details, creating a bold and collegiate aesthetic. Designed for sports or casual wear, the sneakers have a modern, high-top design with visible cushioning in the sole.",
+      "autogen:subject": [
+        "sneakers",
+        "maroon",
+        "New Balance",
+        "Boston College",
+        "athletic",
+        "high-top",
+        "gold accents",
+        "sportswear",
+        "collegiate",
+        "footwear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Boston College",
+      "product:appareltype": "sneakers",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:2a4ee8cc-5ce7-4561-af55-06d1cb3c2f2c",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 320288,
+      "repo:scene7File": "DynamicMediaNA/cinn",
+      "repo:createDate": "2025-10-17T17:57:16.667Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "cinn.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.863Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Red and Black Basketball Sneaker",
+      "dc:description": "The New Balance basketball sneaker features a bold red and black design, offering comfort and performance for athletes. Its high-top style provides ankle support, making it ideal for intense sports activities.",
+      "dc:subject": [
+        "basketball",
+        "sneaker",
+        "New Balance",
+        "red",
+        "black",
+        "high-top",
+        "athletic",
+        "performance",
+        "comfort",
+        "sports",
+        "footwear",
+        "mesh",
+        "lace-up",
+        "branding",
+        "style"
+      ],
+      "autogen:title": "Red New Balance athletic shoe with black accents",
+      "autogen:description": "A vibrant red New Balance athletic shoe featuring black accents and mesh detailing. The shoe is designed for sports or casual wear, with visible branding and a sleek, modern design. The sole includes dynamic cushioning for enhanced comfort and performance.",
+      "autogen:subject": [
+        "shoe",
+        "sneaker",
+        "athletic",
+        "red",
+        "black",
+        "New Balance",
+        "sports",
+        "mesh",
+        "cushioning",
+        "modern",
+        "comfortable"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:559ad7af-a0cc-4464-8324-a753f538bd70",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 383353,
+      "repo:scene7File": "DynamicMediaNA/col sweatsh",
+      "repo:createDate": "2025-10-17T17:57:17.414Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "col sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.803Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Colorado Buffaloes New Balance Team Sweatshirt",
+      "dc:description": "This New Balance sweatshirt features the Colorado Buffaloes logo, showcasing team pride in a stylish, comfortable design. Ideal for sports fans and casual wear, it combines functionality with collegiate spirit.",
+      "dc:subject": [
+        "New Balance",
+        "Colorado Buffaloes",
+        "sweatshirt",
+        "sportswear",
+        "team apparel",
+        "beige",
+        "logo",
+        "comfortable",
+        "casual",
+        "fashion",
+        "athletic",
+        "collegiate",
+        "branding",
+        "long sleeve",
+        "crew neck"
+      ],
+      "autogen:title": "Colorado Buffaloes beige sweatshirt by New Balance",
+      "autogen:description": "Beige sweatshirt featuring 'Colorado Buffaloes' text and logo prominently displayed on the chest. New Balance branding is visible on the sleeves and neckline. The design includes black accents on the cuffs and hem, creating a sporty and collegiate style.",
+      "autogen:subject": [
+        "sweatshirt",
+        "beige",
+        "Colorado Buffaloes",
+        "New Balance",
+        "collegiate",
+        "sporty",
+        "logo",
+        "black accents",
+        "apparel",
+        "casual wear"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Colorado Buffaloes",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:17007053-ca20-4a97-a3df-40a9666dd8a8",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 278181,
+      "repo:scene7File": "DynamicMediaNA/col",
+      "repo:createDate": "2025-10-17T17:57:17.394Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "col.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.763Z"
+    },
+    "assetMetadata": {
+      "dc:title": "New Balance Black and Gold Athletic Sneaker",
+      "dc:description": "A stylish New Balance sneaker in black and gold, designed for sports enthusiasts seeking comfort and performance. The shoe features a sleek design with a prominent logo and durable sole.",
+      "dc:subject": [
+        "sneaker",
+        "New Balance",
+        "black",
+        "gold",
+        "sports",
+        "footwear",
+        "athletic",
+        "comfortable",
+        "performance",
+        "stylish",
+        "durable",
+        "logo",
+        "design",
+        "shoe",
+        "fashion"
+      ],
+      "autogen:title": "New Balance black and gold athletic shoe",
+      "autogen:description": "A New Balance athletic shoe featuring a black and gold color palette. The shoe is designed with a mesh upper and bold 'N' branding on the side. Visible text includes 'new balance' and the New Balance logo. The design emphasizes performance and style for sports or casual wear.",
+      "autogen:subject": [
+        "shoe",
+        "athletic",
+        "New Balance",
+        "black",
+        "gold",
+        "mesh",
+        "sports",
+        "casual",
+        "performance"
+      ],
+      "product:brand": "New Balance",
+      "product:appareltype": "sneaker",
+      "product:sneakerBrand": "New Balance",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:b7a4e892-89e8-4809-91e4-8821aa6e0d89",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 346595,
+      "repo:scene7File": "DynamicMediaNA/kansas hoodie",
+      "repo:createDate": "2025-10-17T17:57:17.517Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "kansas hoodie.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.672Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Kansas State Purple Hoodie by New Balance",
+      "dc:description": "This purple Kansas State hoodie by New Balance features the university's logo and mascot, offering comfort and style for fans and students alike. Ideal for casual wear and sports events.",
+      "dc:subject": [
+        "Kansas State",
+        "hoodie",
+        "New Balance",
+        "purple",
+        "university",
+        "logo",
+        "mascot",
+        "casual wear",
+        "sports",
+        "comfort",
+        "style",
+        "apparel",
+        "college",
+        "team spirit"
+      ],
+      "autogen:title": "Purple Kansas State hoodie with logo",
+      "autogen:description": "A purple hoodie featuring the Kansas State text and wildcat logo prominently on the chest. The garment includes white accents on the sides and drawstrings, with visible New Balance branding on the sleeves and chest. Designed for casual wear, the hoodie has a front pocket and a comfortable fit.",
+      "autogen:subject": [
+        "hoodie",
+        "purple",
+        "Kansas State",
+        "wildcat",
+        "New Balance",
+        "casual wear",
+        "front pocket",
+        "drawstrings",
+        "white accents"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Kansas State",
+      "product:appareltype": "hoodie",
+      "product:backgroundScene": "plain white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  },
+  {
+    "assetId": "urn:aaid:aem:b7b72762-2e78-464c-bb56-0e199c971ed0",
+    "repositoryMetadata": {
+      "repo:createdBy": "pnam@adobe.com",
+      "repo:modifiedBy": "pnam@adobe.com",
+      "repo:size": 259732,
+      "repo:scene7File": "DynamicMediaNA/ga sweatsh",
+      "repo:createDate": "2025-10-17T17:57:17.382Z",
+      "repo:repositoryId": "delivery-p59602-e520244.adobeaemcloud.com",
+      "repo:name": "ga sweatsh.png",
+      "dc:format": "image/png",
+      "repo:modifyDate": "2025-10-17T17:59:08.672Z"
+    },
+    "assetMetadata": {
+      "dc:title": "Georgia Tech White Sweatshirt by New Balance",
+      "dc:description": "A white Georgia Tech sweatshirt with gold accents, featuring the New Balance logo on the sleeve. Ideal for fans and casual wear, showcasing school pride and comfort.",
+      "dc:subject": [
+        "Georgia Tech",
+        "sweatshirt",
+        "New Balance",
+        "white",
+        "gold accents",
+        "casual wear",
+        "school pride",
+        "comfortable",
+        "apparel",
+        "sportswear",
+        "university",
+        "fashion",
+        "team spirit"
+      ],
+      "autogen:title": "Georgia Tech white sweatshirt by New Balance",
+      "autogen:description": "A white Georgia Tech sweatshirt featuring the university's logo and name prominently on the chest. The design includes gold accents on the sleeves and collar, with visible New Balance branding on the sleeves. Ideal for casual wear or supporting Georgia Tech events.",
+      "autogen:subject": [
+        "Georgia Tech",
+        "sweatshirt",
+        "white",
+        "gold accents",
+        "New Balance",
+        "casual wear",
+        "university apparel",
+        "long sleeves"
+      ],
+      "product:brand": "New Balance",
+      "product:team": "Georgia Tech",
+      "product:appareltype": "sweatshirt",
+      "product:backgroundScene": "white background",
+      "xdm:campaignName": "College merch 2026",
+      "photoshop:Credit": "AI Generated",
+      "dam:assetStatus": "approved",
+      "xcm:keywords": [
+        {
+          "value": "Asset Properties : Orientation / Portrait",
+          "repo:ancestors": [
+            "properties",
+            "orientation",
+            "portrait"
+          ]
+        }
+      ],
+      "tiff:ImageWidth": 896,
+      "tiff:ImageLength": 1280,
+      "status": "Finished"
+    }
+  }
+]

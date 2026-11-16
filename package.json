@@ -1,0 +1,13 @@
+{
+  "name": "aem-contact-sheet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/core"
+  ],
+  "scripts": {
+    "test": "node --test packages/core/__tests__/*.test.js",
+    "demo": "node scripts/build-demo.js"
+  }
+}
