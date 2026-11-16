@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.parcel-cache/
+.env
+.aio
+*.local.json
+547DimSquid-*.json
+.DS_Store

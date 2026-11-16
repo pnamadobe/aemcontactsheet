@@ -1,0 +1,118 @@
+application:
+  actions: actions
+  runtimeManifest:
+    packages:
+      contactsheet:
+        license: Apache-2.0
+        actions:
+          resolve:
+            function: actions/resolve/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 60000
+              memorySize: 512
+            inputs:
+              LOG_LEVEL: info
+              DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
+              DEFAULT_DELIVERY_HOST: https://delivery-p59602-e520244.adobeaemcloud.com
+            annotations:
+              require-adobe-auth: true
+              final: true
+          resolve-worker:
+            function: actions/resolve-worker/index.js
+            web: 'no'
+            runtime: nodejs:22
+            limits:
+              timeout: 300000
+              memorySize: 1024
+            inputs:
+              LOG_LEVEL: info
+              DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
+              DEFAULT_DELIVERY_HOST: https://delivery-p59602-e520244.adobeaemcloud.com
+          generate:
+            function: actions/generate/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 60000
+              memorySize: 512
+            inputs:
+              LOG_LEVEL: info
+              DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
+              DEFAULT_DELIVERY_HOST: https://delivery-p59602-e520244.adobeaemcloud.com
+            annotations:
+              require-adobe-auth: true
+              final: true
+          generate-worker:
+            function: actions/generate-worker/index.js
+            web: 'no'
+            runtime: nodejs:22
+            limits:
+              timeout: 900000
+              memorySize: 2048
+            inputs:
+              LOG_LEVEL: info
+              DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
+              DEFAULT_DELIVERY_HOST: https://delivery-p59602-e520244.adobeaemcloud.com
+              PDF_SERVICES_CLIENT_ID: $PDF_SERVICES_CLIENT_ID
+              PDF_SERVICES_CLIENT_SECRET: $PDF_SERVICES_CLIENT_SECRET
+              AEM_TECH_CLIENT_ID: $AEM_TECH_CLIENT_ID
+              AEM_TECH_CLIENT_SECRET: $AEM_TECH_CLIENT_SECRET
+              AEM_TECH_SCOPES: $AEM_TECH_SCOPES
+          status:
+            function: actions/status/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 30000
+              memorySize: 256
+            inputs:
+              LOG_LEVEL: info
+            annotations:
+              require-adobe-auth: true
+              final: true
+          browse:
+            function: actions/browse/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 30000
+              memorySize: 256
+            inputs:
+              LOG_LEVEL: info
+              DEFAULT_AEM_HOST: https://author-p59602-e520244.adobeaemcloud.com
+              DEFAULT_DELIVERY_HOST: https://delivery-p59602-e520244.adobeaemcloud.com
+            annotations:
+              require-adobe-auth: true
+              final: true
+          presets:
+            function: actions/presets/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 30000
+              memorySize: 256
+            inputs:
+              LOG_LEVEL: info
+            annotations:
+              require-adobe-auth: true
+              final: true
+          prefs:
+            function: actions/prefs/index.js
+            web: 'yes'
+            runtime: nodejs:22
+            limits:
+              timeout: 30000
+              memorySize: 256
+            inputs:
+              LOG_LEVEL: info
+            annotations:
+              require-adobe-auth: true
+              final: true
+
+extensions:
+  aem/assets/assetsview/1:
+    $include: src/aem-assets-assetsview-1/ext.config.yaml
+  aem/assets/contenthub/1:
+    $include: src/aem-assets-contenthub-1/ext.config.yaml
