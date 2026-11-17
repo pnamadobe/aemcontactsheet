@@ -127,9 +127,9 @@ html, body {
   left: ${margin}in;
   width: ${contentW}in;
   height: ${headerH}in;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
   gap: 0.18in;
   border-bottom: 1.5px solid #222222;
   padding-bottom: 0.06in;
@@ -139,17 +139,16 @@ html, body {
   align-items: flex-start;
   gap: 0.14in;
   min-width: 0;
-  flex: 1;
+  justify-self: start;
+  width: 100%;
 }
 .header-center {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  pointer-events: none;
+  justify-self: center;
+  align-self: start;
+  padding-top: 0;
 }
 .header-logo {
   max-height: ${Number((headerH - 0.14).toFixed(3))}in;
@@ -194,6 +193,8 @@ html, body {
   color: #374151;
   flex-shrink: 0;
   line-height: 1.35;
+  justify-self: end;
+  align-self: start;
 }
 .header-date {
   font-weight: 600;
@@ -446,7 +447,7 @@ export function renderHtml(
 
     const logoHtml = logoUrl
       ? `<div class="header-center"><img class="header-logo" src="${escapeHtml(logoUrl)}" alt="Logo" /></div>`
-      : '';
+      : '<div class="header-center"></div>';
 
     const pageNumHtml = layout.pageNumbers !== false
       ? `<span>Page ${page.pageNumber} of ${totalPages}</span>`

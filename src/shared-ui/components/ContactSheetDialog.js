@@ -547,8 +547,8 @@ export default function ContactSheetDialog({
   const [thumbDataUrls, setThumbDataUrls] = useState({});
   const iframeRef = useRef(null);
 
-  // For Delivery / Content Hub assets that do not have a pre-signed Author `thumbnailUrl`,
-  // fetch the 350px Dynamic Media JPEG with the user's Bearer token in the browser so the live preview shows real images.
+  // For assets that do not have a pre-signed `thumbnailUrl` (including unapproved/rejected Author assets and Delivery assets),
+  // resolve thumbnails via Delivery Dynamic Media (for approved/published assets) and Author `/browse?mode=thumbnails` (for unapproved/rejected assets).
   useEffect(() => {
     if (!model?.assets?.length || !authCtx?.accessToken) return;
     const missing = model.assets.filter((a) => !a.thumbnailUrl && !thumbDataUrls[a.id]);
@@ -558,34 +558,59 @@ export default function ContactSheetDialog({
     const deliveryBase = (model.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
 
     (async () => {
-      const batch = missing.slice(0, 60);
+      const batch = missing.slice(0, 80);
+      const needAuthorFallback = [];
       let idx = 0;
+
       async function worker() {
         while (idx < batch.length && !cancelled) {
           const asset = batch[idx++];
           const seo = (asset.name || 'image').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-') || 'image';
-          try {
-            const res = await fetch(
-              `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`,
-              {
-                headers: {
-                  Authorization: `Bearer ${authCtx.accessToken}`,
-                  'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
-                  'x-gw-ims-org-id': authCtx.imsOrg || '',
-                },
+          let resolvedOnDelivery = false;
+          if (tier === 'delivery' || asset.approved || asset.published) {
+            try {
+              const res = await fetch(
+                `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${authCtx.accessToken}`,
+                    'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
+                    'x-gw-ims-org-id': authCtx.imsOrg || '',
+                  },
+                }
+              );
+              if (res.ok && !cancelled) {
+                const blob = await res.blob();
+                const objUrl = URL.createObjectURL(blob);
+                setThumbDataUrls((prev) => ({ ...prev, [asset.id]: objUrl }));
+                resolvedOnDelivery = true;
               }
-            );
-            if (res.ok && !cancelled) {
-              const blob = await res.blob();
-              const objUrl = URL.createObjectURL(blob);
-              setThumbDataUrls((prev) => ({ ...prev, [asset.id]: objUrl }));
+            } catch {
+              // fall through to Author fallback
             }
-          } catch {
-            // ignore individual thumbnail failure
+          }
+          if (!resolvedOnDelivery) {
+            needAuthorFallback.push(asset.id);
           }
         }
       }
       await Promise.all(Array.from({ length: Math.min(6, batch.length) }, () => worker()));
+
+      // Fetch Author static rendition thumbnails in batches of 8 for any unapproved/rejected assets
+      for (let i = 0; i < needAuthorFallback.length && !cancelled; i += 8) {
+        const chunkIds = needAuthorFallback.slice(i, i + 8);
+        try {
+          const data = await callAction('browse', {
+            method: 'GET',
+            query: { mode: 'thumbnails', assetIds: chunkIds.join(',') },
+          });
+          if (!cancelled && data?.thumbnails && Object.keys(data.thumbnails).length > 0) {
+            setThumbDataUrls((prev) => ({ ...prev, ...data.thumbnails }));
+          }
+        } catch {
+          // ignore chunk failure
+        }
+      }
     })();
 
     return () => {

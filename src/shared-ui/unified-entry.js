@@ -28,7 +28,7 @@ function UnifiedRegistration() {
                       : { kind: 'folder', id: resource.id, path: resource.path, includeSubfolders: false };
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
                       type: 'fullscreen',
                     });
                   },
@@ -79,7 +79,7 @@ function UnifiedRegistration() {
                     }
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
                       type: 'fullscreen',
                     });
                   },
@@ -127,7 +127,7 @@ function UnifiedRegistration() {
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
                   type: 'fullscreen',
                 });
               }
@@ -152,7 +152,7 @@ function UnifiedRegistration() {
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
                   type: 'fullscreen',
                 });
               }

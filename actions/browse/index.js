@@ -47,10 +47,15 @@ export async function main(params = {}) {
     }
 
     async function fetchSmallThumbDataUrl(assetId) {
-      for (const rName of ['cq5dam.thumbnail.140.100.png', 'cq5dam.thumbnail.319.319.png', 'cq5dam.thumbnail.48.48.png']) {
+      for (const rName of [
+        { name: 'cq5dam.thumbnail.319.319.png', mime: 'image/png' },
+        { name: 'cq5dam.thumbnail.140.100.png', mime: 'image/png' },
+        { name: 'cq5dam.fpo.jpeg', mime: 'image/jpeg' },
+        { name: 'cq5dam.thumbnail.48.48.png', mime: 'image/png' },
+      ]) {
         try {
           const rRes = await fetch(
-            `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/renditions/${rName}/as/thumb.png`,
+            `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/renditions/${rName.name}/as/thumb`,
             {
               headers: {
                 Authorization: `Bearer ${auth.bearerToken}`,
@@ -63,7 +68,7 @@ export async function main(params = {}) {
             const ab = await rRes.arrayBuffer();
             const buf = Buffer.from(ab);
             if (buf.byteLength > 64) {
-              return `data:image/png;base64,${buf.toString('base64')}`;
+              return `data:${rName.mime};base64,${buf.toString('base64')}`;
             }
           }
         } catch {
@@ -71,6 +76,23 @@ export async function main(params = {}) {
         }
       }
       return null;
+    }
+
+    // Batch thumbnail resolver (`GET /browse?mode=thumbnails&assetIds=urn:...,urn:...`) for unapproved/rejected Author assets in Live Preview
+    if (mode === 'thumbnails') {
+      const ids = String(params.assetIds || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 15);
+      const thumbnails = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          const dataUrl = await fetchSmallThumbDataUrl(id);
+          if (dataUrl) thumbnails[id] = dataUrl;
+        })
+      );
+      return jsonResponse(200, { thumbnails });
     }
 
     // Optional search query for finding logo images quickly across DAM
