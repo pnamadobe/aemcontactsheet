@@ -84,26 +84,29 @@ export function normalizeAsset(raw, index = 0) {
 }
 
 /**
- * Build a verified deep-link URL to open an asset's detail page in AEM Assets View (`tier=author`)
- * or AEM Content Hub (`tier=delivery`).
+ * Build a verified deep-link URL on `https://experience.adobe.com` to open an asset's detail page
+ * in AEM Assets View (`tier=author`) or AEM Content Hub (`tier=delivery`).
  */
 export function buildAssetDeepLink(asset, model = null) {
   const tier = model?.tier || 'author';
+  const orgPrefix = model?.imsOrgSubdomain ? `/@${String(model.imsOrgSubdomain).toLowerCase().replace(/^@/, '')}` : '';
   if (tier === 'delivery') {
     const repoHost = (model?.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com')
       .replace(/^https?:\/\//i, '')
       .replace(/\/+$/, '');
-    return `https://experience.adobe.com/?repoId=${encodeURIComponent(repoHost)}#/assets/contenthub/assets/${encodeURIComponent(asset?.id || '')}`;
+    return `https://experience.adobe.com/?repoId=${encodeURIComponent(repoHost)}#${orgPrefix}/assets/contenthub/assets/${encodeURIComponent(asset?.id || '')}`;
   }
-  const aemBase = (model?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+  const authorRepoHost = (model?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
   if (asset?.path && asset.path.startsWith('/content/dam/')) {
     const encodedPath = asset.path
       .split('/')
       .map((seg) => encodeURIComponent(seg))
       .join('/');
-    return `${aemBase}/ui#/aem/assets/detail${encodedPath}`;
+    return `https://experience.adobe.com/?repoId=${encodeURIComponent(authorRepoHost)}#${orgPrefix}/assets/detail${encodedPath}`;
   }
-  return `${aemBase}/ui#/aem/assets/go?action=asset-details&id=${encodeURIComponent(asset?.id || '')}`;
+  return `https://experience.adobe.com/?repoId=${encodeURIComponent(authorRepoHost)}#${orgPrefix}/assets/go?action=asset-details&id=${encodeURIComponent(asset?.id || '')}`;
 }
 
 /**

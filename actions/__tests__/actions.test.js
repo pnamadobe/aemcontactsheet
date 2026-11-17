@@ -504,7 +504,7 @@ test('Tier 1 enhancements: clickable deep links, approval status badges, and dar
 
   assert.match(
     buildAssetDeepLink(authorModel.assets[0], authorModel),
-    /^https:\/\/author-p59602-e520244\.adobeaemcloud\.com\/ui#\/aem\/assets\/detail\/content\/dam\//
+    /^https:\/\/experience\.adobe\.com\/\?repoId=author-p59602-e520244\.adobeaemcloud\.com#\/assets\/detail\/content\/dam\//
   );
   assert.match(
     buildAssetDeepLink(deliveryModel.assets[0], deliveryModel),
