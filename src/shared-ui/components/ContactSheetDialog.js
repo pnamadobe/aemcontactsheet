@@ -1,8 +1,8 @@
 // Shared Contact Sheet Modal UI used by both Assets View (`aem/assets/assetsview/1`)
 // and Content Hub (`aem/assets/contenthub/1`) UI extensions.
-// Uses @contactsheet/core so the live preview and the backend PDF renderer produce identical output.
+// Built with Adobe Spectrum 2 / AEM Assets View design tokens and responsive viewport scaling.
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createDefaultConfig,
   formatBytes,
@@ -10,6 +10,505 @@ import {
   paginate,
   renderHtml,
 } from '../../../packages/core/index.js';
+
+const SPECTRUM_CSS = `
+:root {
+  --s2-bg-base: #f8f8f8;
+  --s2-bg-layer-1: #ffffff;
+  --s2-bg-layer-2: #f3f3f3;
+  --s2-bg-canvas: #eef0f3;
+  --s2-border-subtle: #e6e6e6;
+  --s2-border: #d5d5d5;
+  --s2-border-strong: #b1b1b1;
+  --s2-text-primary: #222222;
+  --s2-text-secondary: #505050;
+  --s2-text-muted: #717171;
+  --s2-accent: #0265dc;
+  --s2-accent-hover: #0054b6;
+  --s2-accent-subtle: #e5f0fe;
+  --s2-purple: #6e3ff3;
+  --s2-purple-hover: #5a2de0;
+  --s2-positive: #05834e;
+  --s2-positive-subtle: #e3fcef;
+  --s2-warning: #cb6f10;
+  --s2-warning-subtle: #fff5eb;
+  --s2-danger: #d73220;
+  --s2-danger-subtle: #ffebe7;
+  --s2-radius-sm: 6px;
+  --s2-radius-md: 8px;
+  --s2-radius-lg: 10px;
+  --s2-radius-pill: 9999px;
+  --s2-font: "Adobe Clean", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--s2-font);
+  color: var(--s2-text-primary);
+  background: var(--s2-bg-base);
+  -webkit-font-smoothing: antialiased;
+}
+.s2-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--s2-bg-base);
+}
+.s2-topbar {
+  height: 56px;
+  background: var(--s2-bg-layer-1);
+  border-bottom: 1px solid var(--s2-border-subtle);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.s2-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.s2-brand-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--s2-accent-subtle);
+  color: var(--s2-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.s2-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.s2-app-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--s2-text-primary);
+  white-space: nowrap;
+}
+.s2-source-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--s2-text-secondary);
+  background: var(--s2-bg-layer-2);
+  padding: 3px 10px;
+  border-radius: var(--s2-radius-pill);
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-count-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--s2-accent);
+  background: var(--s2-accent-subtle);
+  padding: 2px 8px;
+  border-radius: var(--s2-radius-pill);
+  white-space: nowrap;
+}
+.s2-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.s2-divider-v {
+  width: 1px;
+  height: 22px;
+  background: var(--s2-border-subtle);
+  margin: 0 4px;
+}
+.s2-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--s2-radius-pill);
+  font-family: var(--s2-font);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  border: 1.5px solid var(--s2-border);
+  background: var(--s2-bg-layer-1);
+  color: var(--s2-text-primary);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.s2-btn:hover:not(:disabled) {
+  background: var(--s2-bg-layer-2);
+  border-color: var(--s2-border-strong);
+}
+.s2-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.s2-btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--s2-text-secondary);
+}
+.s2-btn-quiet:hover:not(:disabled) {
+  background: var(--s2-bg-layer-2);
+  border-color: transparent;
+  color: var(--s2-text-primary);
+}
+.s2-btn-accent {
+  background: var(--s2-accent);
+  border-color: var(--s2-accent);
+  color: #ffffff;
+}
+.s2-btn-accent:hover:not(:disabled) {
+  background: var(--s2-accent-hover);
+  border-color: var(--s2-accent-hover);
+}
+.s2-btn-boards {
+  background: var(--s2-purple);
+  border-color: var(--s2-purple);
+  color: #ffffff;
+}
+.s2-btn-boards:hover:not(:disabled) {
+  background: var(--s2-purple-hover);
+  border-color: var(--s2-purple-hover);
+}
+.s2-btn-sm {
+  height: 28px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+.s2-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.s2-sidebar {
+  width: 360px;
+  background: var(--s2-bg-layer-1);
+  border-right: 1px solid var(--s2-border-subtle);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.s2-section {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--s2-border-subtle);
+}
+.s2-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.s2-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--s2-text-secondary);
+  margin: 0;
+}
+.s2-field {
+  margin-bottom: 10px;
+}
+.s2-field:last-child {
+  margin-bottom: 0;
+}
+.s2-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--s2-text-secondary);
+  margin-bottom: 4px;
+}
+.s2-input, .s2-select {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--s2-radius-sm);
+  border: 1px solid var(--s2-border);
+  background: var(--s2-bg-layer-1);
+  font-family: var(--s2-font);
+  font-size: 13px;
+  color: var(--s2-text-primary);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.s2-input:focus, .s2-select:focus {
+  border-color: var(--s2-accent);
+  box-shadow: 0 0 0 2px rgba(2, 101, 220, 0.18);
+}
+.s2-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.s2-grid-sort {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 8px;
+  align-items: end;
+}
+.s2-chip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.s2-chip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px 58px 24px;
+  gap: 6px;
+  align-items: center;
+  background: var(--s2-bg-base);
+  border: 1px solid var(--s2-border-subtle);
+  border-radius: var(--s2-radius-sm);
+  padding: 5px 8px;
+  font-size: 12.5px;
+}
+.s2-chip-title {
+  font-weight: 600;
+  color: var(--s2-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-chip-select {
+  height: 24px;
+  padding: 0 4px;
+  font-size: 11.5px;
+  border-radius: 4px;
+  border: 1px solid var(--s2-border);
+  background: #ffffff;
+}
+.s2-chip-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--s2-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.s2-chip-remove {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--s2-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.s2-chip-remove:hover {
+  background: var(--s2-danger-subtle);
+  color: var(--s2-danger);
+}
+.s2-asset-selector-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--s2-bg-base);
+  border: 1px solid var(--s2-border-subtle);
+  border-radius: var(--s2-radius-sm);
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+.s2-asset-selector-path {
+  color: var(--s2-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+}
+.s2-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+.s2-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--s2-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.s2-preview-stage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--s2-bg-canvas);
+  position: relative;
+}
+.s2-preview-bar {
+  height: 44px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--s2-border-subtle);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--s2-text-secondary);
+  flex-shrink: 0;
+}
+.s2-preview-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.s2-stat-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--s2-border-strong);
+}
+.s2-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s2-zoom-pill {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--s2-radius-pill);
+  border: 1px solid var(--s2-border);
+  background: var(--s2-bg-layer-1);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--s2-text-secondary);
+  cursor: pointer;
+}
+.s2-zoom-pill.active {
+  background: var(--s2-accent-subtle);
+  border-color: var(--s2-accent);
+  color: var(--s2-accent);
+}
+.s2-preview-viewport {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+.s2-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: transparent;
+}
+.s2-state-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--s2-bg-canvas);
+}
+.s2-state-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--s2-bg-layer-1);
+  border: 1px solid var(--s2-border-subtle);
+  border-radius: var(--s2-radius-lg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  padding: 28px 32px;
+}
+.s2-progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--s2-bg-layer-2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 14px 0;
+}
+.s2-progress-fill {
+  height: 100%;
+  background: var(--s2-accent);
+  border-radius: 999px;
+  transition: width 250ms ease;
+}
+.s2-banner-warn {
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  background: var(--s2-warning-subtle);
+  border: 1px solid #f5c490;
+  border-radius: var(--s2-radius-sm);
+  font-size: 12px;
+  color: #8a4600;
+}
+.s2-picker-drawer {
+  margin: 12px 18px;
+  padding: 12px;
+  background: var(--s2-bg-layer-1);
+  border: 1.5px solid var(--s2-accent);
+  border-radius: var(--s2-radius-md);
+  box-shadow: 0 6px 20px rgba(2, 101, 220, 0.10);
+}
+.s2-picker-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--s2-border-subtle);
+  border-radius: var(--s2-radius-sm);
+  background: var(--s2-bg-base);
+}
+.s2-picker-item {
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--s2-font);
+  font-size: 12.5px;
+  color: var(--s2-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.s2-picker-item:hover {
+  background: var(--s2-accent-subtle);
+  color: var(--s2-accent);
+}
+`;
 
 export default function ContactSheetDialog({
   guestConnection,
@@ -19,6 +518,7 @@ export default function ContactSheetDialog({
 }) {
   const [authCtx, setAuthCtx] = useState(null);
   const [phase, setPhase] = useState('resolving'); // 'resolving' | 'configure' | 'generating' | 'done' | 'error'
+  const [activeOutputFormat, setActiveOutputFormat] = useState('pdf');
   const [resolveProgress, setResolveProgress] = useState({ done: 0, total: 0 });
   const [generateJob, setGenerateJob] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -33,8 +533,22 @@ export default function ContactSheetDialog({
 
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
+  const [zoomMode, setZoomMode] = useState('fit'); // 'fit' | '0.75' | '1'
   const [readyDownloadUrl, setReadyDownloadUrl] = useState(null);
   const [checkingDownload, setCheckingDownload] = useState(false);
+  const iframeRef = useRef(null);
+
+  // Sync zoom mode into the preview iframe whenever zoomMode or previewHtml changes
+  function applyIframeZoom(z = zoomMode) {
+    try {
+      const win = iframeRef.current?.contentWindow;
+      if (win && typeof win.__setCsZoom === 'function') {
+        win.__setCsZoom(z);
+      }
+    } catch {
+      // ignore cross-origin if any
+    }
+  }
 
   // Poll until a real, verified https:// download URL is ready before enabling the Download PDF button
   useEffect(() => {
@@ -44,6 +558,10 @@ export default function ContactSheetDialog({
       return;
     }
     const r = generateJob?.result || {};
+    if (r.outputFormat === 'boards' || r.boardUrl) {
+      setCheckingDownload(false);
+      return;
+    }
     if (r.downloadUrl && r.downloadUrl.startsWith('https://')) {
       setReadyDownloadUrl(r.downloadUrl);
       setCheckingDownload(false);
@@ -142,7 +660,6 @@ export default function ContactSheetDialog({
         if (cancelled) return;
         setAuthCtx(ctx);
 
-        // Load saved preferences (lastOutputFolder, lastLogo) and personal presets in parallel
         const [prefsRes, presetsRes, resolveRes] = await Promise.all([
           callAction('prefs', { method: 'GET' }, ctx).catch(() => null),
           callAction('presets', { method: 'GET' }, ctx).catch(() => ({ presets: [] })),
@@ -175,7 +692,6 @@ export default function ContactSheetDialog({
           };
         });
 
-        // If /resolve already completed synchronously with inline model, use it immediately
         if (
           (resolveRes.status === 'succeeded' || resolveRes.status === 'succeeded_with_warnings') &&
           resolveRes.model
@@ -189,7 +705,6 @@ export default function ContactSheetDialog({
           throw new Error(resolveRes.error?.message || 'Failed resolving source assets');
         }
 
-        // Otherwise poll resolve job until succeeded
         const jobId = resolveRes.jobId;
         while (!cancelled) {
           await new Promise((r) => setTimeout(r, 900));
@@ -222,7 +737,6 @@ export default function ContactSheetDialog({
     };
   }, []);
 
-  // Live pagination & HTML preview calculated synchronously in the browser using @contactsheet/core
   const paginated = useMemo(() => {
     if (!model) return null;
     return paginate(model, config);
@@ -250,8 +764,8 @@ export default function ContactSheetDialog({
 
   async function handleGenerate(outputFormat = 'pdf') {
     try {
+      setActiveOutputFormat(outputFormat);
       setPhase('generating');
-      // Persist remembered output folder and logo to user preferences
       callAction('prefs', {
         method: 'PUT',
         body: {
@@ -320,9 +834,9 @@ export default function ContactSheetDialog({
   }
 
   async function handleSavePreset() {
-    const name = window.prompt('Save current layout & field settings as preset name:');
+    const name = window.prompt('Preset name:');
     if (!name) return;
-    const isDefault = window.confirm('Make this your default preset?');
+    const isDefault = window.confirm('Set as your default preset?');
     const res = await callAction('presets', {
       method: 'PUT',
       body: { preset: { name, isDefault, config } },
@@ -353,26 +867,50 @@ export default function ContactSheetDialog({
   }
 
   if (phase === 'resolving') {
+    const pct = resolveProgress.total ? Math.round((resolveProgress.done / resolveProgress.total) * 100) : 35;
     return (
-      <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
-        <h3>Reading assets for contact sheet…</h3>
-        <p style={{ color: '#4b5563' }}>
-          {resolveProgress.total
-            ? `Resolved ${resolveProgress.done} of ${resolveProgress.total} assets…`
-            : 'Listing source contents and metadata…'}
-        </p>
+      <div className="s2-shell">
+        <style>{SPECTRUM_CSS}</style>
+        <div className="s2-state-screen">
+          <div className="s2-state-card">
+            <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>Preparing contact sheet</h3>
+            <p style={{ margin: 0, fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+              {resolveProgress.total
+                ? `Reading metadata for ${resolveProgress.done} of ${resolveProgress.total} assets…`
+                : 'Inspecting folder contents and discovering metadata schema…'}
+            </p>
+            <div className="s2-progress-track">
+              <div className="s2-progress-fill" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (phase === 'error') {
     return (
-      <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
-        <h3 style={{ color: '#b91c1c' }}>Could not complete contact sheet</h3>
-        <p>{errorMsg}</p>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {model && <button onClick={() => setPhase('configure')}>Back to settings</button>}
-          <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Close</button>
+      <div className="s2-shell">
+        <style>{SPECTRUM_CSS}</style>
+        <div className="s2-state-screen">
+          <div className="s2-state-card">
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, color: 'var(--s2-danger)' }}>
+              Could not complete contact sheet
+            </h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'var(--s2-text-secondary)', lineHeight: 1.5 }}>
+              {errorMsg}
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              {model && (
+                <button className="s2-btn" onClick={() => setPhase('configure')}>
+                  Back to settings
+                </button>
+              )}
+              <button className="s2-btn s2-btn-accent" onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -380,16 +918,41 @@ export default function ContactSheetDialog({
 
   if (phase === 'generating') {
     const p = generateJob?.progress || { done: 0, total: paginated?.totalAssets || 0 };
+    const pct = p.total ? Math.max(15, Math.round((p.done / p.total) * 100)) : 45;
     return (
-      <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
-        <h3>Generating contact sheet PDF…</h3>
-        <p>
-          Phase: <strong>{generateJob?.phase || 'images'}</strong> · {p.done} / {p.total} assets processed
-        </p>
-        <p style={{ fontSize: 13, color: '#6b7280' }}>
-          You can close this dialog; generation will finish in the background.
-        </p>
-        <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Close</button>
+      <div className="s2-shell">
+        <style>{SPECTRUM_CSS}</style>
+        <div className="s2-state-screen">
+          <div className="s2-state-card">
+            <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>
+              {activeOutputFormat === 'boards'
+                ? 'Building Firefly Board…'
+                : 'Generating contact sheet PDF…'}
+            </h3>
+            <p style={{ margin: 0, fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+              {activeOutputFormat === 'boards'
+                ? `Placing asset cards and metadata lines on canvas (${p.done} / ${p.total || paginated?.totalAssets || 0})…`
+                : `Rendering high-resolution pages and uploading to AEM Assets (${p.done} / ${p.total || paginated?.totalAssets || 0})…`}
+            </p>
+            <div className="s2-progress-track">
+              <div
+                className="s2-progress-fill"
+                style={{
+                  width: `${pct}%`,
+                  background: activeOutputFormat === 'boards' ? 'var(--s2-purple)' : 'var(--s2-accent)',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+              <span style={{ fontSize: 12, color: 'var(--s2-text-muted)' }}>
+                This job continues in the background if you close the dialog.
+              </span>
+              <button className="s2-btn s2-btn-sm" onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -398,77 +961,107 @@ export default function ContactSheetDialog({
     const r = generateJob?.result || {};
     const isBoards = r.outputFormat === 'boards' || Boolean(r.boardUrl);
     return (
-      <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
-        <h3 style={{ color: '#047857' }}>
-          {isBoards ? 'Firefly Board ready' : 'Contact sheet ready'}
-        </h3>
-        {isBoards ? (
-          <>
-            <p>
-              <strong>{config.header.title}</strong> · {r.placedCards ?? r.assets} asset cards placed on infinite canvas
-            </p>
-            <p style={{ fontSize: 13 }}>
-              Board URL: <a href={r.boardUrl} target="_blank" rel="noreferrer">{r.boardUrl}</a>
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              <strong>{r.fileName}</strong> · {r.pages} pages · {r.assets} assets · {formatBytes(r.bytes)}
-            </p>
-            {r.aemPath && (
-              <p style={{ fontSize: 13 }}>
-                Saved to AEM: <code>{r.aemPath}</code>
+      <div className="s2-shell">
+        <style>{SPECTRUM_CSS}</style>
+        <div className="s2-state-screen">
+          <div className="s2-state-card">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 999, background: 'var(--s2-positive-subtle)', color: 'var(--s2-positive)', fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
+              ✓ {isBoards ? 'Firefly Board Created' : 'Saved to AEM Assets'}
+            </div>
+            <h3 style={{ margin: '0 0 6px', fontSize: 19 }}>
+              {config.header.title || r.fileName}
+            </h3>
+            {isBoards ? (
+              <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+                {r.placedCards ?? r.assets} asset cards with separate editable metadata lines placed on your Firefly Board.
               </p>
+            ) : (
+              <>
+                <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+                  {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets · {formatBytes(r.bytes)}
+                </p>
+                {r.aemPath && (
+                  <div className="s2-asset-selector-row" style={{ marginBottom: 14 }}>
+                    <span className="s2-asset-selector-path" title={r.aemPath}>{r.aemPath}</span>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-        {(generateJob?.warnings || []).map((w, i) => (
-          <p key={i} style={{ color: '#b45309', fontSize: 13 }}>{w}</p>
-        ))}
-        <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
-          {isBoards && r.boardUrl ? (
-            <a href={r.boardUrl} target="_blank" rel="noreferrer">
-              <button style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}>
-                Open in Firefly Boards ↗
+
+            {(generateJob?.warnings || []).map((w, i) => (
+              <div key={i} className="s2-banner-warn" style={{ margin: '0 0 12px' }}>{w}</div>
+            ))}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button className="s2-btn s2-btn-quiet" onClick={() => setPhase('configure')}>
+                Back to editor
               </button>
-            </a>
-          ) : readyDownloadUrl ? (
-            <a href={readyDownloadUrl} target="_blank" rel="noreferrer">
-              <button style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}>
-                Download PDF
+              {!isBoards && r.aemPath && tier === 'author' && (
+                <button
+                  className="s2-btn"
+                  onClick={async () => {
+                    await guestConnection?.host?.modal?.closeDialog?.().catch(() => {});
+                    await guestConnection?.host?.router?.navigateToAssetDetails?.({ assetPath: r.aemPath });
+                  }}
+                >
+                  Open in AEM
+                </button>
+              )}
+              {isBoards && r.boardUrl ? (
+                <a className="s2-btn s2-btn-boards" href={r.boardUrl} target="_blank" rel="noreferrer">
+                  Open in Firefly Boards ↗
+                </a>
+              ) : readyDownloadUrl ? (
+                <a className="s2-btn s2-btn-accent" href={readyDownloadUrl} target="_blank" rel="noreferrer">
+                  Download PDF
+                </a>
+              ) : checkingDownload ? (
+                <button className="s2-btn" disabled>
+                  Preparing download link…
+                </button>
+              ) : null}
+              <button className="s2-btn" onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>
+                Done
               </button>
-            </a>
-          ) : checkingDownload ? (
-            <button disabled style={{ opacity: 0.6, padding: '7px 14px' }}>
-              Preparing download link…
-            </button>
-          ) : null}
-          {!isBoards && r.aemPath && tier === 'author' && (
-            <button
-              onClick={async () => {
-                await guestConnection?.host?.modal?.closeDialog?.().catch(() => {});
-                await guestConnection?.host?.router?.navigateToAssetDetails?.({ assetPath: r.aemPath });
-              }}
-            >
-              Open in AEM
-            </button>
-          )}
-          <button onClick={() => setPhase('configure')}>Back to preview</button>
-          <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Done</button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  const g = paginated?.geometry;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'sans-serif' }}>
-      <header style={{ padding: '10px 18px', background: '#111827', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <strong>Create Contact Sheet</strong> · {model?.sourceLabel} ({model?.totalFound} assets)
+    <div className="s2-shell">
+      <style>{SPECTRUM_CSS}</style>
+
+      {/* Top AEM Action Header */}
+      <header className="s2-topbar">
+        <div className="s2-topbar-left">
+          <div className="s2-brand-badge" title="AEM Assets Contact Sheet">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </div>
+          <div className="s2-title-group">
+            <span className="s2-app-title">Contact Sheet</span>
+            <span className="s2-source-pill" title={model?.sourceLabel}>
+              {model?.sourceLabel}
+            </span>
+            <span className="s2-count-badge">
+              {model?.totalFound} {model?.totalFound === 1 ? 'asset' : 'assets'}
+            </span>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+
+        <div className="s2-topbar-actions">
           <select
+            className="s2-select"
+            style={{ width: 156, height: 32, borderRadius: 999, paddingLeft: 12 }}
             value={selectedPresetId}
             onChange={(e) => {
               const id = e.target.value;
@@ -482,144 +1075,256 @@ export default function ContactSheetDialog({
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-          <button onClick={handleSavePreset}>Save preset</button>
+          <button className="s2-btn s2-btn-quiet" onClick={handleSavePreset}>
+            Save preset
+          </button>
+
+          <div className="s2-divider-v" />
+
           <button
+            className="s2-btn"
             onClick={() => {
-              const iframe = document.getElementById('cs-live-preview-iframe');
-              iframe?.contentWindow?.focus();
-              iframe?.contentWindow?.print();
+              const win = iframeRef.current?.contentWindow;
+              win?.focus();
+              win?.print();
             }}
           >
-            Print / Save as PDF
+            Print
           </button>
-          <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Cancel</button>
-          <button
-            style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}
-            onClick={() => handleGenerate('boards')}
-          >
+          <button className="s2-btn s2-btn-boards" onClick={() => handleGenerate('boards')}>
             Send to Firefly Boards
           </button>
-          <button
-            style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}
-            onClick={() => handleGenerate('pdf')}
-          >
-            Generate &amp; Save to AEM
+          <button className="s2-btn s2-btn-accent" onClick={() => handleGenerate('pdf')}>
+            Save PDF to AEM
+          </button>
+          <button className="s2-btn s2-btn-quiet" onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>
+            Cancel
           </button>
         </div>
       </header>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '370px 1fr', minHeight: 0 }}>
-        <aside style={{ overflowY: 'auto', padding: 14, borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Main Split Workspace: 360px Left Inspector Rail + Responsive Right Canvas */}
+      <div className="s2-workspace">
+        <aside className="s2-sidebar">
           {model?.truncated && (
-            <div style={{ padding: 10, background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 4, fontSize: 12 }}>
-              <strong>{model.totalFound} assets found.</strong> MVP cap is {model.maxAssets}. Showing the first {model.maxAssets} after sorting, or narrow your selection first.
+            <div className="s2-banner-warn">
+              <strong>{model.totalFound} assets found.</strong> Showing the first {model.maxAssets} after sorting.
             </div>
           )}
 
-          {/* Header section */}
-          <section>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: 12 }}>1 · HEADER</h4>
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>
-              Title *
+          {/* Folder / Logo Picker Drawer */}
+          {pickerMode && (
+            <div className="s2-picker-drawer">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <strong style={{ fontSize: 12.5 }}>
+                  {pickerMode === 'folder' ? 'Select destination folder' : 'Select header logo'}
+                </strong>
+                <button className="s2-btn s2-btn-quiet s2-btn-sm" onClick={() => setPickerMode(null)}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                <span className="s2-asset-selector-path" title={pickerPath}>{pickerPath}</span>
+                {pickerPath !== '/content/dam' && (
+                  <button
+                    className="s2-btn s2-btn-sm"
+                    onClick={() => openBrowser(pickerMode, pickerPath.slice(0, pickerPath.lastIndexOf('/')) || '/content/dam')}
+                  >
+                    ↑ Up
+                  </button>
+                )}
+              </div>
+              <ul className="s2-picker-list">
+                {pickerListing.folders.map((f) => (
+                  <li key={f.path}>
+                    <button className="s2-picker-item" onClick={() => openBrowser(pickerMode, f.path)}>
+                      <span>📁</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</span>
+                    </button>
+                  </li>
+                ))}
+                {pickerMode === 'logo' &&
+                  pickerListing.images.map((img) => (
+                    <li key={img.assetId}>
+                      <button
+                        className="s2-picker-item"
+                        onClick={() => {
+                          setConfig({
+                            ...config,
+                            header: { ...config.header, logo: { assetId: img.assetId, path: img.path, tier } },
+                          });
+                          setPickerMode(null);
+                        }}
+                      >
+                        <span>🖼️</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.name}</span>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+              {pickerMode === 'folder' && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  <input
+                    className="s2-input"
+                    style={{ height: 28, fontSize: 12 }}
+                    type="text"
+                    placeholder="New subfolder…"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                  />
+                  <button className="s2-btn s2-btn-sm" onClick={handleCreateSubfolder}>+ New</button>
+                  <button
+                    className="s2-btn s2-btn-accent s2-btn-sm"
+                    onClick={() => {
+                      setConfig({
+                        ...config,
+                        output: { ...config.output, targetFolder: { id: '', path: pickerPath } },
+                      });
+                      setPickerMode(null);
+                    }}
+                  >
+                    Select
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Section 1: Sheet Header */}
+          <section className="s2-section">
+            <div className="s2-section-header">
+              <h4 className="s2-section-title">Sheet Header</h4>
+            </div>
+            <div className="s2-field">
+              <label className="s2-label">Title</label>
               <input
+                className="s2-input"
                 type="text"
-                style={{ width: '100%' }}
                 value={config.header.title}
                 onChange={(e) => setConfig({ ...config, header: { ...config.header, title: e.target.value } })}
               />
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <label style={{ fontSize: 12 }}>
-                Date
+            </div>
+            <div className="s2-grid-2 s2-field">
+              <div>
+                <label className="s2-label">Date</label>
                 <input
+                  className="s2-input"
                   type="date"
-                  style={{ width: '100%' }}
                   value={config.header.date}
                   onChange={(e) => setConfig({ ...config, header: { ...config.header, date: e.target.value } })}
                 />
-              </label>
-              <label style={{ fontSize: 12 }}>
-                Department
+              </div>
+              <div>
+                <label className="s2-label">Department</label>
                 <input
+                  className="s2-input"
                   type="text"
-                  style={{ width: '100%' }}
+                  placeholder="e.g. Creative"
                   value={config.header.department || ''}
                   onChange={(e) => setConfig({ ...config, header: { ...config.header, department: e.target.value } })}
                 />
-              </label>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
-              <label style={{ fontSize: 12 }}>
-                Prepared by
+            <div className="s2-grid-2 s2-field">
+              <div>
+                <label className="s2-label">Prepared by</label>
                 <input
+                  className="s2-input"
                   type="text"
-                  style={{ width: '100%' }}
                   value={config.header.preparedBy || ''}
                   onChange={(e) => setConfig({ ...config, header: { ...config.header, preparedBy: e.target.value } })}
                 />
-              </label>
-              <label style={{ fontSize: 12 }}>
-                Project
+              </div>
+              <div>
+                <label className="s2-label">Project / Shoot</label>
                 <input
+                  className="s2-input"
                   type="text"
-                  style={{ width: '100%' }}
+                  placeholder="Optional"
                   value={config.header.project || ''}
                   onChange={(e) => setConfig({ ...config, header: { ...config.header, project: e.target.value } })}
                 />
-              </label>
+              </div>
             </div>
-            <div style={{ marginTop: 8, fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Logo: {config.header.logo?.path?.split('/').pop() || 'None'}</span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button type="button" onClick={() => openBrowser('logo', '/content/dam')}>Change…</button>
-                {config.header.logo && (
-                  <button type="button" onClick={() => setConfig({ ...config, header: { ...config.header, logo: null } })}>Clear</button>
-                )}
+            <div className="s2-field">
+              <label className="s2-label">Brand Logo</label>
+              <div className="s2-asset-selector-row">
+                <span className="s2-asset-selector-path">
+                  {config.header.logo?.path?.split('/').pop() || 'No logo selected'}
+                </span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button type="button" className="s2-btn s2-btn-sm" onClick={() => openBrowser('logo', '/content/dam')}>
+                    Browse
+                  </button>
+                  {config.header.logo && (
+                    <button
+                      type="button"
+                      className="s2-btn s2-btn-quiet s2-btn-sm"
+                      onClick={() => setConfig({ ...config, header: { ...config.header, logo: null } })}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </section>
 
-          {/* Printed metadata fields */}
-          <section>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: 12 }}>2 · METADATA BELOW EACH PREVIEW</h4>
-            {config.fields.map((f, idx) => (
-              <div key={f.key} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 58px 22px', gap: 6, alignItems: 'center', marginBottom: 4, fontSize: 12 }}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.label}</span>
-                <select
-                  value={f.maxLines}
-                  onChange={(e) => {
-                    const next = [...config.fields];
-                    next[idx] = { ...f, maxLines: Number(e.target.value) };
-                    setConfig({ ...config, fields: next });
-                  }}
-                >
-                  <option value={1}>1 line</option>
-                  <option value={2}>2 lines</option>
-                  <option value={3}>3 lines</option>
-                </select>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(f.showLabel)}
+          {/* Section 2: Metadata Fields Below Each Thumbnail */}
+          <section className="s2-section">
+            <div className="s2-section-header">
+              <h4 className="s2-section-title">Metadata Captions</h4>
+              <span style={{ fontSize: 11, color: 'var(--s2-text-muted)' }}>
+                {config.fields.length} selected
+              </span>
+            </div>
+            <div className="s2-chip-list">
+              {config.fields.map((f, idx) => (
+                <div key={f.key} className="s2-chip">
+                  <span className="s2-chip-title" title={f.label}>{f.label}</span>
+                  <select
+                    className="s2-chip-select"
+                    value={f.maxLines}
                     onChange={(e) => {
                       const next = [...config.fields];
-                      next[idx] = { ...f, showLabel: e.target.checked };
+                      next[idx] = { ...f, maxLines: Number(e.target.value) };
                       setConfig({ ...config, fields: next });
                     }}
-                  />
-                  lbl
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setConfig({ ...config, fields: config.fields.filter((_, i) => i !== idx) })}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px', gap: 6, marginTop: 6 }}>
-              <select value={addFieldKey} onChange={(e) => setAddFieldKey(e.target.value)}>
-                <option value="">Select field to add…</option>
+                  >
+                    <option value={1}>1 line</option>
+                    <option value={2}>2 lines</option>
+                    <option value={3}>3 lines</option>
+                  </select>
+                  <label className="s2-chip-check">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(f.showLabel)}
+                      onChange={(e) => {
+                        const next = [...config.fields];
+                        next[idx] = { ...f, showLabel: e.target.checked };
+                        setConfig({ ...config, fields: next });
+                      }}
+                    />
+                    Label
+                  </label>
+                  <button
+                    type="button"
+                    className="s2-chip-remove"
+                    title="Remove field"
+                    onClick={() => setConfig({ ...config, fields: config.fields.filter((_, i) => i !== idx) })}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 68px', gap: 6 }}>
+              <select
+                className="s2-select"
+                value={addFieldKey}
+                onChange={(e) => setAddFieldKey(e.target.value)}
+              >
+                <option value="">Add metadata field…</option>
                 {availableToAdd.map((f) => (
                   <option key={f.key} value={f.key}>
                     {f.label} ({Math.round((f.coverage ?? 1) * 100)}%)
@@ -628,6 +1333,7 @@ export default function ContactSheetDialog({
               </select>
               <button
                 type="button"
+                className="s2-btn"
                 onClick={() => {
                   const key = addFieldKey || availableToAdd[0]?.key;
                   if (!key) return;
@@ -644,13 +1350,15 @@ export default function ContactSheetDialog({
             </div>
           </section>
 
-          {/* Sort & Group */}
-          <section>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: 12 }}>3 · SORT &amp; GROUP</h4>
-            <label style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>
-              Group by
+          {/* Section 3: Sort & Group */}
+          <section className="s2-section">
+            <div className="s2-section-header">
+              <h4 className="s2-section-title">Sort &amp; Group</h4>
+            </div>
+            <div className="s2-field">
+              <label className="s2-label">Group into sections by</label>
               <select
-                style={{ width: '100%' }}
+                className="s2-select"
                 value={config.sort.groupBy?.field || ''}
                 onChange={(e) =>
                   setConfig({
@@ -662,19 +1370,19 @@ export default function ContactSheetDialog({
                   })
                 }
               >
-                <option value="">(None)</option>
+                <option value="">None (continuous grid)</option>
                 {sortableFields.filter((f) => f.groupable).map((f) => (
                   <option key={f.key} value={f.key}>
-                    {f.label}{f.section === 'printed' ? ' ★' : ''}
+                    {f.label}{f.section === 'printed' ? ' •' : ''}
                   </option>
                 ))}
               </select>
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 86px', gap: 6 }}>
-              <label style={{ fontSize: 12 }}>
-                Sort by
+            </div>
+            <div className="s2-grid-sort s2-field">
+              <div>
+                <label className="s2-label">Primary sort</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
                   value={config.sort.keys?.[0]?.field || 'repo:name'}
                   onChange={(e) => {
                     const keys = [...(config.sort.keys || [])];
@@ -684,15 +1392,15 @@ export default function ContactSheetDialog({
                 >
                   {sortableFields.map((f) => (
                     <option key={f.key} value={f.key}>
-                      {f.label}{f.section === 'printed' ? ' ★' : ''}
+                      {f.label}{f.section === 'printed' ? ' •' : ''}
                     </option>
                   ))}
                 </select>
-              </label>
-              <label style={{ fontSize: 12 }}>
-                Dir
+              </div>
+              <div>
+                <label className="s2-label">Order</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
                   value={config.sort.keys?.[0]?.dir || 'asc'}
                   onChange={(e) => {
                     const keys = [...(config.sort.keys || [])];
@@ -700,48 +1408,93 @@ export default function ContactSheetDialog({
                     setConfig({ ...config, sort: { ...config.sort, keys } });
                   }}
                 >
-                  <option value="asc">Asc</option>
-                  <option value="desc">Desc</option>
+                  <option value="asc">A → Z</option>
+                  <option value="desc">Z → A</option>
                 </select>
-              </label>
+              </div>
+            </div>
+            <div className="s2-grid-sort s2-field">
+              <div>
+                <label className="s2-label">Secondary sort</label>
+                <select
+                  className="s2-select"
+                  value={config.sort.keys?.[1]?.field || ''}
+                  onChange={(e) => {
+                    const first = config.sort.keys?.[0] || { field: 'repo:name', dir: 'asc' };
+                    const keys = e.target.value
+                      ? [first, { field: e.target.value, dir: config.sort.keys?.[1]?.dir || 'asc' }]
+                      : [first];
+                    setConfig({ ...config, sort: { ...config.sort, keys } });
+                  }}
+                >
+                  <option value="">None</option>
+                  {sortableFields.map((f) => (
+                    <option key={f.key} value={f.key}>
+                      {f.label}{f.section === 'printed' ? ' •' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="s2-label">Order</label>
+                <select
+                  className="s2-select"
+                  disabled={!config.sort.keys?.[1]?.field}
+                  value={config.sort.keys?.[1]?.dir || 'asc'}
+                  onChange={(e) => {
+                    const first = config.sort.keys?.[0] || { field: 'repo:name', dir: 'asc' };
+                    const second = config.sort.keys?.[1];
+                    if (!second) return;
+                    setConfig({
+                      ...config,
+                      sort: { ...config.sort, keys: [first, { ...second, dir: e.target.value }] },
+                    });
+                  }}
+                >
+                  <option value="asc">A → Z</option>
+                  <option value="desc">Z → A</option>
+                </select>
+              </div>
             </div>
           </section>
 
-          {/* Layout & Output */}
-          <section>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: 12 }}>4 · LAYOUT &amp; DESTINATION</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <label style={{ fontSize: 12 }}>
-                Page size
+          {/* Section 4: Page Layout & Output Destination */}
+          <section className="s2-section" style={{ borderBottom: 'none' }}>
+            <div className="s2-section-header">
+              <h4 className="s2-section-title">Page Layout &amp; Output</h4>
+            </div>
+            <div className="s2-grid-2 s2-field">
+              <div>
+                <label className="s2-label">Paper size</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
                   value={config.layout.pageSize}
                   onChange={(e) => setConfig({ ...config, layout: { ...config.layout, pageSize: e.target.value } })}
                 >
-                  <option value="letter">Letter</option>
-                  <option value="a4">A4</option>
-                  <option value="legal">Legal</option>
-                  <option value="tabloid">Tabloid</option>
-                  <option value="a3">A3</option>
+                  <option value="letter">Letter (8.5 × 11 in)</option>
+                  <option value="a4">A4 (210 × 297 mm)</option>
+                  <option value="legal">Legal (8.5 × 14 in)</option>
+                  <option value="tabloid">Tabloid (11 × 17 in)</option>
+                  <option value="a3">A3 (297 × 420 mm)</option>
                 </select>
-              </label>
-              <label style={{ fontSize: 12 }}>
-                Orientation
+              </div>
+              <div>
+                <label className="s2-label">Orientation</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
                   value={config.layout.orientation}
                   onChange={(e) => setConfig({ ...config, layout: { ...config.layout, orientation: e.target.value } })}
                 >
                   <option value="landscape">Landscape</option>
                   <option value="portrait">Portrait</option>
                 </select>
-              </label>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
-              <label style={{ fontSize: 12 }}>
-                Columns
+            <div className="s2-grid-2 s2-field">
+              <div>
+                <label className="s2-label">Grid columns</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
                   value={config.layout.columns}
                   onChange={(e) => setConfig({ ...config, layout: { ...config.layout, columns: Number(e.target.value) } })}
                 >
@@ -749,120 +1502,144 @@ export default function ContactSheetDialog({
                     <option key={n} value={n}>{n} columns</option>
                   ))}
                 </select>
-              </label>
-              <label style={{ fontSize: 12 }}>
-                Quality
+              </div>
+              <div>
+                <label className="s2-label">Thumbnail aspect</label>
                 <select
-                  style={{ width: '100%' }}
+                  className="s2-select"
+                  value={config.layout.imageAspect}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, imageAspect: e.target.value } })}
+                >
+                  <option value="4:3">4:3 Standard</option>
+                  <option value="1:1">1:1 Square</option>
+                  <option value="3:2">3:2 Photo</option>
+                  <option value="16:9">16:9 Wide</option>
+                  <option value="3:4">3:4 Portrait</option>
+                </select>
+              </div>
+            </div>
+            <div className="s2-grid-2 s2-field">
+              <div>
+                <label className="s2-label">Thumbnail fit</label>
+                <select
+                  className="s2-select"
+                  value={config.layout.imageFit}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, imageFit: e.target.value } })}
+                >
+                  <option value="fit">Contain (full image)</option>
+                  <option value="fill">Cover (fill frame)</option>
+                </select>
+              </div>
+              <div>
+                <label className="s2-label">Resolution</label>
+                <select
+                  className="s2-select"
                   value={config.output.quality}
                   onChange={(e) => setConfig({ ...config, output: { ...config.output, quality: e.target.value } })}
                 >
                   <option value="screen">Screen (150 ppi)</option>
                   <option value="print">Print (300 ppi)</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="s2-checkbox-row">
+              <label className="s2-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={config.layout.pageNumbers !== false}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, pageNumbers: e.target.checked } })}
+                />
+                Page numbers
+              </label>
+              <label className="s2-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={config.layout.sequenceNumbers !== false}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, sequenceNumbers: e.target.checked } })}
+                />
+                Asset sequence #
               </label>
             </div>
+
             {tier === 'author' && (
-              <div style={{ marginTop: 8, fontSize: 12 }}>
-                <div>Save to AEM folder:</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
-                  <code style={{ fontSize: 11 }}>{config.output.targetFolder?.path || '/content/dam/contact-sheets'}</code>
-                  <button type="button" onClick={() => openBrowser('folder', config.output.targetFolder?.path || '/content/dam')}>
-                    Browse…
+              <div className="s2-field" style={{ marginTop: 12 }}>
+                <label className="s2-label">Save PDF to AEM folder</label>
+                <div className="s2-asset-selector-row">
+                  <span
+                    className="s2-asset-selector-path"
+                    title={config.output.targetFolder?.path || '/content/dam/contact-sheets'}
+                  >
+                    {config.output.targetFolder?.path || '/content/dam/contact-sheets'}
+                  </span>
+                  <button
+                    type="button"
+                    className="s2-btn s2-btn-sm"
+                    onClick={() => openBrowser('folder', config.output.targetFolder?.path || '/content/dam')}
+                  >
+                    Browse
                   </button>
                 </div>
               </div>
             )}
           </section>
-
-          {/* Inline folder / logo picker modal */}
-          {pickerMode && (
-            <section style={{ border: '1px solid #1473e6', borderRadius: 4, padding: 10, background: '#f0f7ff', fontSize: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong>{pickerMode === 'folder' ? 'Select destination folder' : 'Select header logo'}</strong>
-                <button type="button" onClick={() => setPickerMode(null)}>Close</button>
-              </div>
-              <div style={{ margin: '6px 0' }}>
-                <code>{pickerPath}</code>
-                {pickerPath !== '/content/dam' && (
-                  <button
-                    type="button"
-                    style={{ marginLeft: 8 }}
-                    onClick={() => openBrowser(pickerMode, pickerPath.slice(0, pickerPath.lastIndexOf('/')) || '/content/dam')}
-                  >
-                    ↑ Up
-                  </button>
-                )}
-              </div>
-              <ul style={{ maxHeight: 140, overflowY: 'auto', paddingLeft: 16, margin: '6px 0' }}>
-                {pickerListing.folders.map((f) => (
-                  <li key={f.path}>
-                    <button type="button" style={{ border: 'none', background: 'none', color: '#1473e6', cursor: 'pointer' }} onClick={() => openBrowser(pickerMode, f.path)}>
-                      📁 {f.title}
-                    </button>
-                  </li>
-                ))}
-                {pickerMode === 'logo' &&
-                  pickerListing.images.map((img) => (
-                    <li key={img.assetId}>
-                      <button
-                        type="button"
-                        style={{ border: 'none', background: 'none', color: '#047857', cursor: 'pointer' }}
-                        onClick={() => {
-                          setConfig({
-                            ...config,
-                            header: { ...config.header, logo: { assetId: img.assetId, path: img.path, tier } },
-                          });
-                          setPickerMode(null);
-                        }}
-                      >
-                        🖼️ {img.name}
-                      </button>
-                    </li>
-                  ))}
-              </ul>
-              {pickerMode === 'folder' && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                  <input
-                    type="text"
-                    placeholder="New folder name…"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                  />
-                  <button type="button" onClick={handleCreateSubfolder}>+ New</button>
-                  <button
-                    type="button"
-                    style={{ background: '#1473e6', color: '#fff', border: 'none', borderRadius: 3 }}
-                    onClick={() => {
-                      setConfig({
-                        ...config,
-                        output: { ...config.output, targetFolder: { id: '', path: pickerPath } },
-                      });
-                      setPickerMode(null);
-                    }}
-                  >
-                    Choose this folder
-                  </button>
-                </div>
-              )}
-            </section>
-          )}
         </aside>
 
-        {/* Live preview iframe */}
-        <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{ padding: '6px 16px', background: '#fff', borderBottom: '1px solid #e5e7eb', fontSize: 12, display: 'flex', justifyContent: 'space-between' }}>
-            <span>
-              {paginated?.totalAssets} assets · {paginated?.totalPages} pages · Est. PDF {formatBytes(paginated?.estimatedBytes || 0)}
-            </span>
-            <span style={{ color: '#b45309' }}>{(paginated?.warnings || []).join(' · ')}</span>
+        {/* Right Responsive Preview Canvas */}
+        <section className="s2-preview-stage">
+          <div className="s2-preview-bar">
+            <div className="s2-preview-stats">
+              <strong style={{ color: 'var(--s2-text-primary)' }}>
+                {paginated?.totalPages} {paginated?.totalPages === 1 ? 'page' : 'pages'}
+              </strong>
+              <span className="s2-stat-dot" />
+              <span>
+                {g?.cols} × {g?.rowsPerPage} grid ({g?.perPageCapacity} per page)
+              </span>
+              <span className="s2-stat-dot" />
+              <span>Est. PDF {formatBytes(paginated?.estimatedBytes || 0)}</span>
+              {(paginated?.warnings || []).length > 0 && (
+                <>
+                  <span className="s2-stat-dot" />
+                  <span style={{ color: 'var(--s2-warning)', fontWeight: 500 }}>
+                    {(paginated?.warnings || []).join(' · ')}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="s2-zoom-controls">
+              <span style={{ fontSize: 11.5, marginRight: 4 }}>Zoom:</span>
+              {[
+                { key: 'fit', label: 'Fit to width' },
+                { key: '0.75', label: '75%' },
+                { key: '1', label: '100%' },
+              ].map((z) => (
+                <button
+                  key={z.key}
+                  type="button"
+                  className={`s2-zoom-pill${zoomMode === z.key ? ' active' : ''}`}
+                  onClick={() => {
+                    setZoomMode(z.key);
+                    applyIframeZoom(z.key);
+                  }}
+                >
+                  {z.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <iframe
-            id="cs-live-preview-iframe"
-            title="Live contact sheet preview"
-            style={{ flex: 1, border: 'none', width: '100%', background: '#e9ebef' }}
-            srcDoc={previewHtml}
-          />
+
+          <div className="s2-preview-viewport">
+            <iframe
+              ref={iframeRef}
+              id="cs-live-preview-iframe"
+              className="s2-preview-iframe"
+              title="Live contact sheet preview"
+              srcDoc={previewHtml}
+              onLoad={() => applyIframeZoom(zoomMode)}
+            />
+          </div>
         </section>
       </div>
     </div>

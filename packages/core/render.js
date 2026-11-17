@@ -34,10 +34,18 @@ export function buildStylesheet(geometry, { mode = 'preview' } = {}) {
     groupBandH,
   } = geometry;
 
+  const pagePxW = pageW * 96;
+  const pagePxH = pageH * 96;
+
   return `
 @page {
   size: ${pageW}in ${pageH}in;
   margin: 0;
+}
+:root {
+  --cs-scale: 1;
+  --cs-page-px-w: ${pagePxW}px;
+  --cs-page-px-h: ${pagePxH}px;
 }
 * {
   box-sizing: border-box;
@@ -47,16 +55,28 @@ export function buildStylesheet(geometry, { mode = 'preview' } = {}) {
 html, body {
   margin: 0;
   padding: 0;
-  font-family: "Source Sans 3", "Adobe Clean", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Adobe Clean", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1d1d1f;
-  background: ${mode === 'preview' ? '#e9ebef' : '#ffffff'};
+  background: ${mode === 'preview' ? 'transparent' : '#ffffff'};
+  overflow-x: hidden;
 }
 .cs-pages {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: ${mode === 'preview' ? '24px' : '0'};
-  padding: ${mode === 'preview' ? '20px' : '0'};
+  gap: ${mode === 'preview' ? '28px' : '0'};
+  padding: ${mode === 'preview' ? '24px 32px 48px' : '0'};
+  width: 100%;
+}
+.page-shell {
+  ${
+    mode === 'preview'
+      ? `width: calc(var(--cs-page-px-w) * var(--cs-scale));
+  height: calc(var(--cs-page-px-h) * var(--cs-scale));
+  position: relative;
+  flex-shrink: 0;`
+      : 'display: contents;'
+  }
 }
 .page {
   position: relative;
@@ -66,11 +86,40 @@ html, body {
   overflow: hidden;
   page-break-after: always;
   break-after: page;
-  ${mode === 'preview' ? 'box-shadow: 0 4px 20px rgba(0,0,0,0.12); border-radius: 3px;' : ''}
+  ${
+    mode === 'preview'
+      ? `transform: scale(var(--cs-scale));
+  transform-origin: top left;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.10);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 4px;`
+      : ''
+  }
 }
+.page-shell:last-child .page,
 .page:last-child {
   page-break-after: auto;
   break-after: auto;
+}
+@media print {
+  html, body {
+    background: #ffffff !important;
+  }
+  .cs-pages {
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+  .page-shell {
+    width: auto !important;
+    height: auto !important;
+    display: contents !important;
+  }
+  .page {
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
 }
 .page-header {
   position: absolute;
@@ -391,7 +440,7 @@ export function renderHtml(
       ? `<span>Page ${page.pageNumber} of ${totalPages}</span>`
       : '<span></span>';
 
-    return `<section class="page" data-page="${page.pageNumber}">
+    return `<div class="page-shell"><section class="page" data-page="${page.pageNumber}">
       <header class="page-header">
         <div class="header-left">
           ${logoHtml}
@@ -411,8 +460,35 @@ export function renderHtml(
         <span>Generated ${escapeHtml(genFormatted)}${model?.resolvedBy ? ` · ${escapeHtml(model.resolvedBy)}` : ''}</span>
         ${pageNumHtml}
       </footer>
-    </section>`;
+    </section></div>`;
   });
+
+  const responsiveScript =
+    mode === 'preview'
+      ? `<script>
+(function() {
+  var pagePxW = ${geometry.pageW * 96};
+  var userZoom = window.__csZoom || 'fit';
+  function updateScale() {
+    var vw = document.documentElement.clientWidth || window.innerWidth || 900;
+    var availW = Math.max(260, vw - 64);
+    var fitScale = Math.min(1.25, availW / pagePxW);
+    var scale = userZoom === 'fit' ? fitScale : Number(userZoom) || fitScale;
+    document.documentElement.style.setProperty('--cs-scale', scale.toFixed(4));
+  }
+  window.__setCsZoom = function(z) {
+    userZoom = z;
+    window.__csZoom = z;
+    updateScale();
+  };
+  window.addEventListener('resize', updateScale);
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(updateScale).observe(document.documentElement);
+  }
+  updateScale();
+})();
+</script>`
+      : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -425,6 +501,7 @@ export function renderHtml(
   <main class="cs-pages">
     ${pageSections.join('\n')}
   </main>
+  ${responsiveScript}
 </body>
 </html>`;
 }
