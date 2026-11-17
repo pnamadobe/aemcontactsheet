@@ -3,6 +3,7 @@
 // with automatic link/collaborator sharing via `invitations.adobe.io`.
 import { COMMON_FIELDS, formatFieldValue } from '../../packages/core/fields.js';
 import { THEME_PALETTES, computeWatermarkMetrics } from '../../packages/core/layout.js';
+import { readImageDimensions } from './firefly-boards.js';
 import { mapWithConcurrency } from './utils.js';
 
 async function shareExpressDocument(
@@ -418,10 +419,15 @@ export function buildContactSheetHzJson({
         );
       }
 
-      // Centered & top-aligned Brand Logo
+      // Centered & top-aligned Brand Logo (aspect-ratio preserved)
       if (registeredResourceIds.has('res_brand_logo')) {
-        const logoW = 120;
-        const logoH = Math.max(24, headerHPx - 10);
+        const maxLogoW = 120;
+        const maxLogoH = Math.max(24, headerHPx - 10);
+        const rawLogoW = Number(logoResource?.width) || maxLogoW;
+        const rawLogoH = Number(logoResource?.height) || maxLogoH;
+        const logoScale = Math.min(maxLogoW / rawLogoW, maxLogoH / rawLogoH, 1);
+        const logoW = Math.max(16, Math.round(rawLogoW * logoScale));
+        const logoH = Math.max(12, Math.round(rawLogoH * logoScale));
         children.push(
           buildBitmapRectNode({
             tx: marginPx + Math.round((contentWPx - logoW) / 2),
@@ -551,19 +557,39 @@ export function buildContactSheetHzJson({
           })
         );
 
-        // Asset bitmap fill inside thumbnail frame
+        // Asset bitmap fill inside thumbnail frame (aspect-ratio preserved so images are never stretched/distorted)
         const resId = `res_${String(asset.id).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
         if (registeredResourceIds.has(resId)) {
-          const pad = layout.fit === 'cover' ? 0 : 4;
+          const isCover = layout.imageFit === 'fill' || layout.fit === 'cover';
+          const pad = isCover ? 0 : 4;
+          const boxW = Math.max(10, cellW - pad * 2);
+          const boxH = Math.max(10, thumbH - pad * 2);
+          const resInfo = assetUrlMap.get(asset.id);
+          const natW = Number(resInfo?.width || asset.width || asset.values?.['tiff:imageWidth']) || boxW;
+          const natH = Number(resInfo?.height || asset.height || asset.values?.['tiff:imageLength']) || boxH;
+
+          let drawW = boxW;
+          let drawH = boxH;
+          let drawX = cellX + pad;
+          let drawY = cellY + pad;
+
+          if (!isCover && natW > 0 && natH > 0) {
+            const scale = Math.min(boxW / natW, boxH / natH);
+            drawW = Math.max(1, Math.round(natW * scale));
+            drawH = Math.max(1, Math.round(natH * scale));
+            drawX = cellX + pad + Math.round((boxW - drawW) / 2);
+            drawY = cellY + pad + Math.round((boxH - drawH) / 2);
+          }
+
           children.push(
             buildBitmapRectNode({
-              tx: cellX + pad,
-              ty: cellY + pad,
-              width: cellW - pad * 2,
-              height: thumbH - pad * 2,
+              tx: drawX,
+              ty: drawY,
+              width: drawW,
+              height: drawH,
               bitmapReference: resId,
-              objectFit: layout.fit === 'cover' ? 'cover' : 'contain',
-              cornerRadius: layout.fit === 'cover' ? 4 : 0,
+              objectFit: isCover ? 'cover' : 'contain',
+              cornerRadius: isCover ? 4 : 0,
             })
           );
         }
@@ -858,11 +884,14 @@ export async function exportContactSheetToAdobeExpress({
         try {
           const rend = await aem.fetchAssetThumbnailBuffer(asset, { targetPx: 900, quality: 'screen' });
           if (rend?.buffer?.byteLength > 0) {
-            const isPng = rend.ext === 'png' || (rend.buffer[0] === 0x89 && rend.buffer[1] === 0x50);
+            const dims = readImageDimensions(rend.buffer);
+            const isPng = dims?.mimeType === 'image/png' || rend.ext === 'png' || (rend.buffer[0] === 0x89 && rend.buffer[1] === 0x50);
             const mimeType = isPng ? 'image/png' : 'image/jpeg';
             assetUrlMap.set(asset.id, {
               url: `data:${mimeType};base64,${rend.buffer.toString('base64')}`,
               mimeType,
+              width: dims?.width || asset.width,
+              height: dims?.height || asset.height,
             });
             return;
           }
@@ -890,6 +919,8 @@ export async function exportContactSheetToAdobeExpress({
         assetUrlMap.set(asset.id, {
           url: candidateUrl,
           mimeType: inferredMime || 'image/jpeg',
+          width: asset.width,
+          height: asset.height,
         });
       }
     },
@@ -900,7 +931,7 @@ export async function exportContactSheetToAdobeExpress({
     }
   );
 
-  // Optional Brand Logo `data:` URI
+  // Optional Brand Logo `data:` URI (with dimensions for aspect-ratio preservation)
   let logoResource = null;
   const logoCfg = paginated?.config?.header?.logo;
   if (logoCfg?.assetId && aem && typeof aem.fetchAssetThumbnailBuffer === 'function') {
@@ -910,11 +941,14 @@ export async function exportContactSheetToAdobeExpress({
         { targetPx: 400, quality: 'print' }
       );
       if (logoRend?.buffer?.byteLength > 0) {
-        const isPng = logoRend.ext === 'png' || (logoRend.buffer[0] === 0x89 && logoRend.buffer[1] === 0x50);
+        const dims = readImageDimensions(logoRend.buffer);
+        const isPng = dims?.mimeType === 'image/png' || logoRend.ext === 'png' || (logoRend.buffer[0] === 0x89 && logoRend.buffer[1] === 0x50);
         const mimeType = isPng ? 'image/png' : 'image/jpeg';
         logoResource = {
           url: `data:${mimeType};base64,${logoRend.buffer.toString('base64')}`,
           mimeType,
+          width: dims?.width || 120,
+          height: dims?.height || 36,
         };
       }
     } catch {

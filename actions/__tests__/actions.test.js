@@ -559,7 +559,12 @@ test('exportContactSheetToAdobeExpress builds multi-page HzJSON v1 and creates a
   const assetUrlMap = new Map(
     model.assets.map((a, idx) => [
       a.id,
-      { url: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-orig-${idx}.jpg?sig=abc`, mimeType: 'image/jpeg' },
+      {
+        url: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-orig-${idx}.jpg?sig=abc`,
+        mimeType: 'image/jpeg',
+        width: 1600,
+        height: 800,
+      },
     ])
   );
   const hzJson = buildContactSheetHzJson({ paginated, model, assetUrlMap });
@@ -568,6 +573,15 @@ test('exportContactSheetToAdobeExpress builds multi-page HzJSON v1 and creates a
   assert.equal(hzJson.resources.length, 6);
   assert.ok(hzJson.artwork.children.length >= 1);
   assert.equal(hzJson.artwork.children[0].sceneNodeType, 'artboard');
+
+  // Verify bitmap nodes preserve native 2:1 aspect ratio (`width / height === 2`) instead of stretching to 4:3 frame
+  const bitmapNodes = hzJson.artwork.children[0].children.filter((n) => n.fill?.fillType === 'bitmap');
+  assert.ok(bitmapNodes.length >= 1);
+  const firstBmp = bitmapNodes[0].rectangleGeometry;
+  assert.ok(
+    Math.abs(firstBmp.width / firstBmp.height - 2) < 0.05,
+    `Expected 2:1 aspect ratio on bitmap node, got ${firstBmp.width}x${firstBmp.height}`
+  );
 
   // Verify multipart/mixed Sensei status response parser
   const sampleMultipart = [
