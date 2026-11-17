@@ -536,7 +536,54 @@ export default function ContactSheetDialog({
   const [zoomMode, setZoomMode] = useState('fit'); // 'fit' | '0.75' | '1'
   const [readyDownloadUrl, setReadyDownloadUrl] = useState(null);
   const [checkingDownload, setCheckingDownload] = useState(false);
+  const [thumbDataUrls, setThumbDataUrls] = useState({});
   const iframeRef = useRef(null);
+
+  // For Delivery / Content Hub assets that do not have a pre-signed Author `thumbnailUrl`,
+  // fetch the 350px Dynamic Media JPEG with the user's Bearer token in the browser so the live preview shows real images.
+  useEffect(() => {
+    if (!model?.assets?.length || !authCtx?.accessToken) return;
+    const missing = model.assets.filter((a) => !a.thumbnailUrl && !thumbDataUrls[a.id]);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    const deliveryBase = (model.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+
+    (async () => {
+      const batch = missing.slice(0, 60);
+      let idx = 0;
+      async function worker() {
+        while (idx < batch.length && !cancelled) {
+          const asset = batch[idx++];
+          const seo = (asset.name || 'image').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-') || 'image';
+          try {
+            const res = await fetch(
+              `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`,
+              {
+                headers: {
+                  Authorization: `Bearer ${authCtx.accessToken}`,
+                  'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
+                  'x-gw-ims-org-id': authCtx.imsOrg || '',
+                },
+              }
+            );
+            if (res.ok && !cancelled) {
+              const blob = await res.blob();
+              const objUrl = URL.createObjectURL(blob);
+              setThumbDataUrls((prev) => ({ ...prev, [asset.id]: objUrl }));
+            }
+          } catch {
+            // ignore individual thumbnail failure
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(6, batch.length) }, () => worker()));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [model, authCtx]);
 
   // Sync zoom mode into the preview iframe whenever zoomMode or previewHtml changes
   function applyIframeZoom(z = zoomMode) {
@@ -641,20 +688,53 @@ export default function ContactSheetDialog({
   // 1. Initialize host auth, load prefs & presets, and kick off resolve job
   useEffect(() => {
     let cancelled = false;
+    function callHostWithTimeout(promiseFn, ms = 1200, fallback = null) {
+      try {
+        const p = Promise.resolve(promiseFn());
+        return Promise.race([
+          p.catch(() => fallback),
+          new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+        ]);
+      } catch {
+        return Promise.resolve(fallback);
+      }
+    }
+    function parseJwtClaims(token) {
+      try {
+        const parts = String(token || '').split('.');
+        if (parts.length < 2) return {};
+        const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(b64));
+      } catch {
+        return {};
+      }
+    }
+
     (async () => {
       try {
-        const ims = (await guestConnection?.host?.auth?.getIMSInfo?.()) || {};
-        const apiKey = (await guestConnection?.host?.auth?.getApiKey?.()) || 'aem-assets-frontend-1';
-        const profile = (await guestConnection?.host?.auth?.getCurrentUserProfile?.()) || {};
-        const aemHost = (await guestConnection?.host?.discovery?.getAemHost?.()) || 'https://author-p59602-e520244.adobeaemcloud.com';
+        // Content Hub implements auth.getIMSInfo(), whereas getCurrentUserProfile() and discovery.getAemHost()
+        // are Assets View-only and time out after 10s on Content Hub if awaited unconditionally.
+        const [ims, apiKey, profile, discoveredHost] = await Promise.all([
+          callHostWithTimeout(() => guestConnection?.host?.auth?.getIMSInfo?.(), 3000, {}),
+          callHostWithTimeout(() => guestConnection?.host?.auth?.getApiKey?.(), 1200, null),
+          tier === 'author'
+            ? callHostWithTimeout(() => guestConnection?.host?.auth?.getCurrentUserProfile?.(), 1200, {})
+            : Promise.resolve({}),
+          tier === 'author'
+            ? callHostWithTimeout(() => guestConnection?.host?.discovery?.getAemHost?.(), 1200, null)
+            : Promise.resolve(null),
+        ]);
+
+        const claims = parseJwtClaims(ims?.accessToken);
+        const aemHost = discoveredHost || 'https://author-p59602-e520244.adobeaemcloud.com';
 
         const ctx = {
-          accessToken: ims.accessToken,
-          imsOrg: ims.imsOrg,
-          apiKey,
-          userId: profile.userId || profile.email || 'user',
-          email: profile.email || profile.name || '',
-          name: profile.name || profile.email || '',
+          accessToken: ims?.accessToken,
+          imsOrg: ims?.imsOrg || claims.org || '4A603BC061E191130A495FEF@AdobeOrg',
+          apiKey: apiKey || claims.client_id || 'aem-assets-frontend-1',
+          userId: profile?.userId || claims.user_id || claims.sub || profile?.email || 'user',
+          email: profile?.email || claims.email || profile?.name || '',
+          name: profile?.name || claims.name || profile?.email || '',
           aemHost,
         };
         if (cancelled) return;
@@ -747,9 +827,9 @@ export default function ContactSheetDialog({
     return renderHtml(paginated, {
       mode: 'preview',
       model,
-      imageResolver: (asset) => asset.thumbnailUrl || null,
+      imageResolver: (asset) => asset.thumbnailUrl || thumbDataUrls[asset.id] || null,
     });
-  }, [paginated, model]);
+  }, [paginated, model, thumbDataUrls]);
 
   const sortableFields = useMemo(() => {
     if (!model) return [];
