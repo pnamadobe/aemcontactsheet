@@ -91,7 +91,8 @@ export async function main(params = {}) {
         model,
         config,
         aem,
-        bearerToken: auth.bearerToken,
+        bearerToken: String(params.boardsBearerToken || '').trim().replace(/^Bearer\s+/i, '') || auth.bearerToken,
+        shareEmail: params.boardsShareEmail || auth.userEmail || null,
         fetchImpl,
         onProgress: async (done, total) => {
           job.progress = { done, total };

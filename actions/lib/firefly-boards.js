@@ -159,7 +159,7 @@ export async function createFireflyBoard({
   };
 }
 
-/** Execute a batch of up to 20 operations on a Firefly Board via `POST /compose`. */
+/** Execute a batch of up to 20 operations on a Firefly Board via `POST /compose`, with automatic retry on 503 `LECCoeditingLimitExceeded` / 429. */
 export async function composeFireflyBoard({
   boardId,
   operations,
@@ -168,20 +168,38 @@ export async function composeFireflyBoard({
   fetchImpl = globalThis.fetch,
 }) {
   const base = docServiceUrl.replace(/\/+$/, '');
-  const res = await fetchImpl(`${base}/compose`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${bearerToken}`,
-      'x-api-key': 'aura_webapp',
-    },
-    body: JSON.stringify({ boardId, operations }),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(`Firefly Boards /compose failed (${res.status}): ${errText.slice(0, 240)}`);
+  const backoffMs = [1200, 2200, 3500, 5000, 7000];
+  let lastStatus = 500;
+  let lastErrText = '';
+
+  for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
+    const res = await fetchImpl(`${base}/compose`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${bearerToken}`,
+        'x-api-key': 'aura_webapp',
+      },
+      body: JSON.stringify({ boardId, operations }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    lastStatus = res.status;
+    lastErrText = await res.text().catch(() => '');
+    const retryable =
+      res.status === 503 ||
+      res.status === 429 ||
+      res.status === 502 ||
+      res.status === 504 ||
+      lastErrText.includes('LECCoeditingLimitExceeded');
+    if (!retryable || attempt === backoffMs.length) {
+      break;
+    }
+    await new Promise((r) => setTimeout(r, backoffMs[attempt]));
   }
-  return await res.json();
+
+  throw new Error(`Firefly Boards /compose failed (${lastStatus}): ${lastErrText.slice(0, 240)}`);
 }
 
 /** Compute the exact canvas dimensions `BoardSessionV2` uses for a single placed image (proportional 2048px height cap). */
@@ -217,6 +235,7 @@ export async function exportContactSheetToFireflyBoard({
   config,
   aem,
   bearerToken,
+  shareEmail = null,
   docServiceUrl = DEFAULT_DOC_SERVICE_URL,
   mcpUrl = DEFAULT_FEDERATED_MCP_URL,
   boardsWebUrl = DEFAULT_BOARDS_WEB_URL,
@@ -244,6 +263,39 @@ export async function exportContactSheetToFireflyBoard({
     fetchImpl,
   });
   const { boardId, boardUrl } = created;
+
+  // Enable "Anyone with the link can edit" (`authenticated: editor`) + optional target email invite via CCX Invitations V4 direct_acl
+  // so the user can open and edit the board in Firefly Boards even if signed into a different IMS Org profile.
+  if (fetchImpl === globalThis.fetch && boardId) {
+    try {
+      const recipients = [
+        { recipient: 'all', role: 'viewer', canComment: true },
+        { recipient: 'authenticated', role: 'editor', canComment: true },
+      ];
+      if (shareEmail && String(shareEmail).includes('@')) {
+        recipients.push({
+          recipient: `mailto:${String(shareEmail).trim()}`,
+          role: 'editor',
+          canComment: true,
+          canShare: true,
+        });
+      }
+      await fetchImpl(
+        `https://invitations.adobe.io/api/v4/share/${encodeURIComponent(boardId)}?mode=direct_acl`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${bearerToken}`,
+            'x-api-key': 'aura_webapp',
+          },
+          body: JSON.stringify({ recipients }),
+        }
+      );
+    } catch {
+      // non-fatal if org sharing policy restricts link access
+    }
+  }
 
   // 2. Collect all assets in sorted/grouped order & resolve the HIGHEST resolution image for each asset
   const orderedAssets = [];
@@ -361,23 +413,17 @@ export async function exportContactSheetToFireflyBoard({
   srcParts.push(`${paginated.totalAssets} assets`);
   headerLines.push(srcParts.join('   ·   '));
 
-  // Group operations into self-contained batches of <= 20 operations and <= 2 `addItemsToArtboard` image uploads per batch
+  // Group operations into self-contained batches of <= 20 operations (`$ref` only resolves within the same `/compose` call!)
+  // Packing full 20-op batches minimizes the number of LES coediting sessions opened on the board.
   const batches = [];
   let currentBatch = [];
-  let currentMediaOps = 0;
 
   function pushOpPair(ops) {
-    const mediaInOps = ops.filter((op) => op.type === 'addItemsToArtboard').length;
-    if (
-      currentBatch.length + ops.length > 20 ||
-      (mediaInOps > 0 && currentMediaOps + mediaInOps > 2 && currentBatch.length > 0)
-    ) {
+    if (currentBatch.length + ops.length > 20 && currentBatch.length > 0) {
       batches.push(currentBatch);
       currentBatch = [];
-      currentMediaOps = 0;
     }
     currentBatch.push(...ops);
-    currentMediaOps += mediaInOps;
   }
 
   let cursorY = 0;
@@ -594,6 +640,10 @@ export async function exportContactSheetToFireflyBoard({
   }
 
   for (let bIdx = 0; bIdx < batches.length; bIdx++) {
+    if (bIdx > 0 && fetchImpl === globalThis.fetch) {
+      // Allow LES coediting service to close the previous batch's session before opening the next
+      await new Promise((r) => setTimeout(r, 550));
+    }
     const rawBatchOps = batches[bIdx];
     const createOps = rawBatchOps.filter((op) => op.type !== 'addItemsToArtboard');
     const addMediaOps = rawBatchOps.filter((op) => op.type === 'addItemsToArtboard');

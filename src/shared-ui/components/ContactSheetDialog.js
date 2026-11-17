@@ -529,7 +529,15 @@ export default function ContactSheetDialog({
   const [pickerMode, setPickerMode] = useState(null); // null | 'folder' | 'logo'
   const [pickerPath, setPickerPath] = useState('/content/dam');
   const [pickerListing, setPickerListing] = useState({ folders: [], images: [] });
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState('');
+  const [logoSearchQuery, setLogoSearchQuery] = useState('');
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
+  const [clusterProfiles, setClusterProfiles] = useState([]);
+  const [boardsAccountMode, setBoardsAccountMode] = useState('current'); // 'current' | 'cluster:<userId>' | 'custom'
+  const [customBoardsToken, setCustomBoardsToken] = useState('');
+  const [boardsShareEmail, setBoardsShareEmail] = useState('');
 
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
@@ -854,6 +862,44 @@ export default function ContactSheetDialog({
     };
   }, []);
 
+  // Resolve a live preview URL whenever `config.header.logo` is set (including when restored from saved user prefs)
+  useEffect(() => {
+    const logo = config?.header?.logo;
+    if (!logo?.assetId) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+    if (logo.previewUrl) {
+      setLogoPreviewUrl(logo.previewUrl);
+      return;
+    }
+    if (!authCtx?.accessToken) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const parentPath = logo.path?.includes('/')
+          ? logo.path.slice(0, logo.path.lastIndexOf('/')) || '/content/dam'
+          : '/content/dam';
+        const data = await callAction('browse', {
+          method: 'GET',
+          query: { mode: 'images', path: parentPath },
+        });
+        const match = (data?.images || []).find((img) => img.assetId === logo.assetId);
+        const signed = match?.downloadUrl || match?.thumbnailUrl || null;
+        if (signed && !cancelled) {
+          setLogoPreviewUrl(signed);
+        }
+      } catch {
+        // non-fatal
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.header?.logo, authCtx]);
+
   const paginated = useMemo(() => {
     if (!model) return null;
     return paginate(model, config);
@@ -864,9 +910,10 @@ export default function ContactSheetDialog({
     return renderHtml(paginated, {
       mode: 'preview',
       model,
+      logoUrl: config.header?.logo ? config.header.logo.previewUrl || logoPreviewUrl || null : null,
       imageResolver: (asset) => asset.thumbnailUrl || thumbDataUrls[asset.id] || null,
     });
-  }, [paginated, model, thumbDataUrls]);
+  }, [paginated, model, thumbDataUrls, config.header?.logo, logoPreviewUrl]);
 
   const sortableFields = useMemo(() => {
     if (!model) return [];
@@ -878,6 +925,92 @@ export default function ContactSheetDialog({
     const active = new Set(config.fields.map((f) => f.key));
     return model.fields.filter((f) => !active.has(f.key) && !f.technical);
   }, [model, config.fields]);
+
+  // Discover linked Adobe IMS Orgs / Account Cluster profiles so users whose Creativity & Productivity
+  // (Firefly Boards) entitlement is in a different IMS Org than AEM can target that Org directly.
+  useEffect(() => {
+    if (!authCtx?.accessToken) return;
+    setBoardsShareEmail((prev) => prev || authCtx.email || '');
+    let cancelled = false;
+    (async () => {
+      try {
+        const [orgsRes, clusterRes] = await Promise.all([
+          fetch('https://ims-na1.adobelogin.com/ims/organizations/v6', {
+            headers: { Authorization: `Bearer ${authCtx.accessToken}` },
+          })
+            .then((r) => (r.ok ? r.json() : []))
+            .catch(() => []),
+          fetch('https://ims-na1.adobelogin.com/ims/account_cluster/v2', {
+            headers: { Authorization: `Bearer ${authCtx.accessToken}` },
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
+        ]);
+        if (cancelled) return;
+        const orgNameById = new Map();
+        const orgList = Array.isArray(orgsRes) ? orgsRes : orgsRes?.organizations || [];
+        for (const o of orgList) {
+          const ident = o?.orgRef?.ident ? `${o.orgRef.ident}@${o.orgRef.authSrc || 'AdobeOrg'}` : o?.orgId;
+          if (ident && o?.orgName) orgNameById.set(ident.toLowerCase(), o.orgName);
+        }
+        const accounts = clusterRes?.data || clusterRes?.accounts || [];
+        const mapped = accounts
+          .filter((acc) => acc?.userId && acc.userId !== authCtx.userId)
+          .map((acc) => {
+            const orgId = acc.owningOrgId || '';
+            const orgName =
+              orgNameById.get(orgId.toLowerCase()) ||
+              acc.orgName ||
+              acc.displayName ||
+              orgId ||
+              acc.userId;
+            return {
+              userId: acc.userId,
+              orgId,
+              label: `${orgName}${acc.email ? ` (${acc.email})` : ''}`,
+            };
+          });
+        setClusterProfiles(mapped);
+      } catch {
+        // non-fatal
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authCtx]);
+
+  async function resolveBoardsBearerToken() {
+    if (boardsAccountMode === 'custom' && customBoardsToken.trim()) {
+      return customBoardsToken.trim().replace(/^Bearer\s+/i, '');
+    }
+    if (boardsAccountMode.startsWith('cluster:')) {
+      const targetUserId = boardsAccountMode.slice('cluster:'.length);
+      try {
+        const clientId = authCtx?.apiKey || 'aem-assets-frontend-1';
+        const form = new URLSearchParams({
+          user_id: targetUserId,
+          explicit_profile_switch: 'true',
+        });
+        const res = await fetch(
+          `https://ims-na1.adobelogin.com/ims/check/v6/token?client_id=${encodeURIComponent(clientId)}`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body: form.toString(),
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.access_token) return data.access_token;
+        }
+      } catch {
+        // fall through to current token
+      }
+    }
+    return null;
+  }
 
   async function handleGenerate(outputFormat = 'pdf') {
     try {
@@ -891,6 +1024,8 @@ export default function ContactSheetDialog({
         },
       }).catch(() => {});
 
+      const boardsBearerToken = outputFormat === 'boards' ? await resolveBoardsBearerToken() : null;
+
       const genInit = await callAction('generate', {
         method: 'POST',
         body: {
@@ -898,6 +1033,8 @@ export default function ContactSheetDialog({
           model,
           config,
           outputFormat,
+          boardsBearerToken,
+          boardsShareEmail: outputFormat === 'boards' ? boardsShareEmail.trim() || null : null,
           tier,
           aemHost: authCtx?.aemHost,
         },
@@ -962,14 +1099,55 @@ export default function ContactSheetDialog({
     setSelectedPresetId(res.preset?.id || '');
   }
 
-  async function openBrowser(mode, startPath = '/content/dam') {
+  function getDefaultLogoStartPath() {
+    if (config.header.logo?.path?.includes('/')) {
+      return config.header.logo.path.slice(0, config.header.logo.path.lastIndexOf('/')) || '/content/dam';
+    }
+    const assetFolder = model?.assets?.[0]?.folderPath || source?.path || '';
+    if (assetFolder.startsWith('/content/dam/') && assetFolder.lastIndexOf('/') > '/content/dam'.length) {
+      return assetFolder.slice(0, assetFolder.lastIndexOf('/')) || '/content/dam';
+    }
+    if (assetFolder.startsWith('/content/dam')) {
+      return assetFolder;
+    }
+    return '/content/dam';
+  }
+
+  async function openBrowser(mode, startPath = '/content/dam', searchQ = '') {
     setPickerMode(mode);
     setPickerPath(startPath);
-    const data = await callAction('browse', {
-      method: 'GET',
-      query: { mode: mode === 'logo' ? 'images' : 'folders', path: startPath },
-    });
-    setPickerListing({ folders: data.folders || [], images: data.images || [] });
+    setPickerLoading(true);
+    setPickerError('');
+    try {
+      const data = await callAction('browse', {
+        method: 'GET',
+        query: {
+          mode: mode === 'logo' ? 'images' : 'folders',
+          path: startPath,
+          q: searchQ ? searchQ.trim() : undefined,
+        },
+      });
+      setPickerListing({ folders: data.folders || [], images: data.images || [] });
+    } catch (err) {
+      // If startPath wasn't found, fall back to /content/dam
+      if (startPath !== '/content/dam') {
+        try {
+          setPickerPath('/content/dam');
+          const fallbackData = await callAction('browse', {
+            method: 'GET',
+            query: { mode: mode === 'logo' ? 'images' : 'folders', path: '/content/dam' },
+          });
+          setPickerListing({ folders: fallbackData.folders || [], images: fallbackData.images || [] });
+          setPickerLoading(false);
+          return;
+        } catch {
+          // fall through
+        }
+      }
+      setPickerError(err.message || 'Could not browse folder');
+    } finally {
+      setPickerLoading(false);
+    }
   }
 
   async function handleCreateSubfolder() {
@@ -1235,84 +1413,6 @@ export default function ContactSheetDialog({
             </div>
           )}
 
-          {/* Folder / Logo Picker Drawer */}
-          {pickerMode && (
-            <div className="s2-picker-drawer">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <strong style={{ fontSize: 12.5 }}>
-                  {pickerMode === 'folder' ? 'Select destination folder' : 'Select header logo'}
-                </strong>
-                <button className="s2-btn s2-btn-quiet s2-btn-sm" onClick={() => setPickerMode(null)}>
-                  ✕
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                <span className="s2-asset-selector-path" title={pickerPath}>{pickerPath}</span>
-                {pickerPath !== '/content/dam' && (
-                  <button
-                    className="s2-btn s2-btn-sm"
-                    onClick={() => openBrowser(pickerMode, pickerPath.slice(0, pickerPath.lastIndexOf('/')) || '/content/dam')}
-                  >
-                    ↑ Up
-                  </button>
-                )}
-              </div>
-              <ul className="s2-picker-list">
-                {pickerListing.folders.map((f) => (
-                  <li key={f.path}>
-                    <button className="s2-picker-item" onClick={() => openBrowser(pickerMode, f.path)}>
-                      <span>📁</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</span>
-                    </button>
-                  </li>
-                ))}
-                {pickerMode === 'logo' &&
-                  pickerListing.images.map((img) => (
-                    <li key={img.assetId}>
-                      <button
-                        className="s2-picker-item"
-                        onClick={() => {
-                          setConfig({
-                            ...config,
-                            header: { ...config.header, logo: { assetId: img.assetId, path: img.path, tier } },
-                          });
-                          setPickerMode(null);
-                        }}
-                      >
-                        <span>🖼️</span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.name}</span>
-                      </button>
-                    </li>
-                  ))}
-              </ul>
-              {pickerMode === 'folder' && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  <input
-                    className="s2-input"
-                    style={{ height: 28, fontSize: 12 }}
-                    type="text"
-                    placeholder="New subfolder…"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                  />
-                  <button className="s2-btn s2-btn-sm" onClick={handleCreateSubfolder}>+ New</button>
-                  <button
-                    className="s2-btn s2-btn-accent s2-btn-sm"
-                    onClick={() => {
-                      setConfig({
-                        ...config,
-                        output: { ...config.output, targetFolder: { id: '', path: pickerPath } },
-                      });
-                      setPickerMode(null);
-                    }}
-                  >
-                    Select
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Section 1: Sheet Header */}
           <section className="s2-section">
             <div className="s2-section-header">
@@ -1372,12 +1472,32 @@ export default function ContactSheetDialog({
             <div className="s2-field">
               <label className="s2-label">Brand Logo</label>
               <div className="s2-asset-selector-row">
-                <span className="s2-asset-selector-path">
-                  {config.header.logo?.path?.split('/').pop() || 'No logo selected'}
-                </span>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button type="button" className="s2-btn s2-btn-sm" onClick={() => openBrowser('logo', '/content/dam')}>
-                    Browse
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  {(config.header.logo?.previewUrl || logoPreviewUrl) && (
+                    <img
+                      src={config.header.logo?.previewUrl || logoPreviewUrl}
+                      alt="Logo"
+                      style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 3, background: '#fff', border: '1px solid var(--s2-border-subtle)' }}
+                    />
+                  )}
+                  <span className="s2-asset-selector-path" title={config.header.logo?.path || ''}>
+                    {config.header.logo?.path?.split('/').pop() || 'No logo selected'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    className="s2-btn s2-btn-sm"
+                    onClick={() => {
+                      if (pickerMode === 'logo') {
+                        setPickerMode(null);
+                      } else {
+                        setLogoSearchQuery('');
+                        openBrowser('logo', getDefaultLogoStartPath());
+                      }
+                    }}
+                  >
+                    {pickerMode === 'logo' ? 'Close' : 'Browse'}
                   </button>
                   {config.header.logo && (
                     <button
@@ -1390,6 +1510,125 @@ export default function ContactSheetDialog({
                   )}
                 </div>
               </div>
+
+              {/* Inline Logo Picker Drawer right underneath Brand Logo */}
+              {pickerMode === 'logo' && (
+                <div className="s2-picker-drawer" style={{ margin: '8px 0 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <strong style={{ fontSize: 12 }}>Select header logo from AEM</strong>
+                    <button type="button" className="s2-btn s2-btn-quiet s2-btn-sm" onClick={() => setPickerMode(null)}>
+                      ✕
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                    <input
+                      className="s2-input"
+                      style={{ height: 28, fontSize: 12 }}
+                      type="text"
+                      placeholder="Search logo across DAM (e.g. hertz, logo)…"
+                      value={logoSearchQuery}
+                      onChange={(e) => setLogoSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          openBrowser('logo', pickerPath, logoSearchQuery);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="s2-btn s2-btn-sm"
+                      onClick={() => openBrowser('logo', pickerPath, logoSearchQuery)}
+                    >
+                      Search
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                    <span className="s2-asset-selector-path" title={pickerPath}>{pickerPath}</span>
+                    {pickerPath !== '/content/dam' && (
+                      <button
+                        type="button"
+                        className="s2-btn s2-btn-sm"
+                        onClick={() => {
+                          setLogoSearchQuery('');
+                          openBrowser('logo', pickerPath.slice(0, pickerPath.lastIndexOf('/')) || '/content/dam');
+                        }}
+                      >
+                        ↑ Up
+                      </button>
+                    )}
+                  </div>
+                  {pickerError && (
+                    <div style={{ color: 'var(--s2-danger)', fontSize: 11.5, marginTop: 6 }}>{pickerError}</div>
+                  )}
+                  <ul className="s2-picker-list">
+                    {pickerLoading ? (
+                      <li style={{ padding: '10px 8px', fontSize: 12, color: 'var(--s2-text-muted)' }}>
+                        Loading folder contents…
+                      </li>
+                    ) : (
+                      <>
+                        {pickerListing.folders.map((f) => (
+                          <li key={f.path}>
+                            <button
+                              type="button"
+                              className="s2-picker-item"
+                              onClick={() => openBrowser('logo', f.path)}
+                            >
+                              <span>📁</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {f.title}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                        {pickerListing.images.map((img) => (
+                          <li key={img.assetId}>
+                            <button
+                              type="button"
+                              className="s2-picker-item"
+                              onClick={() => {
+                                const previewUrl = img.downloadUrl || img.thumbnailUrl || null;
+                                if (previewUrl) setLogoPreviewUrl(previewUrl);
+                                setConfig({
+                                  ...config,
+                                  header: {
+                                    ...config.header,
+                                    logo: {
+                                      assetId: img.assetId,
+                                      path: img.path,
+                                      tier,
+                                      previewUrl,
+                                    },
+                                  },
+                                });
+                                setPickerMode(null);
+                              }}
+                            >
+                              {img.thumbnailUrl ? (
+                                <img
+                                  src={img.thumbnailUrl}
+                                  alt=""
+                                  style={{ width: 20, height: 20, objectFit: 'contain', borderRadius: 3, background: '#fff' }}
+                                />
+                              ) : (
+                                <span>🖼️</span>
+                              )}
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                                {img.name}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                        {pickerListing.folders.length === 0 && pickerListing.images.length === 0 && (
+                          <li style={{ padding: '10px 8px', fontSize: 12, color: 'var(--s2-text-muted)' }}>
+                            No image files in this folder. Click a subfolder or search above.
+                          </li>
+                        )}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           </section>
 
@@ -1698,13 +1937,125 @@ export default function ContactSheetDialog({
                   <button
                     type="button"
                     className="s2-btn s2-btn-sm"
-                    onClick={() => openBrowser('folder', config.output.targetFolder?.path || '/content/dam')}
+                    onClick={() => {
+                      if (pickerMode === 'folder') {
+                        setPickerMode(null);
+                      } else {
+                        openBrowser('folder', config.output.targetFolder?.path || '/content/dam');
+                      }
+                    }}
                   >
-                    Browse
+                    {pickerMode === 'folder' ? 'Close' : 'Browse'}
                   </button>
                 </div>
+
+                {/* Inline Folder Picker Drawer */}
+                {pickerMode === 'folder' && (
+                  <div className="s2-picker-drawer" style={{ margin: '8px 0 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <strong style={{ fontSize: 12 }}>Select destination folder</strong>
+                      <button type="button" className="s2-btn s2-btn-quiet s2-btn-sm" onClick={() => setPickerMode(null)}>
+                        ✕
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                      <span className="s2-asset-selector-path" title={pickerPath}>{pickerPath}</span>
+                      {pickerPath !== '/content/dam' && (
+                        <button
+                          type="button"
+                          className="s2-btn s2-btn-sm"
+                          onClick={() => openBrowser('folder', pickerPath.slice(0, pickerPath.lastIndexOf('/')) || '/content/dam')}
+                        >
+                          ↑ Up
+                        </button>
+                      )}
+                    </div>
+                    <ul className="s2-picker-list">
+                      {pickerLoading ? (
+                        <li style={{ padding: '10px 8px', fontSize: 12, color: 'var(--s2-text-muted)' }}>
+                          Loading subfolders…
+                        </li>
+                      ) : (
+                        pickerListing.folders.map((f) => (
+                          <li key={f.path}>
+                            <button type="button" className="s2-picker-item" onClick={() => openBrowser('folder', f.path)}>
+                              <span>📁</span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</span>
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <input
+                        className="s2-input"
+                        style={{ height: 28, fontSize: 12 }}
+                        type="text"
+                        placeholder="New subfolder…"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                      />
+                      <button type="button" className="s2-btn s2-btn-sm" onClick={handleCreateSubfolder}>+ New</button>
+                      <button
+                        type="button"
+                        className="s2-btn s2-btn-accent s2-btn-sm"
+                        onClick={() => {
+                          setConfig({
+                            ...config,
+                            output: { ...config.output, targetFolder: { id: '', path: pickerPath } },
+                          });
+                          setPickerMode(null);
+                        }}
+                      >
+                        Select
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Firefly Boards Target Account / IMS Org (for customers with AEM in Org A and Firefly Boards in Org B) */}
+            <div className="s2-field" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--s2-border-subtle)' }}>
+              <label className="s2-label">Firefly Boards Target IMS Org / Profile</label>
+              <select
+                className="s2-select"
+                value={boardsAccountMode}
+                onChange={(e) => setBoardsAccountMode(e.target.value)}
+              >
+                <option value="current">
+                  Current AEM Org ({authCtx?.imsOrg?.replace('@AdobeOrg', '') || 'Default'}) + Auto-share link
+                </option>
+                {clusterProfiles.map((p) => (
+                  <option key={p.userId} value={`cluster:${p.userId}`}>
+                    Switch to {p.label}
+                  </option>
+                ))}
+                <option value="custom">Other IMS Org / Custom Firefly Token…</option>
+              </select>
+              {boardsAccountMode === 'custom' && (
+                <div style={{ marginTop: 8 }}>
+                  <label className="s2-label">Target Org Firefly Boards Bearer Token (optional)</label>
+                  <input
+                    className="s2-input"
+                    type="password"
+                    placeholder="Paste Bearer token from target Firefly Boards org…"
+                    value={customBoardsToken}
+                    onChange={(e) => setCustomBoardsToken(e.target.value)}
+                  />
+                </div>
+              )}
+              <div style={{ marginTop: 8 }}>
+                <label className="s2-label">Auto-grant Editor access to email / profile</label>
+                <input
+                  className="s2-input"
+                  type="email"
+                  placeholder="e.g. user@company.com (can open in any IMS Org)"
+                  value={boardsShareEmail}
+                  onChange={(e) => setBoardsShareEmail(e.target.value)}
+                />
+              </div>
+            </div>
           </section>
         </aside>
 

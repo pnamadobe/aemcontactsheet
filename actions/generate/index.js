@@ -46,6 +46,8 @@ export async function main(params = {}) {
       inlineModel: model || null,
       config,
       outputFormat: params.outputFormat || config?.output?.format || 'pdf', // 'pdf' | 'boards'
+      boardsBearerToken: params.boardsBearerToken || null,
+      boardsShareEmail: params.boardsShareEmail || null,
       tier,
       aemHost,
       deliveryHost,
