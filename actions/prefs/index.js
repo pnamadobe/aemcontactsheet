@@ -5,6 +5,8 @@ import { readFileObject, writeFileObject } from '../lib/store.js';
 const DEFAULT_PREFS = {
   lastOutputFolder: { id: '', path: '/content/dam/contact-sheets' },
   lastLogo: null,
+  savedBoardsProfiles: [],
+  defaultBoardsProfileId: null,
 };
 
 export async function main(params = {}) {
@@ -28,6 +30,8 @@ export async function main(params = {}) {
         ...current,
         ...(params.lastOutputFolder !== undefined ? { lastOutputFolder: params.lastOutputFolder } : {}),
         ...(params.lastLogo !== undefined ? { lastLogo: params.lastLogo } : {}),
+        ...(params.savedBoardsProfiles !== undefined ? { savedBoardsProfiles: params.savedBoardsProfiles } : {}),
+        ...(params.defaultBoardsProfileId !== undefined ? { defaultBoardsProfileId: params.defaultBoardsProfileId } : {}),
         updatedAt: new Date().toISOString(),
       };
       await writeFileObject(fileKey, JSON.stringify(updated, null, 2));

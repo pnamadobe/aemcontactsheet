@@ -539,8 +539,18 @@ export default function ContactSheetDialog({
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [clusterProfiles, setClusterProfiles] = useState([]);
-  const [boardsAccountMode, setBoardsAccountMode] = useState('current'); // 'current' | 'cluster:<userId>' | 'custom'
+  const [savedBoardsProfiles, setSavedBoardsProfiles] = useState(() => {
+    try {
+      const raw = window.localStorage?.getItem('cs_saved_boards_profiles');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [boardsAccountMode, setBoardsAccountMode] = useState('current'); // 'current' | 'saved:<id>' | 'cluster:<userId>' | 'custom'
   const [customBoardsToken, setCustomBoardsToken] = useState('');
+  const [customBoardsOrgName, setCustomBoardsOrgName] = useState('');
+  const [detectingBoardsOrg, setDetectingBoardsOrg] = useState(false);
   const [boardsShareEmail, setBoardsShareEmail] = useState('');
 
   const [config, setConfig] = useState(() => createDefaultConfig());
@@ -922,6 +932,18 @@ export default function ContactSheetDialog({
         setPresets(loadedPresets);
         setWatermarkPresets(presetsRes?.watermarkPresets || []);
         setDamFonts(fontsRes?.fonts || []);
+        if (Array.isArray(prefsRes?.savedBoardsProfiles) && prefsRes.savedBoardsProfiles.length > 0) {
+          setSavedBoardsProfiles(prefsRes.savedBoardsProfiles);
+          try {
+            window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(prefsRes.savedBoardsProfiles));
+          } catch {
+            // ignore
+          }
+          const defId = prefsRes.defaultBoardsProfileId || prefsRes.savedBoardsProfiles[0]?.id;
+          if (defId && prefsRes.savedBoardsProfiles.some((p) => p.id === defId)) {
+            setBoardsAccountMode(`saved:${defId}`);
+          }
+        }
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
         setConfig((prev) => {
@@ -1140,9 +1162,146 @@ export default function ContactSheetDialog({
     };
   }, [authCtx]);
 
+  function decodeTokenClaims(rawToken) {
+    try {
+      const clean = String(rawToken || '').trim().replace(/^Bearer\s+/i, '');
+      const parts = clean.split('.');
+      if (parts.length < 2) return {};
+      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(b64));
+    } catch {
+      return {};
+    }
+  }
+
+  async function handleCustomBoardsTokenChange(val) {
+    setCustomBoardsToken(val);
+    const clean = String(val || '').trim().replace(/^Bearer\s+/i, '');
+    if (clean.split('.').length < 2) return;
+
+    const claims = decodeTokenClaims(clean);
+    const fallbackName = claims.org
+      ? `${claims.org.replace('@AdobeOrg', '')}${claims.email ? ` (${claims.email})` : ''}`
+      : claims.email || claims.name || 'Firefly Boards Org';
+    if (!customBoardsOrgName) {
+      setCustomBoardsOrgName(fallbackName);
+    }
+
+    setDetectingBoardsOrg(true);
+    try {
+      const [orgsRes, profRes] = await Promise.all([
+        fetch('https://ims-na1.adobelogin.com/ims/organizations/v6', {
+          headers: { Authorization: `Bearer ${clean}` },
+        })
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
+        fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
+          headers: { Authorization: `Bearer ${clean}` },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
+      ]);
+      const orgList = Array.isArray(orgsRes) ? orgsRes : orgsRes?.organizations || [];
+      const targetOrgId = String(claims.org || '').toLowerCase();
+      let resolvedOrgName = '';
+      for (const o of orgList) {
+        const ident = o?.orgRef?.ident ? `${o.orgRef.ident}@${o.orgRef.authSrc || 'AdobeOrg'}` : o?.orgId || '';
+        if (targetOrgId && ident.toLowerCase() === targetOrgId && o?.orgName) {
+          resolvedOrgName = o.orgName;
+          break;
+        }
+      }
+      if (!resolvedOrgName && orgList.length === 1 && orgList[0]?.orgName) {
+        resolvedOrgName = orgList[0].orgName;
+      }
+      const emailStr = profRes?.email || claims.email || '';
+      if (resolvedOrgName) {
+        setCustomBoardsOrgName(`${resolvedOrgName}${emailStr ? ` (${emailStr})` : ''}`);
+      } else if (profRes?.displayName && !claims.org) {
+        setCustomBoardsOrgName(`${profRes.displayName} (Personal)`);
+      }
+    } catch {
+      // keep fallbackName
+    } finally {
+      setDetectingBoardsOrg(false);
+    }
+  }
+
+  async function handleSaveBoardsProfile() {
+    const cleanToken = customBoardsToken.trim().replace(/^Bearer\s+/i, '');
+    if (!cleanToken) return null;
+    const claims = decodeTokenClaims(cleanToken);
+    const name =
+      customBoardsOrgName.trim() ||
+      (claims.org ? claims.org.replace('@AdobeOrg', '') : '') ||
+      claims.email ||
+      'Firefly Boards Org';
+    const id = `bprof_${(claims.org || name).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32)}`;
+    const entry = {
+      id,
+      name,
+      orgId: claims.org || '',
+      email: claims.email || '',
+      token: cleanToken,
+      updatedAt: new Date().toISOString(),
+    };
+    const nextList = [...savedBoardsProfiles.filter((p) => p.id !== id && p.name !== name), entry];
+    setSavedBoardsProfiles(nextList);
+    setBoardsAccountMode(`saved:${id}`);
+    setCustomBoardsToken('');
+    setCustomBoardsOrgName('');
+    try {
+      window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(nextList));
+    } catch {
+      // ignore
+    }
+    callAction('prefs', {
+      method: 'PUT',
+      body: {
+        savedBoardsProfiles: nextList,
+        defaultBoardsProfileId: id,
+      },
+    }).catch(() => {});
+    guestConnection?.host?.toast?.display?.({
+      variant: 'positive',
+      message: `Saved Firefly Boards org "${name}".`,
+    });
+    return entry;
+  }
+
+  async function handleRemoveSavedBoardsProfile(id) {
+    const nextList = savedBoardsProfiles.filter((p) => p.id !== id);
+    setSavedBoardsProfiles(nextList);
+    setBoardsAccountMode(nextList[0] ? `saved:${nextList[0].id}` : 'current');
+    try {
+      window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(nextList));
+    } catch {
+      // ignore
+    }
+    callAction('prefs', {
+      method: 'PUT',
+      body: {
+        savedBoardsProfiles: nextList,
+        defaultBoardsProfileId: nextList[0]?.id || null,
+      },
+    }).catch(() => {});
+  }
+
   async function resolveBoardsBearerToken() {
+    if (boardsAccountMode.startsWith('saved:')) {
+      const id = boardsAccountMode.slice('saved:'.length);
+      const saved = savedBoardsProfiles.find((p) => p.id === id);
+      if (saved?.token) {
+        callAction('prefs', {
+          method: 'PUT',
+          body: { defaultBoardsProfileId: id },
+        }).catch(() => {});
+        return saved.token;
+      }
+    }
     if (boardsAccountMode === 'custom' && customBoardsToken.trim()) {
-      return customBoardsToken.trim().replace(/^Bearer\s+/i, '');
+      const savedEntry = await handleSaveBoardsProfile();
+      return savedEntry?.token || customBoardsToken.trim().replace(/^Bearer\s+/i, '');
     }
     if (boardsAccountMode.startsWith('cluster:')) {
       const targetUserId = boardsAccountMode.slice('cluster:'.length);
@@ -2533,33 +2692,89 @@ export default function ContactSheetDialog({
             {/* Firefly Boards Target Account / IMS Org (for customers with AEM in Org A and Firefly Boards in Org B) */}
             <div className="s2-field" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--s2-border-subtle)' }}>
               <label className="s2-label">Firefly Boards Target IMS Org / Profile</label>
-              <select
-                className="s2-select"
-                value={boardsAccountMode}
-                onChange={(e) => setBoardsAccountMode(e.target.value)}
-              >
-                <option value="current">
-                  Current AEM Org ({authCtx?.imsOrg?.replace('@AdobeOrg', '') || 'Default'}) + Auto-share link
-                </option>
-                {clusterProfiles.map((p) => (
-                  <option key={p.userId} value={`cluster:${p.userId}`}>
-                    Switch to {p.label}
+              <div style={{ display: 'flex', gap: 6 }}>
+                <select
+                  className="s2-select"
+                  value={boardsAccountMode}
+                  onChange={(e) => setBoardsAccountMode(e.target.value)}
+                >
+                  <option value="current">
+                    Current AEM Org ({authCtx?.imsOrg?.replace('@AdobeOrg', '') || 'Default'}) + Auto-share link
                   </option>
-                ))}
-                <option value="custom">Other IMS Org / Custom Firefly Token…</option>
-              </select>
+                  {savedBoardsProfiles.length > 0 && (
+                    <optgroup label="Saved Firefly Boards Orgs">
+                      {savedBoardsProfiles.map((p) => (
+                        <option key={p.id} value={`saved:${p.id}`}>
+                          ★ {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {clusterProfiles.length > 0 && (
+                    <optgroup label="Account Cluster Profiles">
+                      {clusterProfiles.map((p) => (
+                        <option key={p.userId} value={`cluster:${p.userId}`}>
+                          Switch to {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="custom">+ Add / Save Another IMS Org Token…</option>
+                </select>
+                {boardsAccountMode.startsWith('saved:') && (
+                  <button
+                    type="button"
+                    className="s2-btn s2-btn-sm"
+                    style={{ height: 32 }}
+                    title="Remove saved org token"
+                    onClick={() => handleRemoveSavedBoardsProfile(boardsAccountMode.slice('saved:'.length))}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
               {boardsAccountMode === 'custom' && (
-                <div style={{ marginTop: 8 }}>
-                  <label className="s2-label">Target Org Firefly Boards Bearer Token (optional)</label>
+                <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'var(--s2-bg-base)', border: '1px solid var(--s2-border-subtle)' }}>
+                  <label className="s2-label">1. Paste Bearer Token from Target Firefly Boards Org</label>
                   <input
                     className="s2-input"
                     type="password"
-                    placeholder="Paste Bearer token from target Firefly Boards org…"
+                    placeholder="Paste Bearer token (auto-detects IMS Org name)…"
                     value={customBoardsToken}
-                    onChange={(e) => setCustomBoardsToken(e.target.value)}
+                    onChange={(e) => handleCustomBoardsTokenChange(e.target.value)}
                   />
+                  <div style={{ fontSize: 11, color: 'var(--s2-text-muted)', marginTop: 4 }}>
+                    Tip: In your Firefly Boards tab DevTools console, run{' '}
+                    <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 3 }}>
+                      copy(window.adobeIMS.getAccessToken().token)
+                    </code>
+                  </div>
+
+                  <label className="s2-label" style={{ marginTop: 8 }}>
+                    2. Org / Profile Name {detectingBoardsOrg ? '(Detecting org name…)' : '(Auto-detected or custom)'}
+                  </label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      className="s2-input"
+                      type="text"
+                      placeholder="e.g. Adobe Corp / Creative Studio Org"
+                      value={customBoardsOrgName}
+                      onChange={(e) => setCustomBoardsOrgName(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="s2-btn s2-btn-accent s2-btn-sm"
+                      style={{ height: 32 }}
+                      disabled={!customBoardsToken.trim()}
+                      onClick={handleSaveBoardsProfile}
+                    >
+                      Save Org
+                    </button>
+                  </div>
                 </div>
               )}
+
               <div style={{ marginTop: 8 }}>
                 <label className="s2-label">Auto-grant Editor access to email / profile</label>
                 <input
