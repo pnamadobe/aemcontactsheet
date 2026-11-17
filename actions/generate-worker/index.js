@@ -262,8 +262,11 @@ export async function main(params = {}) {
 
     try {
       if (tier === 'delivery') {
-        // Content Hub: user gets download, and we save an archival copy to AEM Author using the technical account
-        const techToken = params.AEM_TECH_CLIENT_ID && params.AEM_TECH_CLIENT_SECRET
+        // Content Hub: user gets download, and we save an archival copy to AEM Author using the technical account (or user token with Author API key)
+        const hasTechCreds =
+          Boolean(params.AEM_TECH_CLIENT_ID && params.AEM_TECH_CLIENT_SECRET) &&
+          !String(params.AEM_TECH_CLIENT_ID).startsWith('$');
+        const techToken = hasTechCreds
           ? await getServerToServerToken({
               clientId: params.AEM_TECH_CLIENT_ID,
               clientSecret: params.AEM_TECH_CLIENT_SECRET,
@@ -277,7 +280,7 @@ export async function main(params = {}) {
           deliveryHost: deliveryHost || model.deliveryHost,
           bearerToken: techToken,
           imsOrg: auth.imsOrg,
-          apiKey: params.AEM_TECH_CLIENT_ID || auth.apiKey,
+          apiKey: hasTechCreds ? params.AEM_TECH_CLIENT_ID : 'aem-assets-frontend-1',
           fetchImpl,
         });
 

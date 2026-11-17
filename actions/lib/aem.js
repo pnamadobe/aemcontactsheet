@@ -535,11 +535,13 @@ export function createAemClient({
       // Metadata patch is best-effort; verification below is authoritative
     }
 
-    // 6. Verify asset exists and fetch a signed AEM download URL immediately
-    // First try `/adobe/assets/{assetId}/original/as/{fileName}` with `redirect: 'manual'` — this returns
-    // the 302 Location pre-signed blob URL immediately after `completeUpload` without waiting ~60s for
-    // AEM's Smart Tagging / Asset Microservices (`aem:assetState === 'processed'`) and search indexing!
-    const verified = await requestJson(normAuthor, `/adobe/assets/${encodeURIComponent(assetId)}/metadata`);
+    // 6. Verify asset exists (best-effort) and fetch a signed AEM download URL if available
+    let verified = null;
+    try {
+      verified = await requestJson(normAuthor, `/adobe/assets/${encodeURIComponent(assetId)}/metadata`);
+    } catch {
+      // completeUpload already succeeded above; do not fail the upload if /metadata returns 403/404 during indexing
+    }
     let aemDownloadUrl = null;
     try {
       const origRes = await fetchImpl(

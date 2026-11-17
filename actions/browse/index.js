@@ -46,13 +46,21 @@ export async function main(params = {}) {
       return jsonResponse(200, { path: newPath, created: true });
     }
 
-    async function fetchSmallThumbDataUrl(assetId) {
-      for (const rName of [
-        { name: 'cq5dam.thumbnail.319.319.png', mime: 'image/png' },
-        { name: 'cq5dam.thumbnail.140.100.png', mime: 'image/png' },
-        { name: 'cq5dam.fpo.jpeg', mime: 'image/jpeg' },
-        { name: 'cq5dam.thumbnail.48.48.png', mime: 'image/png' },
-      ]) {
+    async function fetchSmallThumbDataUrl(assetId, { preferCompact = false } = {}) {
+      const candidates = preferCompact
+        ? [
+            { name: 'cq5dam.thumbnail.140.100.png', mime: 'image/png', maxBytes: 90_000 },
+            { name: 'cq5dam.fpo.jpeg', mime: 'image/jpeg', maxBytes: 90_000 },
+            { name: 'cq5dam.thumbnail.319.319.png', mime: 'image/png', maxBytes: 65_000 },
+            { name: 'cq5dam.thumbnail.48.48.png', mime: 'image/png', maxBytes: 90_000 },
+          ]
+        : [
+            { name: 'cq5dam.thumbnail.319.319.png', mime: 'image/png', maxBytes: 180_000 },
+            { name: 'cq5dam.thumbnail.140.100.png', mime: 'image/png', maxBytes: 120_000 },
+            { name: 'cq5dam.fpo.jpeg', mime: 'image/jpeg', maxBytes: 120_000 },
+            { name: 'cq5dam.thumbnail.48.48.png', mime: 'image/png', maxBytes: 120_000 },
+          ];
+      for (const rName of candidates) {
         try {
           const rRes = await fetch(
             `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/renditions/${rName.name}/as/thumb`,
@@ -67,7 +75,7 @@ export async function main(params = {}) {
           if (rRes.ok) {
             const ab = await rRes.arrayBuffer();
             const buf = Buffer.from(ab);
-            if (buf.byteLength > 64) {
+            if (buf.byteLength > 64 && buf.byteLength <= rName.maxBytes) {
               return `data:${rName.mime};base64,${buf.toString('base64')}`;
             }
           }
@@ -84,11 +92,11 @@ export async function main(params = {}) {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
-        .slice(0, 15);
+        .slice(0, 10);
       const thumbnails = {};
       await Promise.all(
         ids.map(async (id) => {
-          const dataUrl = await fetchSmallThumbDataUrl(id);
+          const dataUrl = await fetchSmallThumbDataUrl(id, { preferCompact: true });
           if (dataUrl) thumbnails[id] = dataUrl;
         })
       );

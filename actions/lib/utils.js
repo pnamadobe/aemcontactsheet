@@ -35,7 +35,11 @@ export function extractAuth(params = {}) {
   const bearerToken = rawAuth.replace(/^Bearer\s+/i, '').trim();
   const claims = decodeJwtPayload(bearerToken) || {};
   const imsOrg = headers['x-gw-ims-org-id'] || params.imsOrg || claims.org || '4A603BC061E191130A495FEF@AdobeOrg';
-  const apiKey = headers['x-api-key'] || params.apiKey || claims.client_id || 'aem-assets-frontend-1';
+  const rawApiKey = headers['x-api-key'] || params.apiKey || '';
+  const apiKey =
+    !rawApiKey || rawApiKey === 'exc_app' || rawApiKey === 'UnifiedShell'
+      ? 'aem-assets-frontend-1'
+      : rawApiKey;
   const userId = claims.user_id || claims.sub || params.userId || headers['x-ims-user-id'] || 'anonymous';
   const userEmail = params.userEmail || claims.email || userId;
   return {

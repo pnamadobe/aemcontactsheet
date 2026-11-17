@@ -602,9 +602,10 @@ export default function ContactSheetDialog({
       }
       await Promise.all(Array.from({ length: Math.min(6, batch.length) }, () => worker()));
 
-      // Fetch Author static rendition thumbnails in batches of 8 for any unapproved/rejected assets
-      for (let i = 0; i < needAuthorFallback.length && !cancelled; i += 8) {
-        const chunkIds = needAuthorFallback.slice(i, i + 8);
+      // Fetch Author static rendition thumbnails in compact batches of 5 (using `cq5dam.thumbnail.140.100.png` ~25 KB each)
+      // so every batch response stays well under OpenWhisk's 1 MB payload limit!
+      for (let i = 0; i < needAuthorFallback.length && !cancelled; i += 5) {
+        const chunkIds = needAuthorFallback.slice(i, i + 5);
         try {
           const data = await callAction('browse', {
             method: 'GET',
@@ -870,7 +871,7 @@ export default function ContactSheetDialog({
         const ctx = {
           accessToken: ims?.accessToken,
           imsOrg: ims?.imsOrg || claims.org || '4A603BC061E191130A495FEF@AdobeOrg',
-          apiKey: apiKey || claims.client_id || 'aem-assets-frontend-1',
+          apiKey: apiKey || 'aem-assets-frontend-1',
           userId: profile?.userId || claims.user_id || claims.sub || profile?.email || 'user',
           email: profile?.email || claims.email || profile?.name || '',
           name: profile?.name || claims.name || profile?.email || '',
