@@ -156,7 +156,7 @@ export async function main(params = {}) {
             ? 'Your saved token for the target IMS Org has expired — please paste a fresh token in Target IMS Org / Profile.'
             : expressErr.code === 'UserNotEntitled'
             ? 'The selected IMS Org is not entitled to Adobe Express — select your Express-entitled Target IMS Org token.'
-            : expressErr.code || 'direct cloud creation requires an Express/Firefly token in Target IMS Org';
+            : expressErr.message || expressErr.code || 'direct cloud creation requires an Express/Firefly token in Target IMS Org';
         warnings.push(
           `Prepared editable multi-page PDF for Adobe Express import (${reason})`
         );

@@ -947,6 +947,23 @@ export default function ContactSheetDialog({
           if (defId && prefsRes.savedBoardsProfiles.some((p) => p.id === defId)) {
             setBoardsAccountMode(`saved:${defId}`);
           }
+        } else if (savedBoardsProfiles.length > 0) {
+          // Sync existing localStorage profiles up to server prefs and auto-select the default saved org
+          const defId = prefsRes?.defaultBoardsProfileId || savedBoardsProfiles[0]?.id;
+          if (defId && savedBoardsProfiles.some((p) => p.id === defId)) {
+            setBoardsAccountMode(`saved:${defId}`);
+          }
+          callAction(
+            'prefs',
+            {
+              method: 'PUT',
+              body: {
+                savedBoardsProfiles,
+                defaultBoardsProfileId: defId,
+              },
+            },
+            ctx
+          ).catch(() => {});
         }
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
