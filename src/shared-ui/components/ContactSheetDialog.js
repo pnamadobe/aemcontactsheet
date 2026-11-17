@@ -1195,7 +1195,39 @@ export default function ContactSheetDialog({
     }
   }
 
-  function isTokenExpired(rawToken) {
+  const [invalidatedProfileIds, setInvalidatedProfileIds] = useState({});
+
+  useEffect(() => {
+    if (!Array.isArray(savedBoardsProfiles) || savedBoardsProfiles.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const nextInvalid = {};
+      await Promise.all(
+        savedBoardsProfiles.map(async (p) => {
+          if (!p?.token) return;
+          try {
+            const r = await fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
+              headers: { Authorization: `Bearer ${p.token}` },
+            });
+            if (r.status === 401 || r.status === 403) {
+              nextInvalid[p.id] = true;
+            }
+          } catch {
+            // network ignore
+          }
+        })
+      );
+      if (!cancelled) {
+        setInvalidatedProfileIds(nextInvalid);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [savedBoardsProfiles]);
+
+  function isTokenExpired(rawToken, profileId = null) {
+    if (profileId && invalidatedProfileIds[profileId]) return true;
     const claims = decodeTokenClaims(rawToken);
     const created = Number(claims.created_at);
     const expiresIn = Number(claims.expires_in);
@@ -1330,9 +1362,9 @@ export default function ContactSheetDialog({
         if (refreshed?.token) return refreshed.token;
       }
       if (saved?.token) {
-        if (isTokenExpired(saved.token)) {
+        if (isTokenExpired(saved.token, saved.id)) {
           throw new Error(
-            `Your saved token for "${saved.name}" has expired — please paste a fresh token from Firefly Boards or Adobe Express in the Target IMS Org section.`
+            `Your saved token for "${saved.name}" has expired or was logged out — please paste a fresh token from Firefly Boards or Adobe Express in the Target IMS Org section.`
           );
         }
         callAction('prefs', {
@@ -1755,10 +1787,21 @@ export default function ContactSheetDialog({
                   </a>
                   <a
                     className="s2-btn s2-btn-boards"
-                    href={readyDownloadUrl}
-                    download={r.fileName || 'contact-sheet.pdf'}
+                    href={r.expressUrl || 'https://new.express.adobe.com/'}
+                    target="_blank"
+                    rel="noreferrer"
                     onClick={() => {
-                      window.open(r.expressUrl || 'https://new.express.adobe.com/', '_blank', 'noopener,noreferrer');
+                      try {
+                        const dl = document.createElement('a');
+                        dl.href = readyDownloadUrl;
+                        dl.download = r.fileName || 'contact-sheet.pdf';
+                        dl.style.display = 'none';
+                        document.body.appendChild(dl);
+                        dl.click();
+                        setTimeout(() => dl.remove(), 500);
+                      } catch {
+                        // ignore
+                      }
                     }}
                   >
                     Download &amp; Open Adobe Express ↗
@@ -2775,7 +2818,7 @@ export default function ContactSheetDialog({
                     setBoardsAccountMode(nextVal);
                     if (nextVal.startsWith('saved:')) {
                       const sel = savedBoardsProfiles.find((p) => p.id === nextVal.slice('saved:'.length));
-                      if (sel && isTokenExpired(sel.token)) {
+                      if (sel && isTokenExpired(sel.token, sel.id)) {
                         setCustomBoardsOrgName(sel.name);
                       }
                     }
@@ -2787,7 +2830,7 @@ export default function ContactSheetDialog({
                   {savedBoardsProfiles.length > 0 && (
                     <optgroup label="Saved Target Orgs (Firefly Boards & Express)">
                       {savedBoardsProfiles.map((p) => {
-                        const expired = isTokenExpired(p.token);
+                        const expired = isTokenExpired(p.token, p.id);
                         return (
                           <option key={p.id} value={`saved:${p.id}`}>
                             ★ {p.name}{expired ? ' (Token expired — refresh below)' : ''}
@@ -2815,7 +2858,7 @@ export default function ContactSheetDialog({
                 const selectedSaved = boardsAccountMode.startsWith('saved:')
                   ? savedBoardsProfiles.find((p) => p.id === boardsAccountMode.slice('saved:'.length))
                   : null;
-                const selectedExpired = Boolean(selectedSaved && isTokenExpired(selectedSaved.token));
+                const selectedExpired = Boolean(selectedSaved && isTokenExpired(selectedSaved.token, selectedSaved.id));
                 if (boardsAccountMode !== 'custom' && !selectedExpired) return null;
                 return (
                   <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'var(--s2-bg-base)', border: '1px solid var(--s2-border-subtle)' }}>
