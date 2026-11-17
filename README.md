@@ -2,6 +2,12 @@
 
 An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1`)** and **AEM Content Hub (`aem/assets/contenthub/1`)** that generates customizable, print-ready **PDF Contact Sheets** (saved back to AEM Assets and immediately downloadable) and exports high-resolution contact-sheet grids directly to **Adobe Firefly Boards** (infinite canvas).
 
+## Demo Video & Overview
+
+- **Watch the Demo on YouTube:** [https://youtu.be/wgfEXvkFBYM](https://youtu.be/wgfEXvkFBYM)
+
+[![AEM Assets Contact Sheet & Firefly Boards Exporter Demo](docs/images/contact-sheet-modal.png)](https://youtu.be/wgfEXvkFBYM)
+
 ---
 
 ## Features & Capabilities
