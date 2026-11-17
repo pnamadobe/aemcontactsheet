@@ -3,7 +3,7 @@
 // with automatic link/collaborator sharing via `invitations.adobe.io`.
 import { COMMON_FIELDS, formatFieldValue } from '../../packages/core/fields.js';
 import { THEME_PALETTES, computeWatermarkMetrics } from '../../packages/core/layout.js';
-import { writeFileObject, getPresignedDownloadUrl } from './store.js';
+import { mapWithConcurrency } from './utils.js';
 
 async function shareExpressDocument(
   documentId,
@@ -77,6 +77,7 @@ const EXPRESS_BASE_URL =
   process.env.EXPRESS_WEB_BASE_URL || 'https://new.express.adobe.com';
 const EXPRESS_API_KEY = process.env.EXPRESS_API_KEY || 'aura_webapp';
 const PX_PER_IN = 96;
+const EXPRESS_TEXT_SCALE = 96 / 72; // 1.333333 — Express scales HzJSON text bounds & fontSize by 96/72 on import
 
 function hexToArgb(hex, alpha = 255) {
   const clean = String(hex || '#ffffff').replace('#', '').trim();
@@ -112,6 +113,11 @@ function buildTextNode({
 }) {
   const safeText = String(text || '').trim() || ' ';
   const len = safeText.length;
+  // Divide width, height, and fontSize by EXPRESS_TEXT_SCALE (96/72) so Express's 1.333x text transform
+  // produces exact pixel bounds matching the artboard coordinate space (preventing right-edge cutoff and overflow).
+  const unscaledW = Math.max(18, Math.round(width / EXPRESS_TEXT_SCALE));
+  const unscaledH = Math.max(10, Math.round(height / EXPRESS_TEXT_SCALE));
+  const unscaledFontSize = Math.max(5.5, Math.round((fontSize / EXPRESS_TEXT_SCALE) * 10) / 10);
   return {
     sceneNodeType: 'text',
     sceneNodeOpacity: opacity,
@@ -122,8 +128,8 @@ function buildTextNode({
     },
     textGeometry: {
       type: 'autoHeight',
-      width: Math.max(24, Math.round(width)),
-      height: Math.max(12, Math.round(height)),
+      width: unscaledW,
+      height: unscaledH,
       baselineOffset: 0,
     },
     alignment,
@@ -138,7 +144,7 @@ function buildTextNode({
                 style: bold ? 'Bold' : 'Regular',
                 postscriptName: bold ? 'SourceSansPro-Bold' : 'SourceSansPro-Regular',
               },
-              fontSize: Math.max(6, Math.round(fontSize * 10) / 10),
+              fontSize: unscaledFontSize,
               tracking: 0,
               color,
               underline: false,
@@ -660,6 +666,7 @@ export function buildContactSheetHzJson({
           textY += 12;
         }
 
+        const maxCharsPerLine = Math.max(18, Math.floor(cellW / 5.6));
         fields.forEach((f, fIdx) => {
           const fieldKey = f.key || f.id;
           const def = fieldDefs.get(fieldKey) || { key: fieldKey, label: f.label || fieldKey, type: 'text' };
@@ -667,21 +674,28 @@ export function buildContactSheetHzJson({
           const val = formatFieldValue(rawVal, def);
           if (!val) return;
           const labelPrefix = f.showLabel ? `${f.label || def.label}: ` : '';
-          const lineText = `${labelPrefix}${val}`.slice(0, 95);
+          const fullText = `${labelPrefix}${val}`;
+          const maxLines = Math.min(3, Math.max(1, Number(f.maxLines) || 1));
+          const maxTotalChars = maxCharsPerLine * maxLines;
+          const lineText =
+            fullText.length > maxTotalChars
+              ? `${fullText.slice(0, Math.max(10, maxTotalChars - 1)).trimEnd()}…`
+              : fullText;
+          const estimatedLines = Math.min(maxLines, Math.max(1, Math.ceil(lineText.length / maxCharsPerLine)));
           children.push(
             buildTextNode({
               text: lineText,
               tx: cellX,
               ty: textY,
               width: cellW,
-              height: 14,
+              height: 14 * estimatedLines,
               fontSize: fIdx === 0 ? 9.5 : 8.5,
               bold: fIdx === 0,
               color: fIdx === 0 ? textPrimaryColor : textSecondaryColor,
               alignment: 'left',
             })
           );
-          textY += 13;
+          textY += 13 * estimatedLines;
         });
       }
 
@@ -833,60 +847,60 @@ export async function exportContactSheetToAdobeExpress({
   }
 
   const assetUrlMap = new Map();
-  let resolvedCount = 0;
 
-  for (const asset of allAssets) {
-    const assetMime = String(asset.format || asset.mimeType || asset.values?.['dc:format'] || '').toLowerCase();
-    const webOriginal = /^(image\/jpeg|image\/jpg|image\/png|image\/webp)$/i.test(assetMime);
-    const useDownloadUrl =
-      webOriginal && asset.downloadUrl && /^https:\/\//i.test(asset.downloadUrl);
-    const candidateUrl = useDownloadUrl
-      ? asset.downloadUrl
-      : asset.thumbnailUrl && /^https:\/\//i.test(asset.thumbnailUrl)
-      ? asset.thumbnailUrl
-      : null;
-
-    const hasSignature =
-      candidateUrl && (/[?&](sig|se|sv|token|signature)=/i.test(candidateUrl) || /aem-blob-/i.test(candidateUrl));
-
-    if (candidateUrl && hasSignature) {
-      const inferredMime = useDownloadUrl
-        ? assetMime === 'image/jpg'
-          ? 'image/jpeg'
-          : assetMime
-        : /\.png(\?|$)/i.test(candidateUrl)
-        ? 'image/png'
-        : 'image/jpeg';
-      assetUrlMap.set(asset.id, {
-        url: candidateUrl,
-        mimeType: inferredMime || 'image/jpeg',
-      });
-    } else if (aem && typeof aem.fetchAssetThumbnailBuffer === 'function') {
-      try {
-        const rend = await aem.fetchAssetThumbnailBuffer(asset, { targetPx: 1200, quality: 'screen' });
-        if (rend?.buffer?.byteLength > 0) {
-          const ext = rend.ext === 'png' ? 'png' : 'jpg';
-          const fileKey = `express-tmp/${jobId}/${String(asset.id).replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
-          await writeFileObject(fileKey, rend.buffer);
-          const presigned = await getPresignedDownloadUrl(fileKey, 3600);
-          if (presigned && /^https:\/\//i.test(presigned)) {
+  // Embed asset images as `data:` URIs in HzJSON `resources` so the Sensei Headless HzJSON Importer
+  // decodes and uploads them directly into ACP document storage (`rel: "resource"`) with zero external URL/CORS failures.
+  await mapWithConcurrency(
+    allAssets,
+    8,
+    async (asset) => {
+      if (aem && typeof aem.fetchAssetThumbnailBuffer === 'function') {
+        try {
+          const rend = await aem.fetchAssetThumbnailBuffer(asset, { targetPx: 900, quality: 'screen' });
+          if (rend?.buffer?.byteLength > 0) {
+            const isPng = rend.ext === 'png' || (rend.buffer[0] === 0x89 && rend.buffer[1] === 0x50);
+            const mimeType = isPng ? 'image/png' : 'image/jpeg';
             assetUrlMap.set(asset.id, {
-              url: presigned,
-              mimeType: ext === 'png' ? 'image/png' : 'image/jpeg',
+              url: `data:${mimeType};base64,${rend.buffer.toString('base64')}`,
+              mimeType,
             });
+            return;
           }
+        } catch {
+          // fall through to signed URL fallback
         }
-      } catch {
-        // skip image if rendition cannot be staged
+      }
+      const assetMime = String(asset.format || asset.mimeType || asset.values?.['dc:format'] || '').toLowerCase();
+      const webOriginal = /^(image\/jpeg|image\/jpg|image\/png|image\/webp)$/i.test(assetMime);
+      const useDownloadUrl =
+        webOriginal && asset.downloadUrl && /^https:\/\//i.test(asset.downloadUrl);
+      const candidateUrl = useDownloadUrl
+        ? asset.downloadUrl
+        : asset.thumbnailUrl && /^https:\/\//i.test(asset.thumbnailUrl)
+        ? asset.thumbnailUrl
+        : null;
+      if (candidateUrl) {
+        const inferredMime = useDownloadUrl
+          ? assetMime === 'image/jpg'
+            ? 'image/jpeg'
+            : assetMime
+          : /\.png(\?|$)/i.test(candidateUrl)
+          ? 'image/png'
+          : 'image/jpeg';
+        assetUrlMap.set(asset.id, {
+          url: candidateUrl,
+          mimeType: inferredMime || 'image/jpeg',
+        });
+      }
+    },
+    async (done, total) => {
+      if (typeof onProgress === 'function') {
+        await onProgress(done, total);
       }
     }
-    resolvedCount += 1;
-    if (typeof onProgress === 'function') {
-      await onProgress(Math.round((resolvedCount / Math.max(1, allAssets.length)) * 50), allAssets.length);
-    }
-  }
+  );
 
-  // Optional Brand Logo pre-signed URL
+  // Optional Brand Logo `data:` URI
   let logoResource = null;
   const logoCfg = paginated?.config?.header?.logo;
   if (logoCfg?.assetId && aem && typeof aem.fetchAssetThumbnailBuffer === 'function') {
@@ -896,16 +910,12 @@ export async function exportContactSheetToAdobeExpress({
         { targetPx: 400, quality: 'print' }
       );
       if (logoRend?.buffer?.byteLength > 0) {
-        const ext = logoRend.ext === 'png' ? 'png' : 'jpg';
-        const fileKey = `express-tmp/${jobId}/brand-logo.${ext}`;
-        await writeFileObject(fileKey, logoRend.buffer);
-        const presigned = await getPresignedDownloadUrl(fileKey, 3600);
-        if (presigned && /^https:\/\//i.test(presigned)) {
-          logoResource = {
-            url: presigned,
-            mimeType: ext === 'png' ? 'image/png' : 'image/jpeg',
-          };
-        }
+        const isPng = logoRend.ext === 'png' || (logoRend.buffer[0] === 0x89 && logoRend.buffer[1] === 0x50);
+        const mimeType = isPng ? 'image/png' : 'image/jpeg';
+        logoResource = {
+          url: `data:${mimeType};base64,${logoRend.buffer.toString('base64')}`,
+          mimeType,
+        };
       }
     } catch {
       // ignore logo failure
