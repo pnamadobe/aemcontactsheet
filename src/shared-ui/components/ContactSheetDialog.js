@@ -1093,11 +1093,26 @@ export default function ContactSheetDialog({
     try {
       setActiveOutputFormat(outputFormat);
       setPhase('generating');
+      const slimLogo = config.header.logo
+        ? {
+            assetId: config.header.logo.assetId,
+            path: config.header.logo.path,
+            tier: config.header.logo.tier,
+          }
+        : null;
+      const slimConfig = {
+        ...config,
+        header: {
+          ...config.header,
+          logo: slimLogo,
+        },
+      };
+
       callAction('prefs', {
         method: 'PUT',
         body: {
           lastOutputFolder: config.output.targetFolder,
-          lastLogo: config.header.logo,
+          lastLogo: slimLogo,
         },
       }).catch(() => {});
 
@@ -1108,7 +1123,7 @@ export default function ContactSheetDialog({
         body: {
           modelFileKey,
           model,
-          config,
+          config: slimConfig,
           outputFormat,
           boardsBearerToken,
           boardsShareEmail: outputFormat === 'boards' ? boardsShareEmail.trim() || null : null,

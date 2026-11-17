@@ -128,7 +128,7 @@ export async function getPresignedDownloadUrl(fileKey, expirySeconds = 86400) {
   return `file://${path.join(LOCAL_ROOT, 'files', fileKey)}`;
 }
 
-const PDF_CHUNK_BYTES = 600_000; // ~800 KB base64 per State key (well under State's 1 MB per-key limit)
+const PDF_CHUNK_BYTES = 520_000; // ~693 KB base64 per State key & HTTP response (safely under OpenWhisk's 1 MB limit)
 
 export async function savePdfChunks(jobId, pdfBuffer) {
   if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.byteLength === 0) return 0;

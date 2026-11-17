@@ -300,7 +300,7 @@ export async function main(params = {}) {
 
     let pdfChunkCount = 0;
     const finalDownloadUrl = uploaded?.downloadUrl || downloadUrl || null;
-    if (!finalDownloadUrl || !finalDownloadUrl.startsWith('https://')) {
+    if (pdfBuffer.byteLength > 520_000) {
       try {
         pdfChunkCount = await savePdfChunks(jobId, pdfBuffer);
       } catch {
@@ -324,9 +324,9 @@ export async function main(params = {}) {
       aemPath: uploaded?.path || null,
     };
     await saveJob(job);
-    // If PDF is <= 3.2 MB, also attach inlinePdfBase64 on the returned object (not persisted in State)
-    // so synchronous `/generate` callers get a 0.0-second instant Blob download URL!
-    if (pdfBuffer.byteLength <= 3_200_000) {
+    // OpenWhisk max HTTP response payload is 1 MB (1,048,576 bytes).
+    // Only attach inlinePdfBase64 when pdfBuffer <= 520 KB (~693 KB base64); larger PDFs use parallel `pdfChunkCount` fetches!
+    if (pdfBuffer.byteLength <= 520_000) {
       return { ...job, inlinePdfBase64: pdfBuffer.toString('base64') };
     }
     return job;
