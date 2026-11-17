@@ -149,12 +149,12 @@ export async function getPresignedDownloadUrl(fileKey, expirySeconds = 86400) {
   return `file://${path.join(LOCAL_ROOT, 'files', fileKey)}`;
 }
 
-const PDF_CHUNK_BYTES = 520_000; // ~693 KB base64 per State key & HTTP response (safely under OpenWhisk's 1 MB limit)
+const PDF_CHUNK_BYTES = 42_000; // ~56 KB base64 per State key (safely under @adobe/aio-lib-state's 64 KB per-key limit!)
 
 export async function savePdfChunks(jobId, pdfBuffer) {
   if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.byteLength === 0) return 0;
   const totalChunks = Math.ceil(pdfBuffer.byteLength / PDF_CHUNK_BYTES);
-  if (totalChunks > 24) return 0; // cap at ~14.4 MB in State
+  if (totalChunks > 120) return 0; // cap at ~5 MB in State
 
   const state = await getStateClient();
   await Promise.all(

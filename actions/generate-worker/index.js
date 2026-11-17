@@ -307,21 +307,54 @@ export async function main(params = {}) {
         }
         job.phase = 'verify';
         await saveJob(job);
-        uploaded = await aem.uploadPdfAndVerify({
-          folderPath: targetFolder,
-          fileName,
-          pdfBuffer,
-          title: paginated.config.header?.title,
-          sourceLabel: model.sourceLabel,
-          assetCount: paginated.totalAssets,
-          createdBy: auth.userEmail || auth.userId,
-        });
+        const fallbackSharedFolder = `/content/dam/contact-sheets/${yyyy}/${mm}`;
+        try {
+          uploaded = await aem.uploadPdfAndVerify({
+            folderPath: targetFolder,
+            fileName,
+            pdfBuffer,
+            title: paginated.config.header?.title,
+            sourceLabel: model.sourceLabel,
+            assetCount: paginated.totalAssets,
+            createdBy: auth.userEmail || auth.userId,
+          });
+        } catch (primaryErr) {
+          // If the user lacks write permission to the source/chosen folder, try the shared `/content/dam/contact-sheets/yyyy/mm` folder
+          if (targetFolder !== fallbackSharedFolder) {
+            uploaded = await aem.uploadPdfAndVerify({
+              folderPath: fallbackSharedFolder,
+              fileName,
+              pdfBuffer,
+              title: paginated.config.header?.title,
+              sourceLabel: model.sourceLabel,
+              assetCount: paginated.totalAssets,
+              createdBy: auth.userEmail || auth.userId,
+            });
+            warnings.push(
+              `No write access to ${targetFolder}; saved contact sheet to ${fallbackSharedFolder} instead.`
+            );
+          } else {
+            throw primaryErr;
+          }
+        }
       }
-    } catch (uploadErr) {
-      warnings.push(`Saved PDF for download, but could not upload to AEM (${uploadErr.message}).`);
+    } catch {
+      warnings.push(
+        'Your account does not have write permission to save files into AEM Assets; your contact sheet PDF is ready for direct download below.'
+      );
     }
 
     const finalDownloadUrl = uploaded?.downloadUrl || downloadUrl || null;
+    // If AEM upload was skipped due to read-only permissions (`!uploaded?.assetId`) and PDF > 520 KB,
+    // persist 42 KB State chunks so the read-only user can still download the full PDF immediately!
+    let pdfChunkCount = 0;
+    if (!uploaded?.assetId && pdfBuffer.byteLength > 520_000) {
+      try {
+        pdfChunkCount = await savePdfChunks(jobId, pdfBuffer);
+      } catch {
+        pdfChunkCount = 0;
+      }
+    }
 
     job.status = warnings.length ? 'succeeded_with_warnings' : 'succeeded';
     job.phase = 'done';
@@ -330,6 +363,7 @@ export async function main(params = {}) {
       jobId,
       pdfFileKey,
       downloadUrl: finalDownloadUrl,
+      pdfChunkCount,
       fileName: uploaded?.fileName || fileName,
       pages: paginated.totalPages,
       assets: paginated.totalAssets,

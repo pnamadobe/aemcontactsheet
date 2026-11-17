@@ -690,6 +690,37 @@ export default function ContactSheetDialog({
 
     setCheckingDownload(true);
     (async () => {
+      // If AEM upload was skipped (read-only user with `!r.aemAssetId`) and 42 KB State chunks exist, reassemble them in batches of 8
+      const pdfJobId = r.jobId || generateJob?.jobId || generateJob?.id;
+      if (!r.aemAssetId && r.pdfChunkCount > 0 && pdfJobId) {
+        try {
+          const allParts = [];
+          for (let cStart = 0; cStart < r.pdfChunkCount && !cancelled; cStart += 8) {
+            const batchLen = Math.min(8, r.pdfChunkCount - cStart);
+            const batchRes = await Promise.all(
+              Array.from({ length: batchLen }, (_, offset) =>
+                callAction('status', {
+                  method: 'GET',
+                  query: { pdfJobId, chunk: cStart + offset },
+                })
+              )
+            );
+            for (const item of batchRes) {
+              if (item?.chunkBase64) allParts.push(b64ToUint8Array(item.chunkBase64));
+            }
+          }
+          if (!cancelled && allParts.length === r.pdfChunkCount) {
+            const blob = new Blob(allParts, { type: 'application/pdf' });
+            createdBlobUrl = URL.createObjectURL(blob);
+            setReadyDownloadUrl(createdBlobUrl);
+            setCheckingDownload(false);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+
       const aemBase = (authCtx?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = r.fileName || 'contact-sheet.pdf';
 
@@ -1452,7 +1483,7 @@ export default function ContactSheetDialog({
         <div className="s2-state-screen">
           <div className="s2-state-card">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 999, background: 'var(--s2-positive-subtle)', color: 'var(--s2-positive)', fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
-              ✓ {isBoards ? 'Firefly Board Created' : 'Saved to AEM Assets'}
+              ✓ {isBoards ? 'Firefly Board Created' : r.aemPath ? 'Saved to AEM Assets' : 'Contact Sheet Ready for Download'}
             </div>
             <h3 style={{ margin: '0 0 6px', fontSize: 19 }}>
               {config.header.title || r.fileName}
