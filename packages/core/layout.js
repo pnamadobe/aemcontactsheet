@@ -92,13 +92,21 @@ export function computePageGeometry(config) {
   const rowGutter = 0.14;
   const cellW = Number(((contentW - (cols - 1) * colGutter) / cols).toFixed(4));
   const aspect = ASPECT_RATIOS[layout.imageAspect] || ASPECT_RATIOS['4:3'];
-  const imageH = Number((cellW / aspect).toFixed(4));
+  let imageH = Number((cellW / aspect).toFixed(4));
 
-  const lineH = 0.155; // ~11.2 pt line box
+  let lineH = 0.155; // ~11.2 pt line box
   const seqLineH = layout.sequenceNumbers !== false ? 0.15 : 0;
   const totalFieldLines = fields.reduce((sum, f) => sum + Math.min(3, Math.max(1, Number(f.maxLines) || 1)), 0);
   const captionPad = 0.1;
-  const captionH = Number((seqLineH + totalFieldLines * lineH + captionPad).toFixed(4));
+  let captionH = Number((seqLineH + totalFieldLines * lineH + captionPad).toFixed(4));
+  if (imageH + captionH > contentH) {
+    imageH = Number(Math.max(0.9, contentH - captionH).toFixed(4));
+    if (imageH + captionH > contentH && totalFieldLines > 0) {
+      const availForLines = Math.max(0.4, contentH - imageH - seqLineH - captionPad);
+      lineH = Number(Math.max(0.1, availForLines / totalFieldLines).toFixed(4));
+      captionH = Number((seqLineH + totalFieldLines * lineH + captionPad).toFixed(4));
+    }
+  }
   const cellH = Number((imageH + captionH).toFixed(4));
 
   const groupBandH = 0.32;

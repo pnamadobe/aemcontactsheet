@@ -77,6 +77,7 @@ export function normalizeAsset(raw, index = 0) {
     published,
     approved,
     thumbnailUrl: raw.thumbnailUrl || undefined,
+    downloadUrl: raw.downloadUrl || undefined,
     values,
   };
 }

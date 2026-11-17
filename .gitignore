@@ -6,4 +6,5 @@ dist/
 *.local.json
 .aws.tmp.creds.json
 547DimSquid-*.json
+session-*.md
 .DS_Store

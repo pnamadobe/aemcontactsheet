@@ -184,12 +184,33 @@ export async function composeFireflyBoard({
   return await res.json();
 }
 
+/** Compute the exact canvas dimensions `BoardSessionV2` uses for a single placed image (proportional 2048px height cap). */
+export function computePlacedImageDimensions(rawW, rawH) {
+  const w = Math.max(200, Number(rawW) || 1200);
+  const h = Math.max(200, Number(rawH) || 900);
+  if (h > 2048) {
+    const scale = 2048 / h;
+    return { width: Math.round(w * scale), height: 2048 };
+  }
+  return { width: Math.round(w), height: Math.round(h) };
+}
+
+/** Check if an asset's original binary format is directly supported by `aura-doc-service` (`image/jpeg`, `image/png`, `image/webp`). */
+export function isDirectBoardsImageFormat(asset) {
+  const fmt = String(asset?.format || asset?.values?.['dc:format'] || '').toLowerCase();
+  if (fmt === 'image/jpeg' || fmt === 'image/jpg' || fmt === 'image/png' || fmt === 'image/webp') {
+    return true;
+  }
+  const name = String(asset?.name || '').toLowerCase();
+  return /\.(jpe?g|png|webp)$/.test(name);
+}
+
 /**
  * Build and populate a complete Firefly Board from a resolved `SheetModel` and `ContactSheetConfig`.
  * Places:
- *   - A top header banner artboard with Title, Date, Department, Prepared by, Source, and Asset count
- *   - Optional group section banner artboards when grouping is active
- *   - One titled artboard card per asset in an N-column grid with its image inside
+ *   - Top header text lines (Title, Date, Department, Prepared by, Source, and Asset count)
+ *   - Optional group section banners when grouping is active
+ *   - One high-resolution artboard card per asset in an N-column grid with separate stacked metadata lines below each card
  */
 export async function exportContactSheetToFireflyBoard({
   model,
@@ -210,11 +231,6 @@ export async function exportContactSheetToFireflyBoard({
   }
 
   const cols = Math.min(8, Math.max(1, Number(layout.columns) || 4));
-  const cardW = 420;
-  const cardH = 340;
-  const colGap = 56;
-  const rowGap = 72;
-  const totalGridW = cols * cardW + (cols - 1) * colGap;
   const padDigits = Math.max(3, String(paginated.totalAssets || 1).length);
 
   // 1. Create the board
@@ -229,7 +245,108 @@ export async function exportContactSheetToFireflyBoard({
   });
   const { boardId, boardUrl } = created;
 
-  // 2. Build separate header text lines at the top of the board
+  // 2. Collect all assets in sorted/grouped order & resolve the HIGHEST resolution image for each asset
+  const orderedAssets = [];
+  for (const group of paginated.sorted.groups) {
+    for (const asset of group.assets) {
+      orderedAssets.push(asset);
+    }
+  }
+
+  const resolvedMediaByAssetId = new Map();
+  const placedDimsByAssetId = new Map();
+  const needHighResFetch = [];
+
+  for (const asset of orderedAssets) {
+    if (
+      asset.downloadUrl?.startsWith('https://') &&
+      isDirectBoardsImageFormat(asset) &&
+      (!asset.size || asset.size <= 35 * 1024 * 1024)
+    ) {
+      // Full-resolution original asset via pre-signed AEM downloadUrl!
+      resolvedMediaByAssetId.set(asset.id, {
+        type: 'presignedUrl',
+        urls: [asset.downloadUrl],
+      });
+      placedDimsByAssetId.set(
+        asset.id,
+        computePlacedImageDimensions(asset.width || 1280, asset.height || 960)
+      );
+    } else if (aem) {
+      needHighResFetch.push(asset);
+    } else if (asset.thumbnailUrl?.startsWith('https://')) {
+      resolvedMediaByAssetId.set(asset.id, {
+        type: 'presignedUrl',
+        urls: [asset.thumbnailUrl],
+      });
+      placedDimsByAssetId.set(
+        asset.id,
+        computePlacedImageDimensions(asset.width || 380, asset.height || 300)
+      );
+    }
+  }
+
+  if (needHighResFetch.length > 0 && aem) {
+    await mapWithConcurrency(needHighResFetch, 8, async (asset) => {
+      try {
+        // Request highest resolution rendition (up to 2048px Dynamic Media JPEG or 1280px Author web JPEG)
+        const { buffer } = await aem.fetchAssetThumbnailBuffer(asset, {
+          targetPx: 2048,
+          quality: 'print',
+        });
+        const dims = readImageDimensions(buffer);
+        if (dims) {
+          resolvedMediaByAssetId.set(asset.id, {
+            type: 'rawBlob',
+            bytesBase64: buffer.toString('base64'),
+            mimeType: dims.mimeType,
+            width: dims.width,
+            height: dims.height,
+          });
+          placedDimsByAssetId.set(
+            asset.id,
+            computePlacedImageDimensions(dims.width, dims.height)
+          );
+          return;
+        }
+      } catch {
+        // fall through to thumbnailUrl if available
+      }
+      if (asset.thumbnailUrl?.startsWith('https://')) {
+        resolvedMediaByAssetId.set(asset.id, {
+          type: 'presignedUrl',
+          urls: [asset.thumbnailUrl],
+        });
+        placedDimsByAssetId.set(
+          asset.id,
+          computePlacedImageDimensions(asset.width || 380, asset.height || 300)
+        );
+      }
+    });
+  }
+
+  // 3. Compute grid geometry and screen-adaptive vertical spacing (`u` = 1 screen px at full-grid fit zoom)
+  // In Firefly Boards (`DecorationEngine.ts:770`), artboard name labels are a fixed 20 screen px tall (14px font)
+  // regardless of zoom. Scaling vertical spacing by `u = totalGridW / 1350` guarantees clean, breathable spacing
+  // both at bird's-eye view and when zoomed in close.
+  const maxCardW = Math.max(
+    420,
+    ...orderedAssets.map((a) => (placedDimsByAssetId.get(a.id)?.width || 380) + 40)
+  );
+  const colGap = Math.max(64, Math.round(maxCardW * 0.12));
+  const totalGridW = cols * maxCardW + (cols - 1) * colGap;
+  const u = Math.max(1.6, totalGridW / 1350);
+
+  const headerLineStep = Math.round(34 * u);
+  const headerBottomGap = Math.round(60 * u);
+  const groupPreGap = Math.round(44 * u);
+  const groupPostGap = Math.round(64 * u);
+  const firstLineOffset = Math.round(38 * u);
+  const fieldLineStep = Math.round(30 * u);
+  const rowGap = Math.round(72 * u);
+  const textArtboardH = 0.01; // Fractional height accepted by ComposeV2RequestHandler so no white bar renders under text
+
+  // 4. Build separate header text lines at the top of the board
   const headerLines = [];
   headerLines.push(header.title || 'Contact Sheet');
   const subParts = [];
@@ -244,98 +361,6 @@ export async function exportContactSheetToFireflyBoard({
   srcParts.push(`${paginated.totalAssets} assets`);
   headerLines.push(srcParts.join('   ·   '));
 
-  const allOperations = [];
-  let cursorY = 0;
-  const headerLineStep = 28;
-
-  headerLines.forEach((lineText, idx) => {
-    allOperations.push({
-      type: 'createArtboard',
-      ref: idx === 0 ? 'sheet_header' : `sheet_header_${idx}`,
-      name: lineText.slice(0, 180),
-      width: totalGridW,
-      height: 1,
-      placement: {
-        kind: 'rect',
-        rect: { x: 0, y: cursorY, width: totalGridW, height: 1 },
-      },
-    });
-    cursorY += headerLineStep;
-  });
-  cursorY += 48;
-
-  // Optional header logo inside the header banner artboard
-  if (header.logo?.assetId && aem) {
-    try {
-      const { buffer } = await aem.fetchAssetThumbnailBuffer(
-        { id: header.logo.assetId, name: 'logo.png', approved: header.logo.tier === 'delivery' },
-        { targetPx: 320, quality: 'screen' }
-      );
-      const dims = readImageDimensions(buffer);
-      if (dims) {
-        allOperations.push({
-          type: 'addItemsToArtboard',
-          artboardId: '$sheet_header',
-          items: [
-            {
-              type: 'rawBlob',
-              bytesBase64: buffer.toString('base64'),
-              mimeType: dims.mimeType,
-              width: dims.width,
-              height: dims.height,
-            },
-          ],
-        });
-      }
-    } catch {
-      // non-fatal
-    }
-  }
-
-  // 3. Collect all assets in sorted/grouped order & resolve any images that don't have a pre-signed URL
-  const orderedAssets = [];
-  for (const group of paginated.sorted.groups) {
-    for (const asset of group.assets) {
-      orderedAssets.push(asset);
-    }
-  }
-
-  // For Author assets, `asset.thumbnailUrl` is ALREADY a pre-signed blob URL (`https://author-.../aem-blob-...?sig=...`)
-  // that `aura-doc-service` can fetch directly via `presignedUrl` with zero base64 overhead!
-  // For assets without `thumbnailUrl` (e.g. Delivery tier), fetch the 350px thumbnail buffer and pass `rawBlob`.
-  const resolvedMediaByAssetId = new Map();
-  const needDownload = orderedAssets.filter((a) => !a.thumbnailUrl || !a.thumbnailUrl.startsWith('https://'));
-
-  if (needDownload.length > 0 && aem) {
-    await mapWithConcurrency(needDownload, 8, async (asset) => {
-      try {
-        const { buffer } = await aem.fetchAssetThumbnailBuffer(asset, { targetPx: 350, quality: 'screen' });
-        const dims = readImageDimensions(buffer);
-        if (dims) {
-          resolvedMediaByAssetId.set(asset.id, {
-            type: 'rawBlob',
-            bytesBase64: buffer.toString('base64'),
-            mimeType: dims.mimeType,
-            width: dims.width,
-            height: dims.height,
-          });
-        }
-      } catch {
-        // skip image if unavailable
-      }
-    });
-  }
-
-  for (const asset of orderedAssets) {
-    if (!resolvedMediaByAssetId.has(asset.id) && asset.thumbnailUrl?.startsWith('https://')) {
-      resolvedMediaByAssetId.set(asset.id, {
-        type: 'presignedUrl',
-        urls: [asset.thumbnailUrl],
-      });
-    }
-  }
-
-  // 4. Lay out groups and asset cards in a clean grid
   // Group operations into self-contained batches of <= 20 operations (`$ref` only resolves within the same `/compose` call!)
   const batches = [];
   let currentBatch = [];
@@ -348,21 +373,78 @@ export async function exportContactSheetToFireflyBoard({
     currentBatch.push(...ops);
   }
 
-  // Flush initial header ops into first batch
-  pushOpPair(allOperations);
+  let cursorY = 0;
+  headerLines.forEach((lineText, idx) => {
+    pushOpPair([
+      {
+        type: 'createArtboard',
+        ref: idx === 0 ? 'sheet_header' : `sheet_header_${idx}`,
+        name: lineText.slice(0, 180),
+        width: totalGridW,
+        height: textArtboardH,
+        placement: {
+          kind: 'rect',
+          rect: { x: 0, y: cursorY, width: totalGridW, height: textArtboardH },
+        },
+      },
+    ]);
+    cursorY += headerLineStep;
+  });
 
+  // Optional header logo placed in its own artboard below/beside the header lines
+  if (header.logo?.assetId && aem) {
+    try {
+      const { buffer } = await aem.fetchAssetThumbnailBuffer(
+        { id: header.logo.assetId, name: 'logo.png', approved: header.logo.tier === 'delivery' },
+        { targetPx: 600, quality: 'print' }
+      );
+      const dims = readImageDimensions(buffer);
+      if (dims) {
+        const logoCardW = dims.width + 40;
+        const logoCardH = dims.height + 40;
+        pushOpPair([
+          {
+            type: 'createArtboard',
+            ref: 'sheet_header_logo',
+            name: 'Brand Logo',
+            width: logoCardW,
+            height: logoCardH,
+            placement: {
+              kind: 'rect',
+              rect: { x: 0, y: cursorY, width: logoCardW, height: logoCardH },
+            },
+          },
+          {
+            type: 'addItemsToArtboard',
+            artboardId: '$sheet_header_logo',
+            items: [
+              {
+                type: 'rawBlob',
+                bytesBase64: buffer.toString('base64'),
+                mimeType: dims.mimeType,
+                width: dims.width,
+                height: dims.height,
+              },
+            ],
+          },
+        ]);
+        cursorY += logoCardH + headerLineStep;
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+  cursorY += headerBottomGap;
+
+  // 5. Lay out groups and asset cards row-by-row, dynamically expanding row height to fit all printed metadata fields
   let cardCounter = 0;
-  const fieldLineStep = 26;
-  const maxFieldsPerCard = Math.max(1, fields.length);
-  const metadataBlockH = Math.max(0, (maxFieldsPerCard - 1) * fieldLineStep + 28);
-  const effectiveRowStride = cardH + metadataBlockH + rowGap;
 
   for (let gIdx = 0; gIdx < paginated.sorted.groups.length; gIdx++) {
     const group = paginated.sorted.groups[gIdx];
     if (group.assets.length === 0) continue;
 
     if (paginated.sorted.grouped && group.title) {
-      if (gIdx > 0) cursorY += 36;
+      if (gIdx > 0) cursorY += groupPreGap;
       const gRef = `grp_${gIdx}`;
       pushOpPair([
         {
@@ -370,72 +452,94 @@ export async function exportContactSheetToFireflyBoard({
           ref: gRef,
           name: `${group.title} (${group.count} asset${group.count === 1 ? '' : 's'})`.slice(0, 180),
           width: totalGridW,
-          height: 1,
+          height: textArtboardH,
           placement: {
             kind: 'rect',
-            rect: { x: 0, y: cursorY, width: totalGridW, height: 1 },
+            rect: { x: 0, y: cursorY, width: totalGridW, height: textArtboardH },
           },
         },
       ]);
-      cursorY += 54;
+      cursorY += groupPostGap;
     }
 
-    for (let i = 0; i < group.assets.length; i++) {
-      const asset = group.assets[i];
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = col * (cardW + colGap);
-      const y = cursorY + row * effectiveRowStride;
+    for (let rowStart = 0; rowStart < group.assets.length; rowStart += cols) {
+      const rowAssets = group.assets.slice(rowStart, rowStart + cols);
+      let rowMaxCellH = 0;
 
-      cardCounter++;
-      const ref = `card_${cardCounter}`;
-      const lines = buildAssetMetadataLines(asset, fields, fieldDefs, padDigits, layout.sequenceNumbers !== false);
-      const primaryTitle = lines[0];
-      const extraLines = lines.slice(1);
-      const mediaItem = resolvedMediaByAssetId.get(asset.id);
+      for (let col = 0; col < rowAssets.length; col++) {
+        const asset = rowAssets[col];
+        const placed = placedDimsByAssetId.get(asset.id) || { width: 380, height: 300 };
+        const cardW = placed.width + 40;
+        const cardH = placed.height + 40;
+        const x = col * (maxCardW + colGap);
+        const y = cursorY;
 
-      const cellOps = [
-        {
-          type: 'createArtboard',
-          ref,
-          name: primaryTitle,
-          width: cardW,
-          height: cardH,
-          placement: {
-            kind: 'rect',
-            rect: { x, y, width: cardW, height: cardH },
+        cardCounter++;
+        const ref = `card_${cardCounter}`;
+        const lines = buildAssetMetadataLines(
+          asset,
+          fields,
+          fieldDefs,
+          padDigits,
+          layout.sequenceNumbers !== false
+        );
+        const primaryTitle = lines[0];
+        const extraLines = lines.slice(1);
+        const mediaItem = resolvedMediaByAssetId.get(asset.id);
+
+        const cardOps = [
+          {
+            type: 'createArtboard',
+            ref,
+            name: primaryTitle,
+            width: cardW,
+            height: cardH,
+            placement: {
+              kind: 'rect',
+              rect: { x, y, width: cardW, height: cardH },
+            },
           },
-        },
-      ];
-      if (mediaItem) {
-        cellOps.push({
-          type: 'addItemsToArtboard',
-          artboardId: `$${ref}`,
-          items: [mediaItem],
+        ];
+        if (mediaItem) {
+          cardOps.push({
+            type: 'addItemsToArtboard',
+            artboardId: `$${ref}`,
+            items: [mediaItem],
+          });
+        }
+        // Push the 2-op card+image pair together so `$ref` resolves in the same `/compose` batch
+        pushOpPair(cardOps);
+
+        // Push each additional metadata line individually so even 10–30 metadata fields never exceed 20 ops/batch
+        extraLines.forEach((lineStr, lIdx) => {
+          const lineY = y + cardH + firstLineOffset + lIdx * fieldLineStep;
+          pushOpPair([
+            {
+              type: 'createArtboard',
+              ref: `meta_${cardCounter}_${lIdx + 1}`,
+              name: lineStr,
+              width: maxCardW,
+              height: textArtboardH,
+              placement: {
+                kind: 'rect',
+                rect: { x, y: lineY, width: maxCardW, height: textArtboardH },
+              },
+            },
+          ]);
         });
+
+        const metaBlockH =
+          extraLines.length > 0
+            ? firstLineOffset + (extraLines.length - 1) * fieldLineStep
+            : 0;
+        const totalCellH = cardH + metaBlockH;
+        if (totalCellH > rowMaxCellH) {
+          rowMaxCellH = totalCellH;
+        }
       }
 
-      // Create a separate, individually editable text line below the image for each additional metadata field!
-      extraLines.forEach((lineStr, lIdx) => {
-        const lineY = y + cardH + 28 + lIdx * fieldLineStep;
-        cellOps.push({
-          type: 'createArtboard',
-          ref: `meta_${cardCounter}_${lIdx + 1}`,
-          name: lineStr,
-          width: cardW,
-          height: 1,
-          placement: {
-            kind: 'rect',
-            rect: { x, y: lineY, width: cardW, height: 1 },
-          },
-        });
-      });
-
-      pushOpPair(cellOps);
+      cursorY += rowMaxCellH + rowGap;
     }
-
-    const totalRowsInGroup = Math.ceil(group.assets.length / cols);
-    cursorY += totalRowsInGroup * effectiveRowStride;
   }
 
   if (currentBatch.length > 0) {

@@ -82,6 +82,71 @@ export function createAemClient({
   }
 
   /**
+   * Enrich Author asset hits with pre-signed `thumbnailUrl` (319px) and `downloadUrl` (full-resolution original)
+   * from `/adobe/experimental/aemmcpserver-expires-20991231/search-assets` so Live Preview and Firefly Boards
+   * have immediate access to both lightweight thumbnails and full-resolution originals.
+   */
+  async function enrichAuthorSignedUrls(rawAssets, folderPathHint = null) {
+    if (!Array.isArray(rawAssets) || rawAssets.length === 0) return rawAssets;
+    const needEnrich = rawAssets.filter((a) => !a.thumbnailUrl || !a.downloadUrl);
+    if (needEnrich.length === 0) return rawAssets;
+
+    const folderPaths = new Set();
+    if (folderPathHint) folderPaths.add(folderPathHint);
+    for (const a of needEnrich) {
+      const p = a?.repositoryMetadata?.['repo:path'] || a?.path || '';
+      const slash = p.lastIndexOf('/');
+      if (slash > 0) folderPaths.add(p.slice(0, slash));
+    }
+
+    const urlMap = new Map();
+    for (const fp of [...folderPaths].slice(0, 6)) {
+      try {
+        let cursor = null;
+        let fetched = 0;
+        do {
+          const body = {
+            termFilters: [{ key: 'repositoryMetadata.repo:ancestors', value: fp }],
+            limit: 50,
+          };
+          if (cursor) body.cursor = cursor;
+          const sRes = await requestJson(
+            normAuthor,
+            '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
+            { method: 'POST', body }
+          );
+          const results = sRes?.results || [];
+          for (const item of results) {
+            const id = item?.assetId || item?.id;
+            if (id && (item.thumbnailUrl || item.downloadUrl)) {
+              urlMap.set(id, {
+                thumbnailUrl: item.thumbnailUrl,
+                downloadUrl: item.downloadUrl,
+              });
+            }
+          }
+          fetched += results.length;
+          cursor = sRes?.cursor || null;
+        } while (cursor && fetched < Math.max(100, rawAssets.length + 25));
+      } catch {
+        // Non-fatal if search-assets endpoint is unavailable in test mocks
+      }
+    }
+
+    if (urlMap.size > 0) {
+      for (const a of rawAssets) {
+        const id = a?.assetId || a?.id || a?.repositoryMetadata?.['repo:id'];
+        const found = id ? urlMap.get(id) : null;
+        if (found) {
+          if (!a.thumbnailUrl && found.thumbnailUrl) a.thumbnailUrl = found.thumbnailUrl;
+          if (!a.downloadUrl && found.downloadUrl) a.downloadUrl = found.downloadUrl;
+        }
+      }
+    }
+    return rawAssets;
+  }
+
+  /**
    * Bulk-resolve all assets under a folder using the verified S4 search endpoint (`repo:ancestors`).
    * Collects up to `maxScan` assets in pages of 100.
    */
@@ -117,6 +182,8 @@ export function createAemClient({
       }
       cursor = res?.cursor || null;
     } while (cursor && allHits.length < maxScan);
+
+    await enrichAuthorSignedUrls(allHits, resolvedPath);
 
     return {
       folderId: resolvedFolderId,
@@ -205,7 +272,11 @@ export function createAemClient({
       onProgress
     );
 
-    return [...preloadedAssets, ...hydrated.filter(Boolean)];
+    const combined = [...preloadedAssets, ...hydrated.filter(Boolean)];
+    if (tier === 'author') {
+      await enrichAuthorSignedUrls(combined);
+    }
+    return combined;
   }
 
   /**
