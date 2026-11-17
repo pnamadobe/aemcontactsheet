@@ -19,6 +19,43 @@ export async function main(params = {}) {
       return jsonResponse(200, { chunk: Number(params.chunk), chunkBase64 });
     }
 
+    if (params.downloadAssetId && params.sliceIndex !== undefined) {
+      const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      const fileName = params.fileName || 'contact-sheet.pdf';
+      const sliceIndex = Math.max(0, Number(params.sliceIndex) || 0);
+      const sliceSize = Math.min(500_000, Math.max(100_000, Number(params.sliceSize) || 480_000));
+      const start = sliceIndex * sliceSize;
+      const end = start + sliceSize - 1;
+
+      const origRes = await fetch(
+        `${aemHost}/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/original/as/${encodeURIComponent(fileName)}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${auth.bearerToken}`,
+            'x-api-key': auth.apiKey,
+            'x-gw-ims-org-id': auth.imsOrg,
+            Range: `bytes=${start}-${end}`,
+          },
+        }
+      );
+      if (!origRes.ok && origRes.status !== 206) {
+        return errorResponse(origRes.status, 'ORIGINAL_NOT_READY', `Original binary returned ${origRes.status}`);
+      }
+      const ab = await origRes.arrayBuffer();
+      const buf = Buffer.from(ab);
+      const sliceBuf =
+        origRes.status === 206 && buf.byteLength <= sliceSize + 1024
+          ? buf
+          : buf.subarray(start, start + sliceSize);
+      return jsonResponse(200, {
+        ready: true,
+        sliceIndex,
+        sliceBase64: sliceBuf.toString('base64'),
+        sliceBytes: sliceBuf.byteLength,
+      });
+    }
+
     if (params.downloadAssetId) {
       const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = params.fileName || 'contact-sheet.pdf';

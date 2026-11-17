@@ -298,15 +298,7 @@ export async function main(params = {}) {
       warnings.push(`Saved PDF for download, but could not upload to AEM (${uploadErr.message}).`);
     }
 
-    let pdfChunkCount = 0;
     const finalDownloadUrl = uploaded?.downloadUrl || downloadUrl || null;
-    if (pdfBuffer.byteLength > 520_000) {
-      try {
-        pdfChunkCount = await savePdfChunks(jobId, pdfBuffer);
-      } catch {
-        pdfChunkCount = 0;
-      }
-    }
 
     job.status = warnings.length ? 'succeeded_with_warnings' : 'succeeded';
     job.phase = 'done';
@@ -315,7 +307,6 @@ export async function main(params = {}) {
       jobId,
       pdfFileKey,
       downloadUrl: finalDownloadUrl,
-      pdfChunkCount,
       fileName: uploaded?.fileName || fileName,
       pages: paginated.totalPages,
       assets: paginated.totalAssets,

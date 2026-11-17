@@ -683,35 +683,46 @@ export default function ContactSheetDialog({
 
     setCheckingDownload(true);
     (async () => {
-      // 2. Fast (< 1 second) parallel chunk assembly from App Builder State for large (> 3.2 MB) PDFs
-      const pdfJobId = r.jobId || generateJob?.jobId || generateJob?.id;
-      if (r.pdfChunkCount > 0 && pdfJobId) {
-        try {
-          const chunkResponses = await Promise.all(
-            Array.from({ length: r.pdfChunkCount }, (_, idx) =>
-              callAction('status', {
-                method: 'GET',
-                query: { pdfJobId, chunk: idx },
-              })
-            )
-          );
-          if (!cancelled && chunkResponses.every((c) => c?.chunkBase64)) {
-            const parts = chunkResponses.map((c) => b64ToUint8Array(c.chunkBase64));
-            const blob = new Blob(parts, { type: 'application/pdf' });
-            createdBlobUrl = URL.createObjectURL(blob);
-            setReadyDownloadUrl(createdBlobUrl);
-            setCheckingDownload(false);
-            return;
-          }
-        } catch {
-          // fall through to AEM polling
-        }
-      }
-
       const aemBase = (authCtx?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = r.fileName || 'contact-sheet.pdf';
 
       for (let attempt = 0; attempt < 60 && !cancelled; attempt++) {
+        // 2. Server-side range/slice download from `/adobe/assets/{id}/original/as/{fileName}` via `/status`
+        // Works immediately after `completeUpload` with `x-api-key: aem-assets-frontend-1`, zero CORS, and under 1 MB per slice!
+        if (r.aemAssetId) {
+          try {
+            const sliceSize = 480_000;
+            const totalBytes = Number(r.bytes) || 0;
+            const numSlices = totalBytes > 0 ? Math.ceil(totalBytes / sliceSize) : 1;
+            const sliceResponses = await Promise.all(
+              Array.from({ length: numSlices }, (_, idx) =>
+                callAction('status', {
+                  method: 'GET',
+                  query: {
+                    downloadAssetId: r.aemAssetId,
+                    fileName,
+                    aemHost: aemBase,
+                    sliceIndex: idx,
+                    sliceSize,
+                  },
+                })
+              )
+            );
+            if (!cancelled && sliceResponses.every((s) => s?.sliceBase64 !== undefined)) {
+              const parts = sliceResponses.map((s) => b64ToUint8Array(s.sliceBase64));
+              const blob = new Blob(parts, { type: 'application/pdf' });
+              if (blob.size > 500) {
+                createdBlobUrl = URL.createObjectURL(blob);
+                setReadyDownloadUrl(createdBlobUrl);
+                setCheckingDownload(false);
+                return;
+              }
+            }
+          } catch {
+            // Fall through and retry on next tick
+          }
+        }
+
         // 3. Check `/status?downloadAssetId=...` for a pre-signed https:// blob URL
         try {
           const check = await callAction('status', {
