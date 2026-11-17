@@ -53,6 +53,7 @@ export async function main(params = {}) {
               Authorization: `Bearer ${auth.bearerToken}`,
               'x-api-key': auth.apiKey,
               'x-gw-ims-org-id': auth.imsOrg,
+              'X-Adobe-Accept-Experimental': '1',
               'content-type': 'application/json',
             },
             body: JSON.stringify({

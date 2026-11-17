@@ -1608,7 +1608,16 @@ export default function ContactSheetDialog({
                                 <img
                                   src={img.thumbnailUrl}
                                   alt=""
-                                  style={{ width: 20, height: 20, objectFit: 'contain', borderRadius: 3, background: '#fff' }}
+                                  style={{
+                                    width: 36,
+                                    height: 24,
+                                    objectFit: 'contain',
+                                    borderRadius: 4,
+                                    padding: 2,
+                                    background: '#ffffff',
+                                    border: '1px solid var(--s2-border-subtle)',
+                                    flexShrink: 0,
+                                  }}
                                 />
                               ) : (
                                 <span>🖼️</span>

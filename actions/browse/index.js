@@ -46,6 +46,33 @@ export async function main(params = {}) {
       return jsonResponse(200, { path: newPath, created: true });
     }
 
+    async function fetchSmallThumbDataUrl(assetId) {
+      for (const rName of ['cq5dam.thumbnail.140.100.png', 'cq5dam.thumbnail.319.319.png', 'cq5dam.thumbnail.48.48.png']) {
+        try {
+          const rRes = await fetch(
+            `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/renditions/${rName}/as/thumb.png`,
+            {
+              headers: {
+                Authorization: `Bearer ${auth.bearerToken}`,
+                'x-api-key': auth.apiKey,
+                'x-gw-ims-org-id': auth.imsOrg,
+              },
+            }
+          );
+          if (rRes.ok) {
+            const ab = await rRes.arrayBuffer();
+            const buf = Buffer.from(ab);
+            if (buf.byteLength > 64) {
+              return `data:image/png;base64,${buf.toString('base64')}`;
+            }
+          }
+        } catch {
+          // try next rendition
+        }
+      }
+      return null;
+    }
+
     // Optional search query for finding logo images quickly across DAM
     if (mode === 'images' && params.q && String(params.q).trim()) {
       const qStr = String(params.q).trim();
@@ -55,6 +82,7 @@ export async function main(params = {}) {
           Authorization: `Bearer ${auth.bearerToken}`,
           'x-api-key': auth.apiKey,
           'x-gw-ims-org-id': auth.imsOrg,
+          'X-Adobe-Accept-Experimental': '1',
           'content-type': 'application/json',
         },
         body: JSON.stringify({
@@ -63,7 +91,7 @@ export async function main(params = {}) {
         }),
       });
       const sJson = sRes.ok ? await sRes.json().catch(() => ({})) : {};
-      const images = (sJson?.results || [])
+      let images = (sJson?.results || [])
         .filter((r) => /\.(png|jpe?g|svg|webp)$/i.test(r?.repositoryMetadata?.['repo:name'] || ''))
         .map((r) => ({
           assetId: r.assetId,
@@ -73,6 +101,16 @@ export async function main(params = {}) {
           thumbnailUrl: r.thumbnailUrl || null,
           downloadUrl: r.downloadUrl || null,
         }));
+      images = await Promise.all(
+        images.map(async (img) => {
+          const dataUrl = await fetchSmallThumbDataUrl(img.assetId);
+          return {
+            ...img,
+            thumbnailUrl: dataUrl || img.thumbnailUrl,
+            downloadUrl: dataUrl || img.downloadUrl || img.thumbnailUrl,
+          };
+        })
+      );
       return jsonResponse(200, {
         self: { path: folderPath },
         folders: [],
@@ -112,7 +150,8 @@ export async function main(params = {}) {
           }))
       : [];
 
-    // Enrich logo images in this folder with signed thumbnailUrl & downloadUrl
+    // Enrich logo images in this folder with AEM's pre-generated small thumbnail (`cq5dam.thumbnail.140.100.png` / `48.48.png`)
+    // as a self-contained data URL so both the Logo Picker list and the Live Preview iframe render it immediately with zero CORS issues!
     if (images.length > 0) {
       try {
         const sRes = await fetch(`${normAuthor}/adobe/experimental/aemmcpserver-expires-20991231/search-assets`, {
@@ -121,6 +160,7 @@ export async function main(params = {}) {
             Authorization: `Bearer ${auth.bearerToken}`,
             'x-api-key': auth.apiKey,
             'x-gw-ims-org-id': auth.imsOrg,
+            'X-Adobe-Accept-Experimental': '1',
             'content-type': 'application/json',
           },
           body: JSON.stringify({
@@ -141,6 +181,17 @@ export async function main(params = {}) {
       } catch {
         // non-fatal
       }
+
+      images = await Promise.all(
+        images.slice(0, 20).map(async (img) => {
+          const dataUrl = await fetchSmallThumbDataUrl(img.assetId);
+          return {
+            ...img,
+            thumbnailUrl: dataUrl || img.thumbnailUrl,
+            downloadUrl: dataUrl || img.downloadUrl || img.thumbnailUrl,
+          };
+        })
+      );
     }
 
     return jsonResponse(200, {
