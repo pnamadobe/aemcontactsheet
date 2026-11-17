@@ -1196,38 +1196,45 @@ export default function ContactSheetDialog({
   }
 
   const [invalidatedProfileIds, setInvalidatedProfileIds] = useState({});
+  const [copiedExpressLink, setCopiedExpressLink] = useState(false);
+
+  function copyTextToClipboard(text) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      setCopiedExpressLink(true);
+      setTimeout(() => setCopiedExpressLink(false), 5000);
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     if (!Array.isArray(savedBoardsProfiles) || savedBoardsProfiles.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      const nextInvalid = {};
-      await Promise.all(
-        savedBoardsProfiles.map(async (p) => {
-          if (!p?.token) return;
-          try {
-            const r = await fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
-              headers: { Authorization: `Bearer ${p.token}` },
-            });
-            if (r.status === 401 || r.status === 403) {
-              nextInvalid[p.id] = true;
-            }
-          } catch {
-            // network ignore
-          }
-        })
-      );
-      if (!cancelled) {
-        setInvalidatedProfileIds(nextInvalid);
+    const nextInvalid = {};
+    for (const p of savedBoardsProfiles) {
+      if (p?.tokenExpired) {
+        nextInvalid[p.id] = true;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    }
+    if (Object.keys(nextInvalid).length > 0) {
+      setInvalidatedProfileIds((prev) => ({ ...prev, ...nextInvalid }));
+    }
   }, [savedBoardsProfiles]);
 
   function isTokenExpired(rawToken, profileId = null) {
     if (profileId && invalidatedProfileIds[profileId]) return true;
+    const found = profileId ? savedBoardsProfiles.find((p) => p.id === profileId) : null;
+    if (found?.tokenExpired) return true;
     const claims = decodeTokenClaims(rawToken);
     const created = Number(claims.created_at);
     const expiresIn = Number(claims.expires_in);
@@ -1297,20 +1304,30 @@ export default function ContactSheetDialog({
     const cleanToken = customBoardsToken.trim().replace(/^Bearer\s+/i, '');
     if (!cleanToken) return null;
     const claims = decodeTokenClaims(cleanToken);
+    const existingSaved = boardsAccountMode.startsWith('saved:')
+      ? savedBoardsProfiles.find((p) => p.id === boardsAccountMode.slice('saved:'.length))
+      : null;
     const name =
       customBoardsOrgName.trim() ||
+      existingSaved?.name ||
       (claims.org ? claims.org.replace('@AdobeOrg', '') : '') ||
       claims.email ||
       'Firefly Boards Org';
-    const id = `bprof_${(claims.org || name).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32)}`;
+    const id = existingSaved?.id || `bprof_${(claims.org || name).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32)}`;
     const entry = {
       id,
       name,
       orgId: claims.org || '',
       email: claims.email || '',
       token: cleanToken,
+      tokenExpired: false,
       updatedAt: new Date().toISOString(),
     };
+    setInvalidatedProfileIds((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     const nextList = [...savedBoardsProfiles.filter((p) => p.id !== id && p.name !== name), entry];
     setSavedBoardsProfiles(nextList);
     setBoardsAccountMode(`saved:${id}`);
@@ -1725,9 +1742,25 @@ export default function ContactSheetDialog({
                 {r.placedCards ?? r.assets} asset cards with separate editable metadata lines placed on your Firefly Board.
               </p>
             ) : isExpressDirect ? (
-              <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
-                {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets converted into a multi-page editable Adobe Express document.
-              </p>
+              <>
+                <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+                  {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets converted into a multi-page editable Adobe Express document.
+                </p>
+                {r.expressUrl && (
+                  <div className="s2-asset-selector-row" style={{ marginBottom: 14, gap: 8 }}>
+                    <span className="s2-asset-selector-path" style={{ userSelect: 'all' }} title={r.expressUrl}>
+                      {r.expressUrl}
+                    </span>
+                    <button
+                      type="button"
+                      className="s2-btn s2-btn-sm"
+                      onClick={() => copyTextToClipboard(r.expressUrl)}
+                    >
+                      {copiedExpressLink ? '✓ Copied' : 'Copy Link'}
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
@@ -1735,8 +1768,8 @@ export default function ContactSheetDialog({
                 </p>
                 {isExpress && (
                   <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--s2-text-secondary)', lineHeight: 1.45 }}>
-                    Click <strong>Download &amp; Open Adobe Express</strong> below, then drop the PDF into{' '}
-                    <strong>Start from your content</strong> in Adobe Express to edit every page, image, and caption layer.
+                    Click <strong>Download PDF &amp; Copy Express Link</strong> below, paste (<code>Cmd+V</code>) into a new browser tab, and drop the PDF into{' '}
+                    <strong>Start from your content</strong> in Adobe Express.
                   </p>
                 )}
                 {r.aemPath && (
@@ -1750,6 +1783,22 @@ export default function ContactSheetDialog({
             {(generateJob?.warnings || []).map((w, i) => (
               <div key={i} className="s2-banner-warn" style={{ margin: '0 0 12px' }}>{w}</div>
             ))}
+
+            {copiedExpressLink && (
+              <div
+                style={{
+                  margin: '0 0 12px',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  background: 'var(--s2-positive-subtle)',
+                  color: 'var(--s2-positive)',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                }}
+              >
+                ✓ Adobe Express link copied to clipboard! Open a new browser tab (Cmd+T) and paste (Cmd+V).
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button className="s2-btn s2-btn-quiet" onClick={() => setPhase('configure')}>
@@ -1771,9 +1820,13 @@ export default function ContactSheetDialog({
                   Open in Firefly Boards ↗
                 </a>
               ) : isExpressDirect && r.expressUrl ? (
-                <a className="s2-btn s2-btn-boards" href={r.expressUrl} target="_blank" rel="noreferrer">
-                  Open in Adobe Express ↗
-                </a>
+                <button
+                  type="button"
+                  className="s2-btn s2-btn-boards"
+                  onClick={() => copyTextToClipboard(r.expressUrl)}
+                >
+                  {copiedExpressLink ? '✓ Express Link Copied (Paste in New Tab)' : 'Copy Adobe Express Link'}
+                </button>
               ) : readyDownloadUrl ? (
                 <>
                   <a
@@ -1787,24 +1840,13 @@ export default function ContactSheetDialog({
                   </a>
                   <a
                     className="s2-btn s2-btn-boards"
-                    href={r.expressUrl || 'https://new.express.adobe.com/'}
-                    target="_blank"
-                    rel="noreferrer"
+                    href={readyDownloadUrl}
+                    download={r.fileName || 'contact-sheet.pdf'}
                     onClick={() => {
-                      try {
-                        const dl = document.createElement('a');
-                        dl.href = readyDownloadUrl;
-                        dl.download = r.fileName || 'contact-sheet.pdf';
-                        dl.style.display = 'none';
-                        document.body.appendChild(dl);
-                        dl.click();
-                        setTimeout(() => dl.remove(), 500);
-                      } catch {
-                        // ignore
-                      }
+                      copyTextToClipboard(r.expressUrl || 'https://new.express.adobe.com/');
                     }}
                   >
-                    Download &amp; Open Adobe Express ↗
+                    {copiedExpressLink ? '✓ Downloaded & Express Link Copied!' : 'Download PDF & Copy Express Link'}
                   </a>
                 </>
               ) : !isBoards ? (

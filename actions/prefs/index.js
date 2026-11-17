@@ -22,6 +22,21 @@ export async function main(params = {}) {
     const method = (params.__ow_method || params.method || 'GET').toUpperCase();
 
     if (method === 'GET') {
+      if (Array.isArray(current.savedBoardsProfiles) && current.savedBoardsProfiles.length > 0 && !process.env.CONTACTSHEET_LOCAL_STORE) {
+        current.savedBoardsProfiles = await Promise.all(
+          current.savedBoardsProfiles.map(async (p) => {
+            if (!p?.token) return { ...p, tokenExpired: true };
+            try {
+              const r = await fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
+                headers: { Authorization: `Bearer ${p.token}` },
+              });
+              return { ...p, tokenExpired: r.status === 401 || r.status === 403 };
+            } catch {
+              return p;
+            }
+          })
+        );
+      }
       return jsonResponse(200, current);
     }
 
