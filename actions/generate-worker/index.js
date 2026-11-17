@@ -224,10 +224,10 @@ export async function main(params = {}) {
       await writeFileObject(pdfFileKey, pdfBuffer);
       downloadUrl = await getPresignedDownloadUrl(pdfFileKey, 86400);
     } catch {
-      // If App Builder Files isn't provisioned yet, provide a base64 data URL if under 700 KB
-      if (pdfBuffer.byteLength < 700_000) {
-        downloadUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
-      }
+      // ignore if App Builder Files is not provisioned
+    }
+    if (!downloadUrl && pdfBuffer.byteLength < 700_000) {
+      downloadUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
     }
 
     // 5 & 6. Save to AEM Author + verify (§7.4 steps 5–6 and §7.5)

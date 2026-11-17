@@ -648,30 +648,32 @@ export default function ContactSheetDialog({
           // keep polling
         }
 
-        // 2. Also try fetching `/adobe/assets/{id}/renditions/original/as/{fileName}` directly with the user's Bearer token
+        // 2. Also try fetching `/adobe/assets/{id}/original/as/{fileName}` directly with the user's Bearer token
         if (authCtx?.accessToken) {
-          try {
-            const origRes = await fetch(
-              `${aemBase}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
-              {
+          for (const endpoint of [
+            `${aemBase}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/original/as/${encodeURIComponent(fileName)}`,
+            `${aemBase}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
+          ]) {
+            try {
+              const origRes = await fetch(endpoint, {
                 headers: {
                   Authorization: `Bearer ${authCtx.accessToken}`,
                   'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
                   'x-gw-ims-org-id': authCtx.imsOrg || '',
                 },
+              });
+              if (origRes.ok && !cancelled) {
+                const blob = await origRes.blob();
+                if (blob.size > 500 && !cancelled) {
+                  createdBlobUrl = URL.createObjectURL(blob);
+                  setReadyDownloadUrl(createdBlobUrl);
+                  setCheckingDownload(false);
+                  return;
+                }
               }
-            );
-            if (origRes.ok && !cancelled) {
-              const blob = await origRes.blob();
-              if (blob.size > 500 && !cancelled) {
-                createdBlobUrl = URL.createObjectURL(blob);
-                setReadyDownloadUrl(createdBlobUrl);
-                setCheckingDownload(false);
-                return;
-              }
+            } catch {
+              // try next
             }
-          } catch {
-            // keep polling
           }
         }
 

@@ -472,25 +472,46 @@ export function createAemClient({
       // Metadata patch is best-effort; verification below is authoritative
     }
 
-    // 6. Verify asset exists and fetch a signed AEM download URL if available
+    // 6. Verify asset exists and fetch a signed AEM download URL immediately
+    // First try `/adobe/assets/{assetId}/original/as/{fileName}` with `redirect: 'manual'` — this returns
+    // the 302 Location pre-signed blob URL immediately after `completeUpload` without waiting ~60s for
+    // AEM's Smart Tagging / Asset Microservices (`aem:assetState === 'processed'`) and search indexing!
     const verified = await requestJson(normAuthor, `/adobe/assets/${encodeURIComponent(assetId)}/metadata`);
     let aemDownloadUrl = null;
     try {
-      const sRes = await requestJson(
-        normAuthor,
-        '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
+      const origRes = await fetchImpl(
+        `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/original/as/${encodeURIComponent(fileName)}`,
         {
-          method: 'POST',
-          body: {
-            termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
-            limit: 5,
-          },
+          method: 'GET',
+          redirect: 'manual',
+          headers: buildHeaders(),
         }
       );
-      const match = (sRes?.results || []).find((x) => x.assetId === assetId) || sRes?.results?.[0];
-      aemDownloadUrl = match?.downloadUrl || null;
+      const loc = origRes?.headers?.get?.('location') || '';
+      if (loc && loc.startsWith('https://')) {
+        aemDownloadUrl = loc;
+      }
     } catch {
-      // optional
+      // Fall through to search-assets
+    }
+    if (!aemDownloadUrl) {
+      try {
+        const sRes = await requestJson(
+          normAuthor,
+          '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
+          {
+            method: 'POST',
+            body: {
+              termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
+              limit: 5,
+            },
+          }
+        );
+        const match = (sRes?.results || []).find((x) => x.assetId === assetId) || sRes?.results?.[0];
+        aemDownloadUrl = match?.downloadUrl || null;
+      } catch {
+        // optional
+      }
     }
 
     return {

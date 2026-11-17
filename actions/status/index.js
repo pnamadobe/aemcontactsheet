@@ -14,11 +14,14 @@ export async function main(params = {}) {
       const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = params.fileName || 'contact-sheet.pdf';
 
-      // 1. Check direct original rendition endpoint for a 302 Location pre-signed blob URL (works immediately before search indexing!)
-      try {
-        const origRes = await fetch(
-          `${aemHost}/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
-          {
+      // 1. Check `/adobe/assets/{id}/original/as/{fileName}` (originally uploaded binary — available immediately before microservices/indexing!)
+      // and `/adobe/assets/{id}/renditions/original/as/{fileName}` for a 302 Location pre-signed blob URL
+      for (const pathSuffix of [
+        `/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/original/as/${encodeURIComponent(fileName)}`,
+        `/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
+      ]) {
+        try {
+          const origRes = await fetch(`${aemHost}${pathSuffix}`, {
             method: 'GET',
             redirect: 'manual',
             headers: {
@@ -26,18 +29,18 @@ export async function main(params = {}) {
               'x-api-key': auth.apiKey,
               'x-gw-ims-org-id': auth.imsOrg,
             },
-          }
-        );
-        const loc = origRes.headers?.get?.('location') || '';
-        if (loc && loc.startsWith('https://')) {
-          return jsonResponse(200, {
-            ready: true,
-            fileName,
-            downloadUrl: loc,
           });
+          const loc = origRes.headers?.get?.('location') || '';
+          if (loc && loc.startsWith('https://')) {
+            return jsonResponse(200, {
+              ready: true,
+              fileName,
+              downloadUrl: loc,
+            });
+          }
+        } catch {
+          // Try next
         }
-      } catch {
-        // Fall through to search-assets
       }
 
       // 2. Try to get a pre-signed blob downloadUrl from AEM search
