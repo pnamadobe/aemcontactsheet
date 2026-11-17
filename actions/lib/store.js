@@ -127,3 +127,48 @@ export async function getPresignedDownloadUrl(fileKey, expirySeconds = 86400) {
   }
   return `file://${path.join(LOCAL_ROOT, 'files', fileKey)}`;
 }
+
+const PDF_CHUNK_BYTES = 600_000; // ~800 KB base64 per State key (well under State's 1 MB per-key limit)
+
+export async function savePdfChunks(jobId, pdfBuffer) {
+  if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.byteLength === 0) return 0;
+  const totalChunks = Math.ceil(pdfBuffer.byteLength / PDF_CHUNK_BYTES);
+  if (totalChunks > 24) return 0; // cap at ~14.4 MB in State
+
+  const state = await getStateClient();
+  await Promise.all(
+    Array.from({ length: totalChunks }, async (_, idx) => {
+      const slice = pdfBuffer.subarray(idx * PDF_CHUNK_BYTES, (idx + 1) * PDF_CHUNK_BYTES);
+      const b64 = slice.toString('base64');
+      if (state) {
+        try {
+          await state.put(`pdf:${jobId}:${idx}`, b64, { ttl: 3600 });
+          return;
+        } catch {
+          // fall through
+        }
+      }
+      const dir = path.join(LOCAL_ROOT, 'state');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(path.join(dir, `pdf_${jobId}_${idx}.b64`), b64);
+    })
+  );
+  return totalChunks;
+}
+
+export async function loadPdfChunk(jobId, chunkIdx) {
+  const state = await getStateClient();
+  if (state) {
+    try {
+      const res = await state.get(`pdf:${jobId}:${chunkIdx}`);
+      if (res?.value) return res.value;
+    } catch {
+      // fall through
+    }
+  }
+  try {
+    return await fs.readFile(path.join(LOCAL_ROOT, 'state', `pdf_${jobId}_${chunkIdx}.b64`), 'utf8');
+  } catch {
+    return null;
+  }
+}

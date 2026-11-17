@@ -605,7 +605,16 @@ export default function ContactSheetDialog({
     }
   }
 
-  // Poll until a real, verified download URL (pre-signed https:// or authenticated original rendition blob) is ready
+  function b64ToUint8Array(b64) {
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      arr[i] = bin.charCodeAt(i);
+    }
+    return arr;
+  }
+
+  // Resolve a verified PDF download URL immediately (via inlinePdfBase64, State chunks, or AEM pre-signed URL)
   useEffect(() => {
     if (phase !== 'done') {
       setReadyDownloadUrl(null);
@@ -617,25 +626,68 @@ export default function ContactSheetDialog({
       setCheckingDownload(false);
       return;
     }
+
+    let cancelled = false;
+    let createdBlobUrl = null;
+
+    // 1. Instant 0.0-second download when `inlinePdfBase64` is returned directly from `/generate`
+    if (generateJob?.inlinePdfBase64) {
+      try {
+        const bytes = b64ToUint8Array(generateJob.inlinePdfBase64);
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        createdBlobUrl = URL.createObjectURL(blob);
+        setReadyDownloadUrl(createdBlobUrl);
+        setCheckingDownload(false);
+        return () => {
+          if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
+        };
+      } catch {
+        // fall through
+      }
+    }
+
     if (r.downloadUrl && (r.downloadUrl.startsWith('https://') || r.downloadUrl.startsWith('data:application/pdf'))) {
       setReadyDownloadUrl(r.downloadUrl);
       setCheckingDownload(false);
       return;
     }
-    if (!r.aemAssetId) {
+    if (!r.aemAssetId && !r.pdfChunkCount) {
       setCheckingDownload(false);
       return;
     }
 
-    let cancelled = false;
-    let createdBlobUrl = null;
     setCheckingDownload(true);
     (async () => {
+      // 2. Fast (< 1 second) parallel chunk assembly from App Builder State for large (> 3.2 MB) PDFs
+      const pdfJobId = r.jobId || generateJob?.jobId || generateJob?.id;
+      if (r.pdfChunkCount > 0 && pdfJobId) {
+        try {
+          const chunkResponses = await Promise.all(
+            Array.from({ length: r.pdfChunkCount }, (_, idx) =>
+              callAction('status', {
+                method: 'GET',
+                query: { pdfJobId, chunk: idx },
+              })
+            )
+          );
+          if (!cancelled && chunkResponses.every((c) => c?.chunkBase64)) {
+            const parts = chunkResponses.map((c) => b64ToUint8Array(c.chunkBase64));
+            const blob = new Blob(parts, { type: 'application/pdf' });
+            createdBlobUrl = URL.createObjectURL(blob);
+            setReadyDownloadUrl(createdBlobUrl);
+            setCheckingDownload(false);
+            return;
+          }
+        } catch {
+          // fall through to AEM polling
+        }
+      }
+
       const aemBase = (authCtx?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = r.fileName || 'contact-sheet.pdf';
 
       for (let attempt = 0; attempt < 60 && !cancelled; attempt++) {
-        // 1. Check `/status?downloadAssetId=...` for a pre-signed https:// blob URL
+        // 3. Check `/status?downloadAssetId=...` for a pre-signed https:// blob URL
         try {
           const check = await callAction('status', {
             method: 'GET',

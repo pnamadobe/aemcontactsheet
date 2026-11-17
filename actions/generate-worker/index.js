@@ -14,7 +14,7 @@ import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
 import { buildZipBuffer } from '../lib/zip.js';
 import { convertHtmlZipToPdf, getServerToServerToken } from '../lib/pdf-services.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
-import { getPresignedDownloadUrl, loadJob, readFileObject, saveJob, writeFileObject } from '../lib/store.js';
+import { getPresignedDownloadUrl, loadJob, readFileObject, saveJob, savePdfChunks, writeFileObject } from '../lib/store.js';
 import { mapWithConcurrency } from '../lib/utils.js';
 
 export function buildPdfFileName(title = 'contact-sheet', customName = '') {
@@ -298,12 +298,24 @@ export async function main(params = {}) {
       warnings.push(`Saved PDF for download, but could not upload to AEM (${uploadErr.message}).`);
     }
 
+    let pdfChunkCount = 0;
+    const finalDownloadUrl = uploaded?.downloadUrl || downloadUrl || null;
+    if (!finalDownloadUrl || !finalDownloadUrl.startsWith('https://')) {
+      try {
+        pdfChunkCount = await savePdfChunks(jobId, pdfBuffer);
+      } catch {
+        pdfChunkCount = 0;
+      }
+    }
+
     job.status = warnings.length ? 'succeeded_with_warnings' : 'succeeded';
     job.phase = 'done';
     job.warnings = warnings;
     job.result = {
+      jobId,
       pdfFileKey,
-      downloadUrl: uploaded?.downloadUrl || downloadUrl || null,
+      downloadUrl: finalDownloadUrl,
+      pdfChunkCount,
       fileName,
       pages: paginated.totalPages,
       assets: paginated.totalAssets,
@@ -312,6 +324,11 @@ export async function main(params = {}) {
       aemPath: uploaded?.path || null,
     };
     await saveJob(job);
+    // If PDF is <= 3.2 MB, also attach inlinePdfBase64 on the returned object (not persisted in State)
+    // so synchronous `/generate` callers get a 0.0-second instant Blob download URL!
+    if (pdfBuffer.byteLength <= 3_200_000) {
+      return { ...job, inlinePdfBase64: pdfBuffer.toString('base64') };
+    }
     return job;
   } catch (err) {
     job.status = 'failed';

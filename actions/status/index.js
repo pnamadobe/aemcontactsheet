@@ -1,13 +1,22 @@
 // GET /status?jobId=...&includeModel=true — poll resolve or generate job status (scoped to the calling user),
 // or proxy-download an AEM asset binary (`?downloadAssetId=urn:aaid:aem:...&fileName=...&aemHost=...`).
 import { errorResponse, extractAuth, jsonResponse } from '../lib/utils.js';
-import { getPresignedDownloadUrl, loadJob, readFileObject } from '../lib/store.js';
+import { getPresignedDownloadUrl, loadJob, loadPdfChunk, readFileObject } from '../lib/store.js';
 
 export async function main(params = {}) {
   try {
     const auth = extractAuth(params);
     if (!auth.bearerToken) {
       return errorResponse(401, 'UNAUTHORIZED', 'Missing IMS Bearer token.');
+    }
+
+    // Fast chunked PDF binary retrieval from App Builder State (0-second wait without waiting for AEM Smart Tagging)
+    if (params.pdfJobId && params.chunk !== undefined) {
+      const chunkBase64 = await loadPdfChunk(params.pdfJobId, Number(params.chunk));
+      if (!chunkBase64) {
+        return errorResponse(404, 'CHUNK_NOT_FOUND', 'PDF chunk not found.');
+      }
+      return jsonResponse(200, { chunk: Number(params.chunk), chunkBase64 });
     }
 
     if (params.downloadAssetId) {
