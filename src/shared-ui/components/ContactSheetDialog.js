@@ -526,6 +526,10 @@ export default function ContactSheetDialog({
   const [modelFileKey, setModelFileKey] = useState(null);
   const [presets, setPresets] = useState([]);
   const [selectedPresetId, setSelectedPresetId] = useState('');
+  const [watermarkPresets, setWatermarkPresets] = useState([]);
+  const [selectedWatermarkPresetId, setSelectedWatermarkPresetId] = useState('');
+  const [damFonts, setDamFonts] = useState([]);
+  const [watermarkFontDataUrl, setWatermarkFontDataUrl] = useState(null);
   const [pickerMode, setPickerMode] = useState(null); // null | 'folder' | 'logo'
   const [pickerPath, setPickerPath] = useState('/content/dam');
   const [pickerListing, setPickerListing] = useState({ folders: [], images: [] });
@@ -873,14 +877,17 @@ export default function ContactSheetDialog({
         if (cancelled) return;
         setAuthCtx(ctx);
 
-        const [prefsRes, presetsRes, resolveRes] = await Promise.all([
+        const [prefsRes, presetsRes, fontsRes, resolveRes] = await Promise.all([
           callAction('prefs', { method: 'GET' }, ctx).catch(() => null),
-          callAction('presets', { method: 'GET' }, ctx).catch(() => ({ presets: [] })),
+          callAction('presets', { method: 'GET' }, ctx).catch(() => ({ presets: [], watermarkPresets: [] })),
+          callAction('browse', { method: 'GET', query: { mode: 'fonts' } }, ctx).catch(() => ({ fonts: [] })),
           callAction('resolve', { method: 'POST', body: { source, tier, aemHost } }, ctx),
         ]);
 
         const loadedPresets = presetsRes?.presets || [];
         setPresets(loadedPresets);
+        setWatermarkPresets(presetsRes?.watermarkPresets || []);
+        setDamFonts(fontsRes?.fonts || []);
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
         setConfig((prev) => {
@@ -988,6 +995,36 @@ export default function ContactSheetDialog({
     };
   }, [config?.header?.logo, authCtx]);
 
+  // Load custom AEM DAM font data URL (`@font-face`) whenever `config.watermark.fontAssetId` changes
+  useEffect(() => {
+    const wm = config?.watermark;
+    if (!wm?.enabled || !wm?.fontAssetId || !authCtx?.accessToken) {
+      setWatermarkFontDataUrl(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await callAction('browse', {
+          method: 'GET',
+          query: {
+            mode: 'fontData',
+            assetId: wm.fontAssetId,
+            name: wm.fontName || 'font.ttf',
+          },
+        });
+        if (!cancelled && res?.fontDataUrl) {
+          setWatermarkFontDataUrl(res.fontDataUrl);
+        }
+      } catch {
+        if (!cancelled) setWatermarkFontDataUrl(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.watermark?.enabled, config?.watermark?.fontAssetId, authCtx]);
+
   const paginated = useMemo(() => {
     if (!model) return null;
     return paginate(model, config);
@@ -999,9 +1036,10 @@ export default function ContactSheetDialog({
       mode: 'preview',
       model,
       logoUrl: config.header?.logo ? config.header.logo.previewUrl || logoPreviewUrl || null : null,
+      watermarkFontUrl: watermarkFontDataUrl,
       imageResolver: (asset) => asset.thumbnailUrl || thumbDataUrls[asset.id] || null,
     });
-  }, [paginated, model, thumbDataUrls, config.header?.logo, logoPreviewUrl]);
+  }, [paginated, model, thumbDataUrls, config.header?.logo, logoPreviewUrl, watermarkFontDataUrl]);
 
   const sortableFields = useMemo(() => {
     if (!model) return [];
@@ -1200,6 +1238,29 @@ export default function ContactSheetDialog({
     });
     setPresets(res.presets || []);
     setSelectedPresetId(res.preset?.id || '');
+  }
+
+  async function handleSaveWatermarkPreset() {
+    const name = window.prompt('Watermark preset name:', config.watermark?.text || 'Custom Watermark');
+    if (!name) return;
+    const res = await callAction('presets', {
+      method: 'PUT',
+      body: {
+        watermarkPreset: {
+          name,
+          watermark: {
+            ...config.watermark,
+            enabled: true,
+          },
+        },
+      },
+    });
+    setWatermarkPresets(res.watermarkPresets || []);
+    setSelectedWatermarkPresetId(res.watermarkPreset?.id || '');
+    guestConnection?.host?.toast?.display?.({
+      variant: 'positive',
+      message: `Saved watermark preset "${name}".`,
+    });
   }
 
   function getDefaultLogoStartPath() {
@@ -1930,6 +1991,238 @@ export default function ContactSheetDialog({
                 </select>
               </div>
             </div>
+          </section>
+
+          {/* Section 3b: Watermark Overlay & Standalone Watermark Presets */}
+          <section className="s2-section">
+            <div className="s2-section-header">
+              <h4 className="s2-section-title">Watermark</h4>
+              <label className="s2-checkbox-label" style={{ fontSize: 12, fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(config.watermark?.enabled)}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      watermark: { ...config.watermark, enabled: e.target.checked },
+                    })
+                  }
+                />
+                Enable watermark
+              </label>
+            </div>
+
+            {/* Watermark Preset Picker + Save Watermark Preset */}
+            <div className="s2-field" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 6 }}>
+              <select
+                className="s2-select"
+                value={selectedWatermarkPresetId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedWatermarkPresetId(id);
+                  const found = watermarkPresets.find((wp) => wp.id === id);
+                  if (found?.watermark) {
+                    setConfig((c) => ({
+                      ...c,
+                      watermark: { ...c.watermark, ...found.watermark, enabled: true },
+                    }));
+                  }
+                }}
+              >
+                <option value="">Watermark preset…</option>
+                {watermarkPresets.map((wp) => (
+                  <option key={wp.id} value={wp.id}>
+                    {wp.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="s2-btn s2-btn-sm"
+                style={{ height: 32 }}
+                onClick={handleSaveWatermarkPreset}
+              >
+                Save preset
+              </button>
+            </div>
+
+            {config.watermark?.enabled && (
+              <>
+                <div className="s2-field">
+                  <label className="s2-label">Watermark text</label>
+                  <input
+                    className="s2-input"
+                    type="text"
+                    placeholder="e.g. CONFIDENTIAL, DRAFT, FPO"
+                    value={config.watermark?.text ?? 'CONFIDENTIAL'}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        watermark: { ...config.watermark, text: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="s2-field">
+                  <label className="s2-label">Font family (System &amp; AEM DAM Fonts)</label>
+                  <select
+                    className="s2-select"
+                    value={
+                      config.watermark?.fontAssetId
+                        ? `dam:${config.watermark.fontAssetId}`
+                        : config.watermark?.font || 'blocky'
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val.startsWith('dam:')) {
+                        const assetId = val.slice(4);
+                        const fObj = damFonts.find((f) => f.assetId === assetId);
+                        setConfig({
+                          ...config,
+                          watermark: {
+                            ...config.watermark,
+                            font: val,
+                            fontAssetId: assetId,
+                            fontName: fObj?.name || 'font.ttf',
+                            fontPath: fObj?.path || '',
+                          },
+                        });
+                      } else {
+                        setConfig({
+                          ...config,
+                          watermark: {
+                            ...config.watermark,
+                            font: val,
+                            fontAssetId: null,
+                            fontName: null,
+                            fontPath: null,
+                          },
+                        });
+                      }
+                    }}
+                  >
+                    <optgroup label="System Fonts">
+                      <option value="blocky">Blocky Impact (Default)</option>
+                      <option value="sans-bold">Bold Sans (Helvetica / Arial Bold)</option>
+                      <option value="condensed">Condensed Display (Arial Narrow)</option>
+                      <option value="serif-bold">Classic Serif Bold (Georgia / Times)</option>
+                      <option value="mono-stamp">Monospace Stamp (Courier Bold)</option>
+                    </optgroup>
+                    {damFonts.length > 0 && (
+                      <optgroup label="AEM DAM Fonts (/content/dam/fonts & DAM)">
+                        {damFonts.map((f) => (
+                          <option key={f.assetId} value={`dam:${f.assetId}`}>
+                            {f.label} ({f.name.split('.').pop()?.toUpperCase()})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+
+                <div className="s2-grid-2 s2-field">
+                  <div>
+                    <label className="s2-label">Position</label>
+                    <select
+                      className="s2-select"
+                      value={config.watermark?.position || 'center'}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          watermark: { ...config.watermark, position: e.target.value },
+                        })
+                      }
+                    >
+                      <option value="center">Center</option>
+                      <option value="top-left">Top Left</option>
+                      <option value="top-right">Top Right</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="bottom-right">Bottom Right</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="s2-label">Angle ({config.watermark?.angle ?? 45}°)</label>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <select
+                        className="s2-select"
+                        value={String(config.watermark?.angle ?? 45)}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            watermark: { ...config.watermark, angle: Number(e.target.value) },
+                          })
+                        }
+                      >
+                        <option value="45">45° Diagonal ↗</option>
+                        <option value="-45">-45° Diagonal ↘</option>
+                        <option value="0">0° Horizontal</option>
+                        <option value="30">30°</option>
+                        <option value="-30">-30°</option>
+                        <option value="60">60°</option>
+                        <option value="-60">-60°</option>
+                        <option value="90">90° Vertical</option>
+                      </select>
+                      <input
+                        className="s2-input"
+                        style={{ width: 62, padding: '0 6px' }}
+                        type="number"
+                        min={-90}
+                        max={90}
+                        value={config.watermark?.angle ?? 45}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            watermark: { ...config.watermark, angle: Number(e.target.value) || 0 },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="s2-grid-2 s2-field">
+                  <div>
+                    <label className="s2-label">
+                      Opacity: <strong>{config.watermark?.opacity ?? 35}%</strong>
+                    </label>
+                    <input
+                      type="range"
+                      min={10}
+                      max={90}
+                      step={5}
+                      style={{ width: '100%', accentColor: 'var(--s2-accent)' }}
+                      value={config.watermark?.opacity ?? 35}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          watermark: { ...config.watermark, opacity: Number(e.target.value) },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="s2-label">
+                      Asset coverage: <strong>{config.watermark?.coverage ?? 60}%</strong>
+                    </label>
+                    <input
+                      type="range"
+                      min={20}
+                      max={90}
+                      step={5}
+                      style={{ width: '100%', accentColor: 'var(--s2-accent)' }}
+                      value={config.watermark?.coverage ?? 60}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          watermark: { ...config.watermark, coverage: Number(e.target.value) },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </section>
 
           {/* Section 4: Page Layout & Output Destination */}

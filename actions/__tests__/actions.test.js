@@ -13,7 +13,7 @@ import { main as generateWorkerMain } from '../generate-worker/index.js';
 import { main as statusMain } from '../status/index.js';
 import { main as presetsMain } from '../presets/index.js';
 import { main as prefsMain } from '../prefs/index.js';
-import { buildSheetModel, createDefaultConfig, paginate } from '../../packages/core/index.js';
+import { buildSheetModel, createDefaultConfig, paginate, renderHtml } from '../../packages/core/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.resolve(__dirname, '../../test/fixtures');
@@ -192,6 +192,59 @@ test('presets and prefs actions persist per-user settings', async () => {
   assert.equal(putPreset.statusCode, 200);
   assert.equal(putPreset.body.presets.length, 1);
   assert.equal(putPreset.body.presets[0].isDefault, true);
+
+  // Save a standalone watermark preset
+  const putWmPreset = await presetsMain({
+    __ow_headers: headers,
+    __ow_method: 'PUT',
+    userId: mockAuth.userId,
+    watermarkPreset: {
+      name: 'Embargo 2027 Diagonal',
+      watermark: {
+        enabled: true,
+        text: 'EMBARGO UNTIL 2027',
+        font: 'blocky',
+        angle: 45,
+        position: 'center',
+        opacity: 40,
+        coverage: 65,
+      },
+    },
+  });
+  assert.equal(putWmPreset.statusCode, 200);
+  assert.equal(putWmPreset.body.watermarkPreset.name, 'Embargo 2027 Diagonal');
+  assert.ok(putWmPreset.body.watermarkPresets.some((p) => p.name === 'Embargo 2027 Diagonal'));
+});
+
+test('renderNativePdfBuffer and renderHtml render watermark overlays with angle, position, opacity, and coverage', async () => {
+  const model = buildSheetModel({
+    rawAssets: collegeRaw.slice(0, 4),
+    sourceLabel: 'Collection: College Branded',
+  });
+  const config = createDefaultConfig({
+    watermark: {
+      enabled: true,
+      text: 'DO NOT DISTRIBUTE',
+      font: 'blocky',
+      angle: 45,
+      position: 'bottom-right',
+      opacity: 45,
+      coverage: 70,
+    },
+  });
+  const paginated = paginate(model, config);
+  const html = renderHtml(paginated, {
+    mode: 'preview',
+    model,
+    watermarkFontUrl: 'data:font/ttf;base64,AAEAAA==',
+  });
+  assert.match(html, /watermark-layer pos-bottom-right/);
+  assert.match(html, /DO NOT DISTRIBUTE/);
+  assert.match(html, /transform: rotate\(-45deg\)/);
+
+  const pdfBuf = await renderNativePdfBuffer(paginated, { model });
+  assert.ok(pdfBuf.byteLength > 1000);
+  assert.equal(pdfBuf.subarray(0, 5).toString('utf8'), '%PDF-');
 });
 
 test('renderNativePdfBuffer produces a valid multi-page PDF Buffer from real fixture data', async () => {

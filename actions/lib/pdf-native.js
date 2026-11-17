@@ -1,7 +1,9 @@
 // Pure-JS vector PDF renderer using pdf-lib that produces a real multi-page PDF Buffer
 // matching `paginate()` geometry when Adobe PDF Services credentials are not yet configured.
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 import { COMMON_FIELDS, formatFieldValue, formatMimeType } from '../../packages/core/fields.js';
+import { computeWatermarkMetrics } from '../../packages/core/layout.js';
 
 const PT_PER_IN = 72;
 
@@ -59,15 +61,37 @@ export async function renderNativePdfBuffer(
     model = null,
     imageBuffersByAssetId = new Map(),
     logoEntry = null,
+    watermarkFontBuffer = null,
     generatedAt = null,
   } = {}
 ) {
   const pdfDoc = await PDFDocument.create();
+  try {
+    pdfDoc.registerFontkit(fontkit);
+  } catch {
+    // non-fatal if fontkit registration fails
+  }
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const { config, geometry, pages, totalPages, totalAssets, totalFound } = paginated;
-  const { header, fields, layout } = config;
+  const { header, fields, layout, watermark } = config;
+  const wm = computeWatermarkMetrics(geometry, watermark || {});
+
+  let watermarkFont = fontBold;
+  if (wm.enabled) {
+    if (watermarkFontBuffer && Buffer.isBuffer(watermarkFontBuffer) && watermarkFontBuffer.byteLength > 100) {
+      try {
+        watermarkFont = await pdfDoc.embedFont(watermarkFontBuffer);
+      } catch {
+        watermarkFont = fontBold;
+      }
+    } else if (watermark?.font === 'serif-bold') {
+      watermarkFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+    } else if (watermark?.font === 'mono-stamp') {
+      watermarkFont = await pdfDoc.embedFont(StandardFonts.CourierBold);
+    }
+  }
   const fieldDefs = new Map((model?.fields || COMMON_FIELDS).map((f) => [f.key, f]));
   for (const cf of COMMON_FIELDS) {
     if (!fieldDefs.has(cf.key)) fieldDefs.set(cf.key, cf);
@@ -302,6 +326,58 @@ export async function renderNativePdfBuffer(
             size: 8,
             font: fontBold,
             color: rgb(0.42, 0.45, 0.5),
+          });
+        }
+
+        // Draw watermark overlay if enabled
+        if (wm.enabled && wm.text) {
+          const wmText = watermarkFont === fontBold ? toAsciiSafe(wm.text) : wm.text;
+          const unitW = Math.max(0.5, watermarkFont.widthOfTextAtSize(wmText, 1));
+          const maxFontH = imageH * (wm.position === 'center' ? 0.38 : 0.22) * (wm.coverage / 0.6);
+          const wmSize = Math.max(7, Math.min(64, maxFontH, wm.targetSpanPt / unitW));
+          const textW = unitW * wmSize;
+          const textH = wmSize * 0.72;
+          const rad = (wm.angle * Math.PI) / 180;
+
+          const padX = cellW * 0.14;
+          const padY = imageH * 0.16;
+          let cx = cellX + cellW / 2;
+          let cy = thumbBottomY + imageH / 2;
+          if (wm.position === 'top-left') {
+            cx = cellX + padX + Math.min(cellW * 0.22, textW * 0.35);
+            cy = rowTopY - padY - Math.min(imageH * 0.18, textH * 0.5);
+          } else if (wm.position === 'top-right') {
+            cx = cellX + cellW - padX - Math.min(cellW * 0.22, textW * 0.35);
+            cy = rowTopY - padY - Math.min(imageH * 0.18, textH * 0.5);
+          } else if (wm.position === 'bottom-left') {
+            cx = cellX + padX + Math.min(cellW * 0.22, textW * 0.35);
+            cy = thumbBottomY + padY + Math.min(imageH * 0.18, textH * 0.5);
+          } else if (wm.position === 'bottom-right') {
+            cx = cellX + cellW - padX - Math.min(cellW * 0.22, textW * 0.35);
+            cy = thumbBottomY + padY + Math.min(imageH * 0.18, textH * 0.5);
+          }
+
+          const wx = cx - (textW / 2) * Math.cos(rad) + (textH / 2) * Math.sin(rad);
+          const wy = cy - (textW / 2) * Math.sin(rad) - (textH / 2) * Math.cos(rad);
+
+          // Dual-contrast grey pass (subtle dark halo + mid-grey body so it shows on both white and black assets)
+          page.drawText(wmText, {
+            x: wx + 0.65,
+            y: wy - 0.65,
+            size: wmSize,
+            font: watermarkFont,
+            color: rgb(0.16, 0.16, 0.16),
+            opacity: Math.min(0.95, wm.opacity * 0.65),
+            rotate: degrees(wm.angle),
+          });
+          page.drawText(wmText, {
+            x: wx,
+            y: wy,
+            size: wmSize,
+            font: watermarkFont,
+            color: rgb(0.56, 0.56, 0.56),
+            opacity: wm.opacity,
+            rotate: degrees(wm.angle),
           });
         }
 

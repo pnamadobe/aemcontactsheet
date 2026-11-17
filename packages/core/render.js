@@ -1,6 +1,7 @@
 // Shared HTML/CSS renderer for both live browser preview and Adobe PDF Services HTML→PDF ZIP input.
 
 import { COMMON_FIELDS, formatFieldValue, formatMimeType } from './fields.js';
+import { computeWatermarkMetrics } from './layout.js';
 
 export function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -12,7 +13,10 @@ export function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-export function buildStylesheet(geometry, { mode = 'preview' } = {}) {
+export function buildStylesheet(
+  geometry,
+  { mode = 'preview', watermark = null, watermarkFontUrl = null } = {}
+) {
   const {
     pageW,
     pageH,
@@ -36,8 +40,16 @@ export function buildStylesheet(geometry, { mode = 'preview' } = {}) {
 
   const pagePxW = pageW * 96;
   const pagePxH = pageH * 96;
+  const wm = computeWatermarkMetrics(geometry, watermark || {});
+  const fontFaceCss = watermarkFontUrl
+    ? `@font-face {
+  font-family: "CSCustomWatermark";
+  src: url("${watermarkFontUrl}");
+  font-display: swap;
+}\n`
+    : '';
 
-  return `
+  return `${fontFaceCss}
 @page {
   size: ${pageW}in ${pageH}in;
   margin: 0;
@@ -294,6 +306,51 @@ html, body {
   font-size: 7.5pt;
   margin-bottom: 3px;
 }
+.watermark-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+  z-index: 3;
+  padding: 8%;
+  opacity: ${wm.opacity};
+  overflow: hidden;
+}
+.watermark-layer.pos-center {
+  align-items: center;
+  justify-content: center;
+}
+.watermark-layer.pos-top-left {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.watermark-layer.pos-top-right {
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.watermark-layer.pos-bottom-left {
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+.watermark-layer.pos-bottom-right {
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.watermark-text {
+  display: inline-block;
+  font-family: ${wm.fontFamilyCss};
+  font-size: ${wm.fontSizePt}pt;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: #888888;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.72), 0 0 2px rgba(255, 255, 255, 0.72);
+  -webkit-text-stroke: 0.4px rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  transform: rotate(${-wm.angle}deg);
+  transform-origin: center center;
+  user-select: none;
+}
 .caption {
   height: ${captionH}in;
   padding-top: 0.04in;
@@ -357,17 +414,19 @@ export function renderHtml(
     model = null,
     imageResolver = defaultImageResolver,
     logoUrl = null,
+    watermarkFontUrl = null,
     generatedAt = null,
   } = {}
 ) {
   const { config, geometry, pages, totalPages, totalAssets, totalFound } = paginated;
-  const { header, fields, layout } = config;
+  const { header, fields, layout, watermark } = config;
+  const wm = computeWatermarkMetrics(geometry, watermark || {});
   const fieldDefs = new Map((model?.fields || COMMON_FIELDS).map((f) => [f.key, f]));
   for (const cf of COMMON_FIELDS) {
     if (!fieldDefs.has(cf.key)) fieldDefs.set(cf.key, cf);
   }
 
-  const css = buildStylesheet(geometry, { mode });
+  const css = buildStylesheet(geometry, { mode, watermark, watermarkFontUrl });
   const subParts = [];
   if (header.department) subParts.push(escapeHtml(header.department));
   if (header.preparedBy) subParts.push(`Prepared by ${escapeHtml(header.preparedBy)}`);
@@ -434,8 +493,12 @@ export function renderHtml(
               })
               .join('');
 
+            const wmHtml = wm.enabled
+              ? `<div class="watermark-layer pos-${escapeHtml(wm.position)}"><span class="watermark-text">${escapeHtml(wm.text)}</span></div>`
+              : '';
+
             return `<article class="cell" data-asset-id="${escapeHtml(asset.id)}">
-              <div class="thumb-frame ${fitClass}">${thumbInner}</div>
+              <div class="thumb-frame ${fitClass}">${thumbInner}${wmHtml}</div>
               <div class="caption">${seqHtml}${fieldLinesHtml}</div>
             </article>`;
           })

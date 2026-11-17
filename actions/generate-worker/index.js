@@ -186,6 +186,24 @@ export async function main(params = {}) {
       }
     }
 
+    // Optional custom watermark font from AEM DAM (e.g. `/content/dam/fonts/*.ttf` or `*.otf`)
+    let watermarkFontBuffer = null;
+    let watermarkFontZipPath = null;
+    const wmCfg = paginated.config.watermark;
+    if (wmCfg?.enabled && wmCfg?.fontAssetId) {
+      try {
+        const fontFileName = wmCfg.fontName || wmCfg.fontPath?.split('/').pop() || 'watermark-font.ttf';
+        watermarkFontBuffer = await aem.fetchAssetOriginalBuffer(wmCfg.fontAssetId, fontFileName);
+        if (useZipPipeline && watermarkFontBuffer) {
+          const ext = fontFileName.split('.').pop()?.toLowerCase() || 'ttf';
+          watermarkFontZipPath = `fonts/watermark.${ext}`;
+          zipEntries.push({ name: watermarkFontZipPath, data: watermarkFontBuffer });
+        }
+      } catch {
+        warnings.push('Selected custom watermark font could not be loaded; fell back to standard bold font.');
+      }
+    }
+
     // 3 & 4. Convert to PDF (Adobe PDF Services HTML-to-PDF if credentials configured; otherwise built-in pdf-lib vector renderer)
     job.phase = 'pdf';
     await saveJob(job);
@@ -199,6 +217,7 @@ export async function main(params = {}) {
         model,
         imageResolver: (asset) => imageMap.get(asset.id) || null,
         logoUrl: logoZipPath,
+        watermarkFontUrl: watermarkFontZipPath,
       });
       zipEntries.unshift({ name: 'index.html', data: Buffer.from(html, 'utf8') });
       const zipBuffer = buildZipBuffer(zipEntries);
@@ -215,6 +234,7 @@ export async function main(params = {}) {
         model,
         imageBuffersByAssetId,
         logoEntry,
+        watermarkFontBuffer,
       });
       imageBuffersByAssetId.clear();
     }

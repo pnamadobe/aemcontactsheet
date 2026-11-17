@@ -95,6 +95,124 @@ export async function main(params = {}) {
       return jsonResponse(200, { thumbnails });
     }
 
+    // Discover published/uploaded font files (`.ttf`, `.otf`, `.woff`, `.woff2`) from `/content/dam/fonts` AND across DAM
+    if (mode === 'fonts') {
+      const byName = new Map();
+      function humanizeFontName(fileName = '') {
+        return String(fileName)
+          .replace(/\.(ttf|otf|woff2?)$/i, '')
+          .replace(/-VariableFont.*$/i, '')
+          .replace(/[_-]+/g, ' ')
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      // 1. Check `/content/dam/fonts` (primary convention)
+      try {
+        const fontFolder = await aem.listFolder({
+          path: '/content/dam/fonts',
+          types: 'ASSET',
+          limit: 50,
+        });
+        for (const c of fontFolder?.children || []) {
+          if (c.type === 'ASSET' && /\.(ttf|otf|woff2?)$/i.test(c.name || '')) {
+            const key = c.name.toLowerCase();
+            byName.set(key, {
+              assetId: c.assetId || c.id,
+              name: c.name,
+              label: humanizeFontName(c.name),
+              path: `/content/dam/fonts/${c.name}`,
+              folder: '/content/dam/fonts',
+              primary: true,
+            });
+          }
+        }
+      } catch {
+        // non-fatal if /content/dam/fonts does not exist in tenant
+      }
+
+      // 2. Also discover font files stored under any other DAM folder convention via `dc:format` search
+      try {
+        const sRes = await fetch(`${normAuthor}/adobe/experimental/metaall-expires-20991231/assets/search`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.bearerToken}`,
+            'x-api-key': auth.apiKey,
+            'x-gw-ims-org-id': auth.imsOrg,
+            'X-Adobe-Accept-Experimental': '1',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: [
+              {
+                term: {
+                  'repositoryMetadata.dc:format': [
+                    'font/ttf',
+                    'font/otf',
+                    'font/woff',
+                    'font/woff2',
+                    'application/x-font-ttf',
+                    'application/x-font-otf',
+                  ],
+                },
+              },
+            ],
+            limit: 60,
+          }),
+        });
+        if (sRes.ok) {
+          const sJson = await sRes.json().catch(() => ({}));
+          for (const h of sJson?.hits?.results || []) {
+            const name = h?.repositoryMetadata?.['repo:name'] || '';
+            const fullPath = h?.repositoryMetadata?.['repo:path'] || '';
+            if (!/\.(ttf|otf|woff2?)$/i.test(name)) continue;
+            const key = name.toLowerCase();
+            if (!byName.has(key)) {
+              const slash = fullPath.lastIndexOf('/');
+              const folder = slash > 0 ? fullPath.slice(0, slash) : '/content/dam';
+              byName.set(key, {
+                assetId: h.assetId,
+                name,
+                label: humanizeFontName(name),
+                path: fullPath,
+                folder,
+                primary: folder === '/content/dam/fonts',
+              });
+            }
+          }
+        }
+      } catch {
+        // non-fatal
+      }
+
+      const fonts = [...byName.values()].sort((a, b) => {
+        if (a.primary !== b.primary) return a.primary ? -1 : 1;
+        return a.label.localeCompare(b.label);
+      });
+      return jsonResponse(200, { fonts });
+    }
+
+    // Fetch a DAM font binary as a `data:` URL (`GET /browse?mode=fontData&assetId=urn:...&name=ArchivoBlack-Regular.ttf`)
+    if (mode === 'fontData' && params.assetId) {
+      const fontName = String(params.name || 'font.ttf');
+      const buf = await aem.fetchAssetOriginalBuffer(params.assetId, fontName);
+      const ext = fontName.split('.').pop()?.toLowerCase() || 'ttf';
+      const mime =
+        ext === 'otf'
+          ? 'font/otf'
+          : ext === 'woff2'
+            ? 'font/woff2'
+            : ext === 'woff'
+              ? 'font/woff'
+              : 'font/ttf';
+      return jsonResponse(200, {
+        assetId: params.assetId,
+        name: fontName,
+        fontDataUrl: `data:${mime};base64,${buf.toString('base64')}`,
+      });
+    }
+
     // Optional search query for finding logo images quickly across DAM
     if (mode === 'images' && params.q && String(params.q).trim()) {
       const qStr = String(params.q).trim();

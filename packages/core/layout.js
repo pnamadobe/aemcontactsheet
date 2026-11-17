@@ -60,6 +60,80 @@ export function createDefaultConfig(overrides = {}) {
       targetFolder: { id: '', path: '/content/dam/contact-sheets' },
       ...(overrides.output || {}),
     },
+    watermark: {
+      enabled: false,
+      text: 'CONFIDENTIAL',
+      font: 'blocky', // 'blocky' | 'sans-bold' | 'condensed' | 'serif-bold' | 'mono-stamp' | 'dam:<assetId>'
+      fontAssetId: null,
+      fontPath: null,
+      fontName: null,
+      angle: 45, // degrees (-90 to 90, default 45)
+      position: 'center', // 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+      opacity: 35, // 10..90 (%)
+      coverage: 60, // 20..90 (% of asset span)
+      ...(overrides.watermark || {}),
+    },
+  };
+}
+
+/**
+ * Compute deterministic watermark sizing, opacity, angle, and CSS font-family stack for a thumbnail cell.
+ */
+export function computeWatermarkMetrics(geometry, watermark = {}) {
+  const enabled = Boolean(watermark?.enabled && String(watermark?.text || '').trim());
+  const text = String(watermark?.text || 'CONFIDENTIAL').trim();
+  const angle = Number.isFinite(Number(watermark?.angle)) ? Number(watermark.angle) : 45;
+  const position = ['center', 'top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(watermark?.position)
+    ? watermark.position
+    : 'center';
+  const opacityPct = Math.min(95, Math.max(5, Number(watermark?.opacity) || 35));
+  const opacity = Number((opacityPct / 100).toFixed(3));
+  const coveragePct = Math.min(95, Math.max(15, Number(watermark?.coverage) || 60));
+  const coverage = coveragePct / 100;
+
+  const cellW = geometry?.cellW || 2.2;
+  const imageH = geometry?.imageH || 1.65;
+  const fullSpanIn =
+    position === 'center'
+      ? Math.abs(angle) > 15 && Math.abs(angle) < 75
+        ? Math.hypot(cellW, imageH) * 0.88
+        : cellW * 0.92
+      : Math.min(cellW, imageH) * 0.68;
+
+  const targetSpanPt = fullSpanIn * 72 * coverage;
+  const charCount = Math.max(1, text.length);
+  const maxByHeightPt = imageH * 72 * (position === 'center' ? 0.38 : 0.22) * (coverage / 0.6);
+  const fontSizePt = Number(
+    Math.max(7, Math.min(64, maxByHeightPt, targetSpanPt / (charCount * 0.62))).toFixed(2)
+  );
+
+  let fontFamilyCss = 'Impact, "Arial Black", "Helvetica Neue Condensed Black", sans-serif';
+  let isBold = true;
+  if (watermark?.fontAssetId || String(watermark?.font || '').startsWith('dam:')) {
+    fontFamilyCss = '"CSCustomWatermark", Impact, "Arial Black", sans-serif';
+  } else if (watermark?.font === 'sans-bold') {
+    fontFamilyCss = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+  } else if (watermark?.font === 'condensed') {
+    fontFamilyCss = '"Arial Narrow", "Roboto Condensed", Impact, sans-serif';
+  } else if (watermark?.font === 'serif-bold') {
+    fontFamilyCss = 'Georgia, "Times New Roman", Times, serif';
+  } else if (watermark?.font === 'mono-stamp') {
+    fontFamilyCss = '"Courier New", Courier, monospace';
+  }
+
+  return {
+    enabled,
+    text,
+    angle,
+    position,
+    opacityPct,
+    opacity,
+    coveragePct,
+    coverage,
+    fontSizePt,
+    targetSpanPt,
+    fontFamilyCss,
+    isBold,
   };
 }
 

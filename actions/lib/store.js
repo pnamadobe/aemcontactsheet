@@ -86,8 +86,18 @@ export async function loadJob(jobId) {
 }
 
 export async function writeFileObject(fileKey, data) {
-  const files = await getFilesClient();
   const buf = typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data);
+  if (typeof data === 'string' && buf.byteLength < 55_000) {
+    const state = await getStateClient();
+    if (state) {
+      try {
+        await state.put(`file:${fileKey}`, data, { ttl: SEVEN_DAYS_SEC });
+      } catch {
+        // fall through
+      }
+    }
+  }
+  const files = await getFilesClient();
   if (files) {
     await files.write(fileKey, buf);
     return fileKey;
@@ -99,6 +109,17 @@ export async function writeFileObject(fileKey, data) {
 }
 
 export async function readFileObject(fileKey, asText = true) {
+  if (asText) {
+    const state = await getStateClient();
+    if (state) {
+      try {
+        const sRes = await state.get(`file:${fileKey}`);
+        if (sRes?.value) return sRes.value;
+      } catch {
+        // fall through
+      }
+    }
+  }
   const files = await getFilesClient();
   if (files) {
     const buf = await files.read(fileKey);

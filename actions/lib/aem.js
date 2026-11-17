@@ -614,12 +614,22 @@ export function createAemClient({
     }
   }
 
+  /** Fetch the original binary buffer of an asset (e.g. a `.ttf` or `.otf` font from `/content/dam/fonts`). */
+  async function fetchAssetOriginalBuffer(assetId, fileName = 'file.bin') {
+    const cleanName = String(fileName || 'file.bin').replace(/[^a-zA-Z0-9._-]+/g, '-');
+    return await requestBuffer(
+      normAuthor,
+      `/adobe/assets/${encodeURIComponent(assetId)}/original/as/${encodeURIComponent(cleanName)}`
+    );
+  }
+
   return {
     listFolder,
     resolveFolderAssets,
     resolveCollectionAssets,
     resolveSelectionAssets,
     fetchAssetThumbnailBuffer,
+    fetchAssetOriginalBuffer,
     uploadPdfAndVerify,
     fetchTenantMetadataFields,
   };
