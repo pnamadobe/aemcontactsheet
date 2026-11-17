@@ -1,9 +1,10 @@
 // Pure-JS vector PDF renderer using pdf-lib that produces a real multi-page PDF Buffer
 // matching `paginate()` geometry when Adobe PDF Services credentials are not yet configured.
-import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFString, StandardFonts, degrees, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { COMMON_FIELDS, formatFieldValue, formatMimeType } from '../../packages/core/fields.js';
-import { computeWatermarkMetrics } from '../../packages/core/layout.js';
+import { computeWatermarkMetrics, getThemePalette } from '../../packages/core/layout.js';
+import { buildAssetDeepLink } from '../../packages/core/model.js';
 
 const PT_PER_IN = 72;
 
@@ -76,6 +77,7 @@ export async function renderNativePdfBuffer(
 
   const { config, geometry, pages, totalPages, totalAssets, totalFound } = paginated;
   const { header, fields, layout, watermark } = config;
+  const pal = getThemePalette(layout.theme || 'light');
   const wm = computeWatermarkMetrics(geometry, watermark || {});
 
   let watermarkFont = fontBold;
@@ -165,6 +167,15 @@ export async function renderNativePdfBuffer(
 
   for (const p of pages) {
     const page = pdfDoc.addPage([pageW, pageH]);
+    if (pal.key !== 'light') {
+      page.drawRectangle({
+        x: 0,
+        y: 0,
+        width: pageW,
+        height: pageH,
+        color: rgb(...pal.pageBgRgb),
+      });
+    }
     const headerTopY = pageH - margin;
     const headerBottomY = headerTopY - headerH;
 
@@ -189,7 +200,7 @@ export async function renderNativePdfBuffer(
       y: headerTopY - 14,
       size: 13,
       font: fontBold,
-      color: rgb(0.07, 0.07, 0.07),
+      color: rgb(...pal.titleRgb),
     });
 
     if (subParts.length) {
@@ -198,7 +209,7 @@ export async function renderNativePdfBuffer(
         y: headerTopY - 27,
         size: 8.5,
         font: fontRegular,
-        color: rgb(0.3, 0.33, 0.39),
+        color: rgb(...pal.metaTextRgb),
       });
     }
 
@@ -207,7 +218,7 @@ export async function renderNativePdfBuffer(
       y: headerTopY - (subParts.length ? 39 : 27),
       size: 7.5,
       font: fontRegular,
-      color: rgb(0.42, 0.45, 0.5),
+      color: rgb(...pal.mutedTextRgb),
     });
 
     // Right-aligned date & count
@@ -218,7 +229,7 @@ export async function renderNativePdfBuffer(
       y: headerTopY - 13,
       size: 8.5,
       font: fontBold,
-      color: rgb(0.07, 0.07, 0.07),
+      color: rgb(...pal.titleRgb),
     });
     const cntW = fontRegular.widthOfTextAtSize(toAsciiSafe(countText), 8);
     page.drawText(toAsciiSafe(countText), {
@@ -226,7 +237,7 @@ export async function renderNativePdfBuffer(
       y: headerTopY - 25,
       size: 8,
       font: fontRegular,
-      color: rgb(0.3, 0.33, 0.39),
+      color: rgb(...pal.metaTextRgb),
     });
 
     // Header bottom rule
@@ -234,7 +245,7 @@ export async function renderNativePdfBuffer(
       start: { x: margin, y: headerBottomY },
       end: { x: margin + contentW, y: headerBottomY },
       thickness: 1.2,
-      color: rgb(0.13, 0.13, 0.13),
+      color: rgb(...pal.headerRuleRgb),
     });
 
     // Body blocks
@@ -251,7 +262,7 @@ export async function renderNativePdfBuffer(
           y: bandBottomY,
           width: contentW,
           height: groupBandH,
-          color: rgb(0.95, 0.96, 0.97),
+          color: rgb(...pal.groupBandBgRgb),
         });
         page.drawRectangle({
           x: margin,
@@ -265,7 +276,7 @@ export async function renderNativePdfBuffer(
           y: bandBottomY + (groupBandH - 8) / 2,
           size: 9,
           font: fontBold,
-          color: rgb(0.07, 0.09, 0.15),
+          color: rgb(...pal.groupBandTextRgb),
         });
         const gCountStr = `${block.group.count} asset${block.group.count === 1 ? '' : 's'}`;
         const gCountW = fontBold.widthOfTextAtSize(gCountStr, 8);
@@ -274,7 +285,7 @@ export async function renderNativePdfBuffer(
           y: bandBottomY + (groupBandH - 7) / 2,
           size: 8,
           font: fontBold,
-          color: rgb(0.3, 0.33, 0.39),
+          color: rgb(...pal.metaTextRgb),
         });
         cursorTopY = bandBottomY;
         prevWasBand = true;
@@ -298,8 +309,8 @@ export async function renderNativePdfBuffer(
           y: thumbBottomY,
           width: cellW,
           height: imageH,
-          color: rgb(0.97, 0.98, 0.99),
-          borderColor: rgb(0.9, 0.91, 0.92),
+          color: rgb(...pal.thumbBgRgb),
+          borderColor: rgb(...pal.thumbBorderRgb),
           borderWidth: 0.75,
         });
 
@@ -326,6 +337,44 @@ export async function renderNativePdfBuffer(
             size: 8,
             font: fontBold,
             color: rgb(0.42, 0.45, 0.5),
+          });
+        }
+
+        // Draw approval / status badge pill at top-right of thumbnail if enabled
+        const rawStatus = String(asset.status || asset.values?.['dam:assetStatus'] || '').toLowerCase().trim();
+        if (layout.statusBadges && rawStatus) {
+          const stLabel = toAsciiSafe(
+            rawStatus === 'approved'
+              ? 'APPROVED'
+              : rawStatus === 'rejected'
+                ? 'REJECTED'
+                : rawStatus.replace(/[-_]+/g, ' ').toUpperCase()
+          );
+          const pillColor =
+            rawStatus === 'approved'
+              ? rgb(0.02, 0.514, 0.306)
+              : rawStatus === 'rejected'
+                ? rgb(0.843, 0.196, 0.125)
+                : rgb(0.796, 0.435, 0.063);
+          const pillFontSize = 6;
+          const labelW = fontBold.widthOfTextAtSize(stLabel, pillFontSize);
+          const pillW = labelW + 7;
+          const pillH = 11;
+          const pillX = cellX + cellW - pillW - 4;
+          const pillY = rowTopY - pillH - 4;
+          page.drawRectangle({
+            x: pillX,
+            y: pillY,
+            width: pillW,
+            height: pillH,
+            color: pillColor,
+          });
+          page.drawText(stLabel, {
+            x: pillX + 3.5,
+            y: pillY + 3,
+            size: pillFontSize,
+            font: fontBold,
+            color: rgb(1, 1, 1),
           });
         }
 
@@ -381,6 +430,36 @@ export async function renderNativePdfBuffer(
           });
         }
 
+        // Attach clickable PDF URI link annotation over the thumbnail cell if enabled
+        if (layout.clickableLinks !== false) {
+          try {
+            const deepLink = buildAssetDeepLink(asset, model);
+            if (deepLink) {
+              const linkAnnot = pdfDoc.context.register(
+                pdfDoc.context.obj({
+                  Type: 'Annot',
+                  Subtype: 'Link',
+                  Rect: [cellX, thumbBottomY - 12, cellX + cellW, rowTopY],
+                  Border: [0, 0, 0],
+                  A: {
+                    Type: 'Action',
+                    S: 'URI',
+                    URI: PDFString.of(deepLink),
+                  },
+                })
+              );
+              let annots = page.node.lookup(PDFName.of('Annots'));
+              if (!annots) {
+                annots = pdfDoc.context.obj([]);
+                page.node.set(PDFName.of('Annots'), annots);
+              }
+              annots.push(linkAnnot);
+            }
+          } catch {
+            // non-fatal
+          }
+        }
+
         // Caption lines below thumbnail
         let textY = thumbBottomY - 10;
         if (layout.sequenceNumbers !== false) {
@@ -390,7 +469,7 @@ export async function renderNativePdfBuffer(
             y: textY,
             size: 7.2,
             font: fontBold,
-            color: rgb(0.42, 0.45, 0.5),
+            color: rgb(...pal.mutedTextRgb),
           });
           textY -= 10.5;
         }
@@ -412,7 +491,7 @@ export async function renderNativePdfBuffer(
               y: textY,
               size: 7.8,
               font: fontToUse,
-              color: fIdx === 0 && !fSpec.showLabel ? rgb(0.07, 0.09, 0.15) : rgb(0.18, 0.22, 0.28),
+              color: fIdx === 0 && !fSpec.showLabel ? rgb(...pal.primaryTextRgb) : rgb(...pal.bodyTextRgb),
             });
             textY -= lineH;
           }
@@ -428,7 +507,7 @@ export async function renderNativePdfBuffer(
       start: { x: margin, y: footerTopY },
       end: { x: margin + contentW, y: footerTopY },
       thickness: 0.6,
-      color: rgb(0.9, 0.91, 0.92),
+      color: rgb(...pal.footerRuleRgb),
     });
     const footerLeft = toAsciiSafe(
       `Generated ${genFormatted}${model?.resolvedBy ? ` | ${model.resolvedBy}` : ''}`
@@ -438,7 +517,7 @@ export async function renderNativePdfBuffer(
       y: margin + 6,
       size: 7.5,
       font: fontRegular,
-      color: rgb(0.42, 0.45, 0.5),
+      color: rgb(...pal.mutedTextRgb),
     });
     if (layout.pageNumbers !== false) {
       const pageStr = `Page ${p.pageNumber} of ${totalPages}`;
@@ -448,7 +527,7 @@ export async function renderNativePdfBuffer(
         y: margin + 6,
         size: 7.5,
         font: fontRegular,
-        color: rgb(0.42, 0.45, 0.5),
+        color: rgb(...pal.mutedTextRgb),
       });
     }
   }

@@ -76,10 +76,34 @@ export function normalizeAsset(raw, index = 0) {
     createdBy,
     published,
     approved,
+    status: damStatus ? String(damStatus).toLowerCase() : undefined,
     thumbnailUrl: raw.thumbnailUrl || undefined,
     downloadUrl: raw.downloadUrl || undefined,
     values,
   };
+}
+
+/**
+ * Build a verified deep-link URL to open an asset's detail page in AEM Assets View (`tier=author`)
+ * or AEM Content Hub (`tier=delivery`).
+ */
+export function buildAssetDeepLink(asset, model = null) {
+  const tier = model?.tier || 'author';
+  if (tier === 'delivery') {
+    const repoHost = (model?.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com')
+      .replace(/^https?:\/\//i, '')
+      .replace(/\/+$/, '');
+    return `https://experience.adobe.com/?repoId=${encodeURIComponent(repoHost)}#/assets/contenthub/assets/${encodeURIComponent(asset?.id || '')}`;
+  }
+  const aemBase = (model?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+  if (asset?.path && asset.path.startsWith('/content/dam/')) {
+    const encodedPath = asset.path
+      .split('/')
+      .map((seg) => encodeURIComponent(seg))
+      .join('/');
+    return `${aemBase}/ui#/aem/assets/detail${encodedPath}`;
+  }
+  return `${aemBase}/ui#/aem/assets/go?action=asset-details&id=${encodeURIComponent(asset?.id || '')}`;
 }
 
 /**

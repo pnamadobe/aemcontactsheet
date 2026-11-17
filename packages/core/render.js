@@ -1,7 +1,8 @@
 // Shared HTML/CSS renderer for both live browser preview and Adobe PDF Services HTML→PDF ZIP input.
 
 import { COMMON_FIELDS, formatFieldValue, formatMimeType } from './fields.js';
-import { computeWatermarkMetrics } from './layout.js';
+import { computeWatermarkMetrics, getThemePalette } from './layout.js';
+import { buildAssetDeepLink } from './model.js';
 
 export function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -15,7 +16,7 @@ export function escapeHtml(str) {
 
 export function buildStylesheet(
   geometry,
-  { mode = 'preview', watermark = null, watermarkFontUrl = null } = {}
+  { mode = 'preview', watermark = null, watermarkFontUrl = null, theme = 'light' } = {}
 ) {
   const {
     pageW,
@@ -40,6 +41,7 @@ export function buildStylesheet(
 
   const pagePxW = pageW * 96;
   const pagePxH = pageH * 96;
+  const pal = getThemePalette(theme);
   const wm = computeWatermarkMetrics(geometry, watermark || {});
   const fontFaceCss = watermarkFontUrl
     ? `@font-face {
@@ -68,8 +70,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: "Adobe Clean", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #1d1d1f;
-  background: ${mode === 'preview' ? 'transparent' : '#ffffff'};
+  color: ${pal.bodyText};
+  background: ${mode === 'preview' ? 'transparent' : pal.pageBg};
   overflow-x: hidden;
 }
 .cs-pages {
@@ -94,7 +96,7 @@ html, body {
   position: relative;
   width: ${pageW}in;
   height: ${pageH}in;
-  background: #ffffff;
+  background: ${pal.pageBg};
   overflow: hidden;
   page-break-after: always;
   break-after: page;
@@ -115,7 +117,7 @@ html, body {
 }
 @media print {
   html, body {
-    background: #ffffff !important;
+    background: ${pal.pageBg} !important;
   }
   .cs-pages {
     padding: 0 !important;
@@ -143,7 +145,7 @@ html, body {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: start;
   gap: 0.18in;
-  border-bottom: 1.5px solid #222222;
+  border-bottom: 1.5px solid ${pal.headerRule};
   padding-bottom: 0.06in;
 }
 .header-left {
@@ -178,14 +180,14 @@ html, body {
   font-size: 14pt;
   font-weight: 700;
   line-height: 1.15;
-  color: #111111;
+  color: ${pal.titleColor};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .header-meta {
   font-size: 8.5pt;
-  color: #4b5563;
+  color: ${pal.metaText};
   margin-top: 2pt;
   white-space: nowrap;
   overflow: hidden;
@@ -193,7 +195,7 @@ html, body {
 }
 .header-source {
   font-size: 7.5pt;
-  color: #6b7280;
+  color: ${pal.mutedText};
   margin-top: 2pt;
   white-space: nowrap;
   overflow: hidden;
@@ -202,7 +204,7 @@ html, body {
 .header-right {
   text-align: right;
   font-size: 8.5pt;
-  color: #374151;
+  color: ${pal.metaText};
   flex-shrink: 0;
   line-height: 1.35;
   justify-self: end;
@@ -210,7 +212,7 @@ html, body {
 }
 .header-date {
   font-weight: 600;
-  color: #111111;
+  color: ${pal.titleColor};
 }
 .page-body {
   position: absolute;
@@ -227,12 +229,12 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #f3f4f6;
+  background: ${pal.groupBandBg};
   border-left: 3px solid #1473e6;
   padding: 0 0.1in;
   font-size: 9pt;
   font-weight: 700;
-  color: #111827;
+  color: ${pal.groupBandText};
   margin-top: ${rowGutter}in;
 }
 .group-band.first-block {
@@ -241,7 +243,7 @@ html, body {
 .group-band-count {
   font-size: 8pt;
   font-weight: 600;
-  color: #4b5563;
+  color: ${pal.metaText};
 }
 .grid-row {
   display: grid;
@@ -267,8 +269,8 @@ html, body {
   position: relative;
   width: ${cellW}in;
   height: ${imageH}in;
-  background: #f8f9fb;
-  border: 1px solid #e5e7eb;
+  background: ${pal.thumbBg};
+  border: 1px solid ${pal.thumbBorder};
   border-radius: 2px;
   display: flex;
   align-items: center;
@@ -286,12 +288,21 @@ html, body {
 .thumb-frame.fill img {
   object-fit: cover;
 }
+.thumb-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
 .thumb-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: ${pal.mutedText};
   font-size: 8pt;
   text-align: center;
   padding: 6px;
@@ -300,11 +311,35 @@ html, body {
   display: inline-block;
   padding: 2px 6px;
   border-radius: 3px;
-  background: #e5e7eb;
-  color: #374151;
+  background: ${pal.badgeBg};
+  color: ${pal.badgeText};
   font-weight: 700;
   font-size: 7.5pt;
   margin-bottom: 3px;
+}
+.status-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 4;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+  font-size: 6pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.status-badge.status-approved {
+  background: #05834e;
+}
+.status-badge.status-rejected {
+  background: #d73220;
+}
+.status-badge.status-pending {
+  background: #cb6f10;
 }
 .watermark-layer {
   position: absolute;
@@ -359,14 +394,21 @@ html, body {
 .seq-line {
   font-size: 7.5pt;
   font-weight: 700;
-  color: #6b7280;
+  color: ${pal.mutedText};
   line-height: 0.14in;
   letter-spacing: 0.02em;
+}
+.seq-link {
+  color: inherit;
+  text-decoration: none;
+}
+.seq-link:hover {
+  text-decoration: underline;
 }
 .field-line {
   font-size: 8pt;
   line-height: ${lineH}in;
-  color: #1f2937;
+  color: ${pal.bodyText};
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -374,14 +416,14 @@ html, body {
 }
 .field-line.primary {
   font-weight: 600;
-  color: #111827;
+  color: ${pal.primaryText};
 }
 .field-label {
-  color: #6b7280;
+  color: ${pal.mutedText};
   font-weight: 500;
 }
 .field-empty {
-  color: #9ca3af;
+  color: ${pal.emptyText};
 }
 .page-footer {
   position: absolute;
@@ -389,13 +431,13 @@ html, body {
   left: ${margin}in;
   width: ${contentW}in;
   height: ${footerH}in;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid ${pal.footerRule};
   padding-top: 0.05in;
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 7.5pt;
-  color: #6b7280;
+  color: ${pal.mutedText};
 }
 `.trim();
 }
@@ -426,7 +468,12 @@ export function renderHtml(
     if (!fieldDefs.has(cf.key)) fieldDefs.set(cf.key, cf);
   }
 
-  const css = buildStylesheet(geometry, { mode, watermark, watermarkFontUrl });
+  const css = buildStylesheet(geometry, {
+    mode,
+    watermark,
+    watermarkFontUrl,
+    theme: layout.theme || 'light',
+  });
   const subParts = [];
   if (header.department) subParts.push(escapeHtml(header.department));
   if (header.preparedBy) subParts.push(`Prepared by ${escapeHtml(header.preparedBy)}`);
@@ -467,12 +514,34 @@ export function renderHtml(
             const imgUrl = imageResolver ? imageResolver(asset) : null;
             const fitClass = layout.imageFit === 'fill' ? 'fill' : 'fit';
             const badge = formatMimeType(asset.format) || 'FILE';
-            const thumbInner = imgUrl
+            const rawThumbInner = imgUrl
               ? `<img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(asset.name)}" loading="lazy" />`
               : `<div class="thumb-placeholder"><span class="thumb-badge">${escapeHtml(badge)}</span><span>No preview</span></div>`;
 
+            const deepLink = layout.clickableLinks !== false ? buildAssetDeepLink(asset, model) : null;
+            const thumbInner = deepLink
+              ? `<a class="thumb-link" href="${escapeHtml(deepLink)}" target="_blank" rel="noopener noreferrer" title="Open in AEM">${rawThumbInner}</a>`
+              : rawThumbInner;
+
+            const rawStatus = String(asset.status || asset.values?.['dam:assetStatus'] || '').toLowerCase().trim();
+            let statusBadgeHtml = '';
+            if (layout.statusBadges && rawStatus) {
+              const stClass = rawStatus === 'approved' ? 'approved' : rawStatus === 'rejected' ? 'rejected' : 'pending';
+              const stLabel =
+                rawStatus === 'approved'
+                  ? 'Approved'
+                  : rawStatus === 'rejected'
+                    ? 'Rejected'
+                    : rawStatus.replace(/[-_]+/g, ' ');
+              statusBadgeHtml = `<span class="status-badge status-${stClass}">${escapeHtml(stLabel)}</span>`;
+            }
+
+            const seqStr = `#${String(asset.sequence || 0).padStart(padDigits, '0')}`;
+            const seqInner = deepLink
+              ? `<a class="seq-link" href="${escapeHtml(deepLink)}" target="_blank" rel="noopener noreferrer">${seqStr}</a>`
+              : seqStr;
             const seqHtml = layout.sequenceNumbers !== false
-              ? `<div class="seq-line">#${String(asset.sequence || 0).padStart(padDigits, '0')}</div>`
+              ? `<div class="seq-line">${seqInner}</div>`
               : '';
 
             const fieldLinesHtml = fields
@@ -498,7 +567,7 @@ export function renderHtml(
               : '';
 
             return `<article class="cell" data-asset-id="${escapeHtml(asset.id)}">
-              <div class="thumb-frame ${fitClass}">${thumbInner}${wmHtml}</div>
+              <div class="thumb-frame ${fitClass}">${thumbInner}${statusBadgeHtml}${wmHtml}</div>
               <div class="caption">${seqHtml}${fieldLinesHtml}</div>
             </article>`;
           })

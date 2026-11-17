@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PDFDocument, PDFName } from 'pdf-lib';
 import { buildZipBuffer } from '../lib/zip.js';
 import { resolveUniqueFileName } from '../lib/aem.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
@@ -13,7 +14,7 @@ import { main as generateWorkerMain } from '../generate-worker/index.js';
 import { main as statusMain } from '../status/index.js';
 import { main as presetsMain } from '../presets/index.js';
 import { main as prefsMain } from '../prefs/index.js';
-import { buildSheetModel, createDefaultConfig, paginate, renderHtml } from '../../packages/core/index.js';
+import { buildAssetDeepLink, buildSheetModel, createDefaultConfig, paginate, renderHtml } from '../../packages/core/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.resolve(__dirname, '../../test/fixtures');
@@ -468,4 +469,67 @@ test('resolveUniqueFileName suffixes duplicate PDF filenames with incrementing s
     ]),
     'hertz-ads_2026-11-17-3.pdf'
   );
+});
+
+test('Tier 1 enhancements: clickable deep links, approval status badges, and dark/grey page themes in HTML and PDF', async () => {
+  const sampleRaw = [
+    {
+      ...collegeRaw[0],
+      repositoryMetadata: {
+        ...collegeRaw[0].repositoryMetadata,
+        'repo:path': '/content/dam/26H2/citibank/2027-spring-campaign-shoot/shot1.jpg',
+      },
+      assetMetadata: { ...collegeRaw[0].assetMetadata, 'dam:assetStatus': 'approved' },
+    },
+    {
+      ...collegeRaw[1],
+      repositoryMetadata: {
+        ...collegeRaw[1].repositoryMetadata,
+        'repo:path': '/content/dam/26H2/citibank/2027-spring-campaign-shoot/shot2.jpg',
+      },
+      assetMetadata: { ...collegeRaw[1].assetMetadata, 'dam:assetStatus': 'rejected' },
+    },
+  ];
+
+  const authorModel = buildSheetModel({
+    rawAssets: sampleRaw,
+    tier: 'author',
+    aemHost: 'https://author-p59602-e520244.adobeaemcloud.com',
+  });
+  const deliveryModel = buildSheetModel({
+    rawAssets: sampleRaw,
+    tier: 'delivery',
+    deliveryHost: 'https://delivery-p59602-e520244.adobeaemcloud.com',
+  });
+
+  assert.match(
+    buildAssetDeepLink(authorModel.assets[0], authorModel),
+    /^https:\/\/author-p59602-e520244\.adobeaemcloud\.com\/ui#\/aem\/assets\/detail\/content\/dam\//
+  );
+  assert.match(
+    buildAssetDeepLink(deliveryModel.assets[0], deliveryModel),
+    /^https:\/\/experience\.adobe\.com\/\?repoId=delivery-p59602-e520244\.adobeaemcloud\.com#\/assets\/contenthub\/assets\//
+  );
+
+  const config = createDefaultConfig({
+    layout: {
+      theme: 'dark',
+      statusBadges: true,
+      clickableLinks: true,
+    },
+  });
+  const paginated = paginate(authorModel, config);
+  const html = renderHtml(paginated, { mode: 'preview', model: authorModel });
+
+  assert.match(html, /background: #18181b/);
+  assert.match(html, /status-badge status-approved/);
+  assert.match(html, /status-badge status-rejected/);
+  assert.match(html, /class="thumb-link"/);
+
+  const pdfBuf = await renderNativePdfBuffer(paginated, { model: authorModel });
+  assert.ok(pdfBuf.byteLength > 1000);
+  const loadedPdf = await PDFDocument.load(pdfBuf);
+  const firstPage = loadedPdf.getPages()[0];
+  const annots = firstPage.node.lookup(PDFName.of('Annots'));
+  assert.equal(annots.size(), 2);
 });

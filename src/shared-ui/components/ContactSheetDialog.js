@@ -546,6 +546,8 @@ export default function ContactSheetDialog({
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
   const [zoomMode, setZoomMode] = useState('fit'); // 'fit' | '0.75' | '1'
+  const [includeSubfolders, setIncludeSubfolders] = useState(() => Boolean(source?.includeSubfolders));
+  const [resolvingSubfolders, setResolvingSubfolders] = useState(false);
   const [readyDownloadUrl, setReadyDownloadUrl] = useState(null);
   const [checkingDownload, setCheckingDownload] = useState(false);
   const [thumbDataUrls, setThumbDataUrls] = useState({});
@@ -1228,6 +1230,30 @@ export default function ContactSheetDialog({
     }
   }
 
+  async function handleToggleSubfolders(checked) {
+    if (source?.kind !== 'folder') return;
+    setIncludeSubfolders(checked);
+    setResolvingSubfolders(true);
+    try {
+      const updatedSource = { ...source, includeSubfolders: checked };
+      const resolveRes = await callAction('resolve', {
+        method: 'POST',
+        body: { source: updatedSource, tier, aemHost: authCtx?.aemHost },
+      });
+      if (
+        (resolveRes.status === 'succeeded' || resolveRes.status === 'succeeded_with_warnings') &&
+        resolveRes.model
+      ) {
+        setModel(resolveRes.model);
+        setModelFileKey(resolveRes.result?.modelFileKey || null);
+      }
+    } catch {
+      // keep existing model if re-resolve fails
+    } finally {
+      setResolvingSubfolders(false);
+    }
+  }
+
   async function handleSavePreset() {
     const name = window.prompt('Preset name:');
     if (!name) return;
@@ -1518,8 +1544,31 @@ export default function ContactSheetDialog({
               {model?.sourceLabel}
             </span>
             <span className="s2-count-badge">
-              {model?.totalFound} {model?.totalFound === 1 ? 'asset' : 'assets'}
+              {resolvingSubfolders
+                ? 'Updating…'
+                : `${model?.totalFound} ${model?.totalFound === 1 ? 'asset' : 'assets'}`}
             </span>
+            {source?.kind === 'folder' && (
+              <label
+                className="s2-checkbox-label"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  marginLeft: 4,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  background: 'var(--s2-bg-layer-2)',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={includeSubfolders}
+                  disabled={resolvingSubfolders}
+                  onChange={(e) => handleToggleSubfolders(e.target.checked)}
+                />
+                Include subfolders
+              </label>
+            )}
           </div>
         </div>
 
@@ -2310,7 +2359,20 @@ export default function ContactSheetDialog({
               </div>
             </div>
 
-            <div className="s2-checkbox-row">
+            <div className="s2-field">
+              <label className="s2-label">Page theme</label>
+              <select
+                className="s2-select"
+                value={config.layout.theme || 'light'}
+                onChange={(e) => setConfig({ ...config, layout: { ...config.layout, theme: e.target.value } })}
+              >
+                <option value="light">Clean White (Default)</option>
+                <option value="dark">Photographer Dark (#18181b)</option>
+                <option value="grey">Neutral Proofing Grey (#52525b)</option>
+              </select>
+            </div>
+
+            <div className="s2-checkbox-row" style={{ flexWrap: 'wrap', rowGap: 6 }}>
               <label className="s2-checkbox-label">
                 <input
                   type="checkbox"
@@ -2326,6 +2388,22 @@ export default function ContactSheetDialog({
                   onChange={(e) => setConfig({ ...config, layout: { ...config.layout, sequenceNumbers: e.target.checked } })}
                 />
                 Asset sequence #
+              </label>
+              <label className="s2-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={Boolean(config.layout.statusBadges)}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, statusBadges: e.target.checked } })}
+                />
+                Status badges
+              </label>
+              <label className="s2-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={config.layout.clickableLinks !== false}
+                  onChange={(e) => setConfig({ ...config, layout: { ...config.layout, clickableLinks: e.target.checked } })}
+                />
+                Clickable AEM links
               </label>
             </div>
 
