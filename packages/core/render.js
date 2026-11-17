@@ -136,15 +136,27 @@ html, body {
 }
 .header-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.14in;
   min-width: 0;
   flex: 1;
 }
+.header-center {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: none;
+}
 .header-logo {
   max-height: ${Number((headerH - 0.14).toFixed(3))}in;
-  max-width: 1.4in;
+  max-width: 1.6in;
   object-fit: contain;
+  object-position: top center;
+  display: block;
   flex-shrink: 0;
 }
 .header-titles {
@@ -433,7 +445,7 @@ export function renderHtml(
       .join('');
 
     const logoHtml = logoUrl
-      ? `<img class="header-logo" src="${escapeHtml(logoUrl)}" alt="Logo" />`
+      ? `<div class="header-center"><img class="header-logo" src="${escapeHtml(logoUrl)}" alt="Logo" /></div>`
       : '';
 
     const pageNumHtml = layout.pageNumbers !== false
@@ -443,13 +455,13 @@ export function renderHtml(
     return `<div class="page-shell"><section class="page" data-page="${page.pageNumber}">
       <header class="page-header">
         <div class="header-left">
-          ${logoHtml}
           <div class="header-titles">
             <div class="header-title">${escapeHtml(header.title || 'Contact Sheet')}</div>
             ${subParts.length ? `<div class="header-meta">${subParts.join(' · ')}</div>` : ''}
             <div class="header-source">${sourceLineParts.join(' · ')}</div>
           </div>
         </div>
+        ${logoHtml}
         <div class="header-right">
           <div class="header-date">${escapeHtml(header.date || '')}</div>
           <div>${countText}</div>

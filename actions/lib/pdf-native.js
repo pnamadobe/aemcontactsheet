@@ -144,21 +144,20 @@ export async function renderNativePdfBuffer(
     const headerTopY = pageH - margin;
     const headerBottomY = headerTopY - headerH;
 
-    // Header title & metadata
-    let textStartX = margin;
+    // Header title & metadata (left-aligned, top-aligned), with optional logo centered & top-aligned
+    const textStartX = margin;
     if (embeddedLogo) {
       const maxLogoH = headerH - 10;
-      const maxLogoW = 95;
+      const maxLogoW = 115;
       const scale = Math.min(maxLogoW / embeddedLogo.width, maxLogoH / embeddedLogo.height, 1);
       const lw = embeddedLogo.width * scale;
       const lh = embeddedLogo.height * scale;
       page.drawImage(embeddedLogo, {
-        x: margin,
-        y: headerBottomY + (headerH - lh) / 2,
+        x: margin + (contentW - lw) / 2,
+        y: headerTopY - lh,
         width: lw,
         height: lh,
       });
-      textStartX = margin + lw + 10;
     }
 
     page.drawText(toAsciiSafe(header.title || 'Contact Sheet'), {

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildZipBuffer } from '../lib/zip.js';
+import { resolveUniqueFileName } from '../lib/aem.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
 import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
 import { main as resolveWorkerMain } from '../resolve-worker/index.js';
@@ -397,5 +398,21 @@ test('exportContactSheetToFireflyBoard uses full-res downloadUrl and expands gri
   assert.ok(
     card3.placement.rect.y > lastMetaY + 100,
     `Expected row 2 card (${card3.placement.rect.y}) to be well below row 1's last metadata line (${lastMetaY})`
+  );
+});
+
+test('resolveUniqueFileName suffixes duplicate PDF filenames with incrementing sequence numbers', () => {
+  assert.equal(resolveUniqueFileName('hertz-ads_2026-11-17.pdf', []), 'hertz-ads_2026-11-17.pdf');
+  assert.equal(
+    resolveUniqueFileName('hertz-ads_2026-11-17.pdf', ['hertz-ads_2026-11-17.pdf']),
+    'hertz-ads_2026-11-17-1.pdf'
+  );
+  assert.equal(
+    resolveUniqueFileName('hertz-ads_2026-11-17.pdf', [
+      'hertz-ads_2026-11-17.pdf',
+      'hertz-ads_2026-11-17-1.pdf',
+      'hertz-ads_2026-11-17-2.pdf',
+    ]),
+    'hertz-ads_2026-11-17-3.pdf'
   );
 });

@@ -2,6 +2,30 @@
 import { CONTACT_SHEET_CREATOR_TOOL } from '../../packages/core/fields.js';
 import { mapWithConcurrency, withRetry } from './utils.js';
 
+/**
+ * Given a desired PDF filename (e.g. `hertz-ads_2026-11-17.pdf`) and existing asset names in the target folder,
+ * append a sequence number (`-1`, `-2`, `-3`, ...) if a file with the same name already exists.
+ */
+export function resolveUniqueFileName(desiredName, existingNames = []) {
+  const cleanDesired = String(desiredName || 'contact-sheet.pdf').trim();
+  const lowerSet = new Set(
+    (Array.isArray(existingNames) ? existingNames : [...existingNames]).map((n) =>
+      String(n || '').toLowerCase()
+    )
+  );
+  if (!lowerSet.has(cleanDesired.toLowerCase())) {
+    return cleanDesired;
+  }
+  const dotIdx = cleanDesired.lastIndexOf('.');
+  const base = dotIdx > 0 ? cleanDesired.slice(0, dotIdx) : cleanDesired;
+  const ext = dotIdx > 0 ? cleanDesired.slice(dotIdx) : '.pdf';
+  let seq = 1;
+  while (lowerSet.has(`${base}-${seq}${ext}`.toLowerCase())) {
+    seq++;
+  }
+  return `${base}-${seq}${ext}`;
+}
+
 export function createAemClient({
   aemHost,
   deliveryHost,
@@ -368,7 +392,7 @@ export function createAemClient({
       (folderPath || '/content/dam/contact-sheets')
         .replace(/\/+$/, '')
         .replace(/\/[^/]+\.pdf$/i, '') || '/content/dam/contact-sheets';
-    // 1. Ensure folder exists (ignore 409 if already exists)
+    // 1. Ensure folder exists (ignore 409 if already exists) and inspect existing asset names for sequence deduplication
     try {
       await requestJson(normAuthor, '/adobe/experimental/metaall-expires-20991231/folders', {
         method: 'POST',
@@ -380,7 +404,18 @@ export function createAemClient({
       }
     }
 
-    const fullPath = `${cleanFolder}/${fileName}`;
+    let resolvedFileName = fileName;
+    try {
+      const folderListing = await listFolder({ path: cleanFolder, types: 'ASSET', limit: 200 });
+      const existingNames = (folderListing?.children || [])
+        .filter((c) => c.type === 'ASSET' && c.name)
+        .map((c) => c.name);
+      resolvedFileName = resolveUniqueFileName(fileName, existingNames);
+    } catch {
+      resolvedFileName = fileName;
+    }
+
+    const fullPath = `${cleanFolder}/${resolvedFileName}`;
     // 2. Initiate upload: in AEM OpenAPI, `path` is the parent folder path and `fileName` is the asset name!
     const initRes = await requestJson(normAuthor, '/adobe/assets', {
       method: 'POST',
@@ -388,7 +423,7 @@ export function createAemClient({
         assets: [
           {
             path: cleanFolder,
-            fileName,
+            fileName: resolvedFileName,
             fileSize: pdfBuffer.byteLength,
           },
         ],
@@ -480,7 +515,7 @@ export function createAemClient({
     let aemDownloadUrl = null;
     try {
       const origRes = await fetchImpl(
-        `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/original/as/${encodeURIComponent(fileName)}`,
+        `${normAuthor}/adobe/assets/${encodeURIComponent(assetId)}/original/as/${encodeURIComponent(resolvedFileName)}`,
         {
           method: 'GET',
           redirect: 'manual',
@@ -502,7 +537,7 @@ export function createAemClient({
           {
             method: 'POST',
             body: {
-              termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
+              termFilters: [{ key: 'repositoryMetadata.repo:name', value: resolvedFileName }],
               limit: 5,
             },
           }
@@ -516,8 +551,8 @@ export function createAemClient({
 
     return {
       assetId,
-      path: verified?.repositoryMetadata?.['repo:path'] || `${cleanFolder}/${fileName}`,
-      fileName,
+      path: verified?.repositoryMetadata?.['repo:path'] || fullPath,
+      fileName: resolvedFileName,
       size: verified?.repositoryMetadata?.['repo:size'] || pdfBuffer.byteLength,
       downloadUrl: aemDownloadUrl,
     };

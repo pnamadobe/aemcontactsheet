@@ -18,7 +18,7 @@ import { getPresignedDownloadUrl, loadJob, readFileObject, saveJob, savePdfChunk
 import { mapWithConcurrency } from '../lib/utils.js';
 
 export function buildPdfFileName(title = 'contact-sheet', customName = '') {
-  const stamp = new Date().toISOString().replace(/[:T.]/g, '-').slice(0, 19);
+  const dateStr = new Date().toISOString().slice(0, 10);
   const slug =
     String(title)
       .toLowerCase()
@@ -27,9 +27,9 @@ export function buildPdfFileName(title = 'contact-sheet', customName = '') {
       .slice(0, 48) || 'contact-sheet';
   if (customName && customName.trim().endsWith('.pdf') && !/^contact-sheet_\d{4}-\d{2}-\d{2}\.pdf$/i.test(customName.trim())) {
     const base = customName.trim().replace(/\.pdf$/i, '').replace(/[^a-zA-Z0-9._-]+/g, '-');
-    return `${base}_${stamp}.pdf`;
+    return `${base}.pdf`;
   }
-  return `${slug}_${stamp}.pdf`;
+  return `${slug}_${dateStr}.pdf`;
 }
 
 export async function main(params = {}) {
@@ -316,7 +316,7 @@ export async function main(params = {}) {
       pdfFileKey,
       downloadUrl: finalDownloadUrl,
       pdfChunkCount,
-      fileName,
+      fileName: uploaded?.fileName || fileName,
       pages: paginated.totalPages,
       assets: paginated.totalAssets,
       bytes: pdfBuffer.byteLength,

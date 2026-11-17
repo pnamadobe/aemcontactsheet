@@ -444,7 +444,7 @@ export async function exportContactSheetToFireflyBoard({
     cursorY += headerLineStep;
   });
 
-  // Optional header logo placed in its own artboard below/beside the header lines
+  // Optional header logo placed horizontally centered and top-aligned at y = 0 in the header
   if (header.logo?.assetId && aem) {
     try {
       const { buffer } = await aem.fetchAssetThumbnailBuffer(
@@ -455,6 +455,7 @@ export async function exportContactSheetToFireflyBoard({
       if (dims) {
         const logoCardW = dims.width + 40;
         const logoCardH = dims.height + 40;
+        const logoX = Math.max(0, Math.round((totalGridW - logoCardW) / 2));
         pushOpPair([
           {
             type: 'createArtboard',
@@ -464,7 +465,7 @@ export async function exportContactSheetToFireflyBoard({
             height: logoCardH,
             placement: {
               kind: 'rect',
-              rect: { x: 0, y: cursorY, width: logoCardW, height: logoCardH },
+              rect: { x: logoX, y: 0, width: logoCardW, height: logoCardH },
             },
           },
           {
@@ -481,7 +482,7 @@ export async function exportContactSheetToFireflyBoard({
             ],
           },
         ]);
-        cursorY += logoCardH + headerLineStep;
+        cursorY = Math.max(cursorY, logoCardH + headerLineStep);
       }
     } catch {
       // non-fatal
