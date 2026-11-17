@@ -9,6 +9,11 @@ import { buildZipBuffer } from '../lib/zip.js';
 import { resolveUniqueFileName } from '../lib/aem.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
 import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
+import {
+  buildContactSheetHzJson,
+  exportContactSheetToAdobeExpress,
+  parseSenseiStatusResponse,
+} from '../lib/adobe-express.js';
 import { main as resolveWorkerMain } from '../resolve-worker/index.js';
 import { main as generateWorkerMain } from '../generate-worker/index.js';
 import { main as statusMain } from '../status/index.js';
@@ -532,4 +537,102 @@ test('Tier 1 enhancements: clickable deep links, approval status badges, and dar
   const firstPage = loadedPdf.getPages()[0];
   const annots = firstPage.node.lookup(PDFName.of('Annots'));
   assert.equal(annots.size(), 2);
+});
+
+test('exportContactSheetToAdobeExpress builds multi-page HzJSON v1 and creates an Adobe Express document via Sensei', async () => {
+  const rawWithSigned = collegeRaw.slice(0, 6).map((item, idx) => ({
+    ...item,
+    thumbnailUrl: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-${idx}.jpg?sig=abc`,
+    downloadUrl: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-orig-${idx}.jpg?sig=abc`,
+  }));
+  const model = buildSheetModel({
+    rawAssets: rawWithSigned,
+    sourceLabel: 'Collection: College Branded',
+  });
+  const config = createDefaultConfig({
+    header: { title: 'Express Lookbook Test', preparedBy: 'Peter Nam' },
+    layout: { columns: 2, theme: 'dark', statusBadges: true },
+    watermark: { enabled: true, text: 'CONFIDENTIAL', angle: 45, position: 'center', opacity: 35, coverage: 60 },
+  });
+  const paginated = paginate(model, config);
+
+  const assetUrlMap = new Map(
+    model.assets.map((a, idx) => [
+      a.id,
+      { url: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-orig-${idx}.jpg?sig=abc`, mimeType: 'image/jpeg' },
+    ])
+  );
+  const hzJson = buildContactSheetHzJson({ paginated, model, assetUrlMap });
+  assert.equal(hzJson.metadata.version, 1);
+  assert.equal(hzJson.metadata.documentName, 'Express Lookbook Test');
+  assert.equal(hzJson.resources.length, 6);
+  assert.ok(hzJson.artwork.children.length >= 1);
+  assert.equal(hzJson.artwork.children[0].sceneNodeType, 'artboard');
+
+  // Verify multipart/mixed Sensei status response parser
+  const sampleMultipart = [
+    '--Boundary_123',
+    'Content-Type: application/json',
+    'Content-Disposition: form-data; name="contentAnalyzerResponse"',
+    '',
+    JSON.stringify({
+      statuses: [
+        {
+          'sensei:engine': 'Feature:autocrop:Service-f3c41ebbaca44b0384e506185c1cf583',
+          invocations: [
+            {
+              'sensei:outputs': { results: { 'dc:format': 'application/json', 'sensei:multipart_field_name': 'results' } },
+              message: null,
+              status: '200',
+            },
+          ],
+        },
+      ],
+      request_id: 'req-express-1',
+    }),
+    '--Boundary_123',
+    'Content-Type: application/json',
+    'Content-Disposition: form-data; name="results"',
+    '',
+    JSON.stringify({ documentId: 'urn:aaid:sc:US:express-doc-777' }),
+    '--Boundary_123--',
+  ].join('\r\n');
+
+  const parsedStatus = parseSenseiStatusResponse(sampleMultipart);
+  assert.equal(parsedStatus.done, true);
+  assert.equal(parsedStatus.documentId, 'urn:aaid:sc:US:express-doc-777');
+
+  const fakeExpressFetch = async (urlStr) => {
+    if (String(urlStr).includes('/services/v2/predict')) {
+      return new Response('', {
+        status: 202,
+        headers: { location: 'https://senseicore-ue1.adobe.io/services/v2/status/req-express-1' },
+      });
+    }
+    if (String(urlStr).includes('/services/v2/status/req-express-1')) {
+      return new Response(sampleMultipart, {
+        status: 200,
+        headers: { 'content-type': 'multipart/mixed; boundary=Boundary_123' },
+      });
+    }
+    if (String(urlStr).includes('invitations.adobe.io')) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+    return new Response('Not found', { status: 404 });
+  };
+
+  const expressRes = await exportContactSheetToAdobeExpress({
+    jobId: 'test_express_1',
+    paginated,
+    model,
+    bearerToken: 'mock-express-token',
+    shareWithEmails: ['pnam@adobe.com'],
+    fetchImpl: fakeExpressFetch,
+  });
+
+  assert.equal(expressRes.documentId, 'urn:aaid:sc:US:express-doc-777');
+  assert.equal(expressRes.expressUrl, 'https://new.express.adobe.com/id/urn%3Aaaid%3Asc%3AUS%3Aexpress-doc-777');
+  assert.equal(expressRes.expressMode, 'direct');
+  assert.equal(expressRes.sharedLinkEnabled, true);
+  assert.equal(expressRes.placedAssets, 6);
 });

@@ -122,8 +122,12 @@ export async function readFileObject(fileKey, asText = true) {
   }
   const files = await getFilesClient();
   if (files) {
-    const buf = await files.read(fileKey);
-    return asText ? buf.toString('utf8') : buf;
+    try {
+      const buf = await files.read(fileKey);
+      if (buf) return asText ? buf.toString('utf8') : buf;
+    } catch {
+      // File does not exist in Files yet; fall through
+    }
   }
   try {
     const full = path.join(LOCAL_ROOT, 'files', fileKey);

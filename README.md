@@ -120,6 +120,20 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
 
 ---
 
+### 9. Export to Adobe Express (`Open in Adobe Express`)
+- **Direct Multi-Page Horizon JSON (`HzJSON` v1) Export (`actions/lib/adobe-express.js`):**
+  - Converts the paginated contact sheet (`paginated.pages`, `geometry`, `THEME_PALETTES`) into a multi-page **Horizon JSON (`HzJSON` v1)** document where each contact sheet page is an `artboard` (`96 px/in`) containing independent, editable Express scene nodes:
+    - Page background `rectangle` (`Clean White`, `Photographer Dark`, or `Neutral Proofing Grey` theme)
+    - Sheet header (`Title`, centered `Brand Logo` bitmap, `Date`, `Prepared by`, `Source`, and divider rule)
+    - Section group banners with accent bars
+    - Thumbnail `rectangle` frames and `BitmapFill` nodes (`contain` or `cover`) referencing pre-signed AEM URLs or App Builder `Files` pre-signed URLs
+    - Approval status badge pills (`APPROVED`, `REJECTED`, `PENDING`), rotated watermark `text` overlays, and individual editable metadata caption `text` nodes
+  - Submits the `HzJSON` document to the **Sensei HzJSON Import Service** (`POST https://sensei.adobe.io/services/v2/predict`, Engine `Feature:autocrop:Service-f3c41ebbaca44b0384e506185c1cf583` — the same pipeline used by Firefly Boards' *"Open in Express"* action), polls `/services/v2/status/{requestId}`, shares the created `urn:aaid:sc:...` document via `invitations.adobe.io`, and opens **`https://new.express.adobe.com/id/{documentId}`**.
+- **Seamless Editable Vector PDF Fallback:**
+  - When the user's current token does not yet include Adobe Fonts / Express scopes, `generate-worker` automatically falls back to generating the vector multi-page PDF and surfaces a 1-click **Download & Open Adobe Express ↗** action so the user can drop the PDF into Adobe Express's native PDF importer (which converts every page, image, logo, badge, and text line into editable Express layers).
+
+---
+
 ## Repository Structure & Documentation
 
 - `packages/core/`: `@contactsheet/core` shared library (`fields.js`, `model.js`, `sort.js`, `layout.js`, `render.js`) and unit tests (`packages/core/__tests__/core.test.js`).

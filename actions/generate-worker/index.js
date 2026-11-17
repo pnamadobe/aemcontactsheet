@@ -11,6 +11,7 @@ import { paginate } from '../../packages/core/layout.js';
 import { renderHtml } from '../../packages/core/render.js';
 import { createAemClient } from '../lib/aem.js';
 import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
+import { exportContactSheetToAdobeExpress } from '../lib/adobe-express.js';
 import { buildZipBuffer } from '../lib/zip.js';
 import { convertHtmlZipToPdf, getServerToServerToken } from '../lib/pdf-services.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
@@ -112,6 +113,50 @@ export async function main(params = {}) {
       };
       await saveJob(job);
       return job;
+    }
+
+    if (outputFormat === 'express') {
+      job.phase = 'express';
+      await saveJob(job);
+      const targetToken =
+        String(params.boardsBearerToken || '').trim().replace(/^Bearer\s+/i, '') || auth.bearerToken;
+      const shareEmails = [params.boardsShareEmail, auth.userEmail].filter(Boolean);
+      try {
+        const expressRes = await exportContactSheetToAdobeExpress({
+          jobId,
+          paginated,
+          model,
+          aem,
+          bearerToken: targetToken,
+          shareWithEmails: shareEmails,
+          fetchImpl,
+          onProgress: async (done, total) => {
+            job.progress = { done, total };
+            await saveJob(job);
+          },
+        });
+        job.status = warnings.length ? 'succeeded_with_warnings' : 'succeeded';
+        job.phase = 'done';
+        job.warnings = warnings;
+        job.result = {
+          outputFormat: 'express',
+          expressMode: 'direct',
+          documentId: expressRes.documentId,
+          expressUrl: expressRes.expressUrl,
+          sharedLinkEnabled: expressRes.sharedLinkEnabled,
+          sharedWith: expressRes.sharedWith,
+          pages: expressRes.pages,
+          assets: expressRes.placedAssets,
+        };
+        await saveJob(job);
+        return job;
+      } catch (expressErr) {
+        // If direct cloud HzJSON import fails (e.g., AEM token lacks Adobe Fonts/Express scope),
+        // fall through to generating the editable multi-page vector PDF for 1-click Express PDF import!
+        warnings.push(
+          `Prepared editable multi-page PDF for Adobe Express import (${expressErr.code || 'direct cloud creation requires an Express/Firefly token in Target IMS Org'}).`
+        );
+      }
     }
 
     // Collect ordered assets from paginated blocks
@@ -361,6 +406,13 @@ export async function main(params = {}) {
     job.warnings = warnings;
     job.result = {
       jobId,
+      outputFormat: outputFormat === 'express' ? 'express' : 'pdf',
+      ...(outputFormat === 'express'
+        ? {
+            expressMode: 'pdf_import',
+            expressUrl: 'https://new.express.adobe.com/',
+          }
+        : {}),
       pdfFileKey,
       downloadUrl: finalDownloadUrl,
       pdfChunkCount,

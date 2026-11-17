@@ -664,7 +664,11 @@ export default function ContactSheetDialog({
       return;
     }
     const r = generateJob?.result || {};
-    if (r.outputFormat === 'boards' || r.boardUrl) {
+    if (
+      r.outputFormat === 'boards' ||
+      r.boardUrl ||
+      (r.outputFormat === 'express' && r.expressMode === 'direct')
+    ) {
       setCheckingDownload(false);
       return;
     }
@@ -1358,7 +1362,8 @@ export default function ContactSheetDialog({
         },
       }).catch(() => {});
 
-      const boardsBearerToken = outputFormat === 'boards' ? await resolveBoardsBearerToken() : null;
+      const isCloudCanvas = outputFormat === 'boards' || outputFormat === 'express';
+      const boardsBearerToken = isCloudCanvas ? await resolveBoardsBearerToken() : null;
 
       const genInit = await callAction('generate', {
         method: 'POST',
@@ -1368,7 +1373,7 @@ export default function ContactSheetDialog({
           config: slimConfig,
           outputFormat,
           boardsBearerToken,
-          boardsShareEmail: outputFormat === 'boards' ? boardsShareEmail.trim() || null : null,
+          boardsShareEmail: isCloudCanvas ? boardsShareEmail.trim() || null : null,
           tier,
           aemHost: authCtx?.aemHost,
         },
@@ -1382,6 +1387,8 @@ export default function ContactSheetDialog({
           message:
             outputFormat === 'boards'
               ? `Firefly Board "${config.header.title}" is ready.`
+              : outputFormat === 'express'
+              ? `Adobe Express document "${config.header.title}" is ready.`
               : `Contact sheet "${config.header.title}" is ready.`,
         });
         return;
@@ -1407,6 +1414,8 @@ export default function ContactSheetDialog({
             message:
               outputFormat === 'boards'
                 ? `Firefly Board "${config.header.title}" is ready.`
+                : outputFormat === 'express'
+                ? `Adobe Express document "${config.header.title}" is ready.`
                 : `Contact sheet "${config.header.title}" is ready.`,
           });
           break;
@@ -1603,11 +1612,15 @@ export default function ContactSheetDialog({
             <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>
               {activeOutputFormat === 'boards'
                 ? 'Building Firefly Board…'
+                : activeOutputFormat === 'express'
+                ? 'Building Adobe Express document…'
                 : 'Generating contact sheet PDF…'}
             </h3>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
               {activeOutputFormat === 'boards'
                 ? `Placing asset cards and metadata lines on canvas (${p.done} / ${p.total || paginated?.totalAssets || 0})…`
+                : activeOutputFormat === 'express'
+                ? `Creating multi-page editable Adobe Express project (${p.done} / ${p.total || paginated?.totalAssets || 0})…`
                 : `Rendering high-resolution pages and uploading to AEM Assets (${p.done} / ${p.total || paginated?.totalAssets || 0})…`}
             </p>
             <div className="s2-progress-track">
@@ -1615,7 +1628,10 @@ export default function ContactSheetDialog({
                 className="s2-progress-fill"
                 style={{
                   width: `${pct}%`,
-                  background: activeOutputFormat === 'boards' ? 'var(--s2-purple)' : 'var(--s2-accent)',
+                  background:
+                    activeOutputFormat === 'boards' || activeOutputFormat === 'express'
+                      ? 'var(--s2-purple)'
+                      : 'var(--s2-accent)',
                 }}
               />
             </div>
@@ -1636,13 +1652,24 @@ export default function ContactSheetDialog({
   if (phase === 'done') {
     const r = generateJob?.result || {};
     const isBoards = r.outputFormat === 'boards' || Boolean(r.boardUrl);
+    const isExpress = r.outputFormat === 'express' || Boolean(r.expressUrl);
+    const isExpressDirect = isExpress && r.expressMode === 'direct';
     return (
       <div className="s2-shell">
         <style>{SPECTRUM_CSS}</style>
         <div className="s2-state-screen">
           <div className="s2-state-card">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 999, background: 'var(--s2-positive-subtle)', color: 'var(--s2-positive)', fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
-              ✓ {isBoards ? 'Firefly Board Created' : r.aemPath ? 'Saved to AEM Assets' : 'Contact Sheet Ready for Download'}
+              ✓{' '}
+              {isBoards
+                ? 'Firefly Board Created'
+                : isExpressDirect
+                ? 'Adobe Express Document Created'
+                : isExpress
+                ? 'Ready for Adobe Express'
+                : r.aemPath
+                ? 'Saved to AEM Assets'
+                : 'Contact Sheet Ready for Download'}
             </div>
             <h3 style={{ margin: '0 0 6px', fontSize: 19 }}>
               {config.header.title || r.fileName}
@@ -1651,11 +1678,21 @@ export default function ContactSheetDialog({
               <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
                 {r.placedCards ?? r.assets} asset cards with separate editable metadata lines placed on your Firefly Board.
               </p>
+            ) : isExpressDirect ? (
+              <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+                {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets converted into a multi-page editable Adobe Express document.
+              </p>
             ) : (
               <>
                 <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
                   {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets · {formatBytes(r.bytes)}
                 </p>
+                {isExpress && (
+                  <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--s2-text-secondary)', lineHeight: 1.45 }}>
+                    Click <strong>Download &amp; Open Adobe Express</strong> below, then drop the PDF into{' '}
+                    <strong>Start from your content</strong> in Adobe Express to edit every page, image, and caption layer.
+                  </p>
+                )}
                 {r.aemPath && (
                   <div className="s2-asset-selector-row" style={{ marginBottom: 14 }}>
                     <span className="s2-asset-selector-path" title={r.aemPath}>{r.aemPath}</span>
@@ -1672,7 +1709,7 @@ export default function ContactSheetDialog({
               <button className="s2-btn s2-btn-quiet" onClick={() => setPhase('configure')}>
                 Back to editor
               </button>
-              {!isBoards && r.aemPath && tier === 'author' && (
+              {!isBoards && !isExpressDirect && r.aemPath && tier === 'author' && (
                 <button
                   className="s2-btn"
                   onClick={async () => {
@@ -1687,16 +1724,32 @@ export default function ContactSheetDialog({
                 <a className="s2-btn s2-btn-boards" href={r.boardUrl} target="_blank" rel="noreferrer">
                   Open in Firefly Boards ↗
                 </a>
-              ) : readyDownloadUrl ? (
-                <a
-                  className="s2-btn s2-btn-accent"
-                  href={readyDownloadUrl}
-                  download={r.fileName || 'contact-sheet.pdf'}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download PDF
+              ) : isExpressDirect && r.expressUrl ? (
+                <a className="s2-btn s2-btn-boards" href={r.expressUrl} target="_blank" rel="noreferrer">
+                  Open in Adobe Express ↗
                 </a>
+              ) : readyDownloadUrl ? (
+                <>
+                  <a
+                    className="s2-btn s2-btn-accent"
+                    href={readyDownloadUrl}
+                    download={r.fileName || 'contact-sheet.pdf'}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Download PDF
+                  </a>
+                  <a
+                    className="s2-btn s2-btn-boards"
+                    href={readyDownloadUrl}
+                    download={r.fileName || 'contact-sheet.pdf'}
+                    onClick={() => {
+                      window.open(r.expressUrl || 'https://new.express.adobe.com/', '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    Download &amp; Open Adobe Express ↗
+                  </a>
+                </>
               ) : !isBoards ? (
                 <button className="s2-btn" disabled>
                   Preparing download link…
@@ -1795,6 +1848,13 @@ export default function ContactSheetDialog({
             }}
           >
             Print
+          </button>
+          <button
+            className="s2-btn"
+            style={{ borderColor: '#6e56cf', color: '#5b3fd1', fontWeight: 600 }}
+            onClick={() => handleGenerate('express')}
+          >
+            Open in Adobe Express
           </button>
           <button className="s2-btn s2-btn-boards" onClick={() => handleGenerate('boards')}>
             Send to Firefly Boards
