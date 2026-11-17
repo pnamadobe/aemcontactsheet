@@ -404,39 +404,67 @@ export function createAemClient({
       }
     }
 
+    const existingNames = [];
     let resolvedFileName = fileName;
     try {
-      const folderListing = await listFolder({ path: cleanFolder, types: 'ASSET', limit: 200 });
-      const existingNames = (folderListing?.children || [])
-        .filter((c) => c.type === 'ASSET' && c.name)
-        .map((c) => c.name);
+      const folderListing = await listFolder({ path: cleanFolder, types: 'ASSET', limit: 50 });
+      for (const c of folderListing?.children || []) {
+        if (c.type === 'ASSET' && c.name) existingNames.push(c.name);
+      }
       resolvedFileName = resolveUniqueFileName(fileName, existingNames);
     } catch {
       resolvedFileName = fileName;
     }
 
-    const fullPath = `${cleanFolder}/${resolvedFileName}`;
-    // 2. Initiate upload: in AEM OpenAPI, `path` is the parent folder path and `fileName` is the asset name!
-    const initRes = await requestJson(normAuthor, '/adobe/assets', {
-      method: 'POST',
-      body: {
-        assets: [
-          {
-            path: cleanFolder,
-            fileName: resolvedFileName,
-            fileSize: pdfBuffer.byteLength,
+    // 2. Initiate upload: in AEM OpenAPI, `path` is the parent folder path and `fileName` is the asset name.
+    // If `initiateUpload` reports a conflict (`errors: [{ type: ".../conflict" }]`) because a file with `resolvedFileName`
+    // already exists, automatically increment the sequence suffix (`-1`, `-2`, `-3`, ...) and retry!
+    let initRes = null;
+    let uploadInfo = null;
+    for (let seqAttempt = 0; seqAttempt < 25; seqAttempt++) {
+      try {
+        initRes = await requestJson(normAuthor, '/adobe/assets', {
+          method: 'POST',
+          body: {
+            assets: [
+              {
+                path: cleanFolder,
+                fileName: resolvedFileName,
+                fileSize: pdfBuffer.byteLength,
+              },
+            ],
           },
-        ],
-      },
-    });
-    const valuesObj = initRes?.data?.values || initRes?.data || initRes;
-    const uploadInfo =
-      (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
-      (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
-      (Array.isArray(valuesObj) && valuesObj[0]) ||
-      (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
-      null;
+        });
+      } catch (initErr) {
+        if (initErr.status === 409) {
+          existingNames.push(resolvedFileName);
+          resolvedFileName = resolveUniqueFileName(fileName, existingNames);
+          continue;
+        }
+        throw initErr;
+      }
 
+      const valuesObj = initRes?.data?.values || initRes?.data || initRes;
+      uploadInfo =
+        (Array.isArray(valuesObj?.assets) && valuesObj.assets[0]) ||
+        (Array.isArray(valuesObj?.uploads) && valuesObj.uploads[0]) ||
+        (Array.isArray(valuesObj) && valuesObj[0]) ||
+        (Array.isArray(initRes?.assets) && initRes.assets[0]) ||
+        null;
+
+      const hasConflictError =
+        Array.isArray(initRes?.errors) &&
+        initRes.errors.some((e) => /conflict|already exists/i.test(`${e?.type || ''} ${e?.title || ''} ${e?.detail || ''}`));
+
+      if (!uploadInfo && hasConflictError) {
+        existingNames.push(resolvedFileName);
+        resolvedFileName = resolveUniqueFileName(fileName, existingNames);
+        continue;
+      }
+      break;
+    }
+
+    const fullPath = `${cleanFolder}/${resolvedFileName}`;
     const assetId = uploadInfo?.id || uploadInfo?.assetId;
     const uploadToken = uploadInfo?.uploadToken;
     const uploadURIs = uploadInfo?.uploadURIs || [];
