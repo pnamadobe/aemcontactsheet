@@ -151,10 +151,14 @@ export async function main(params = {}) {
         await saveJob(job);
         return job;
       } catch (expressErr) {
-        // If direct cloud HzJSON import fails (e.g., AEM token lacks Adobe Fonts/Express scope),
-        // fall through to generating the editable multi-page vector PDF for 1-click Express PDF import!
+        const reason =
+          expressErr.code === 'TOKEN_EXPIRED'
+            ? 'Your saved token for the target IMS Org has expired — please paste a fresh token in Target IMS Org / Profile.'
+            : expressErr.code === 'UserNotEntitled'
+            ? 'The selected IMS Org is not entitled to Adobe Express — select your Express-entitled Target IMS Org token.'
+            : expressErr.code || 'direct cloud creation requires an Express/Firefly token in Target IMS Org';
         warnings.push(
-          `Prepared editable multi-page PDF for Adobe Express import (${expressErr.code || 'direct cloud creation requires an Express/Firefly token in Target IMS Org'}).`
+          `Prepared editable multi-page PDF for Adobe Express import (${reason})`
         );
       }
     }

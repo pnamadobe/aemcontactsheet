@@ -1178,6 +1178,19 @@ export default function ContactSheetDialog({
     }
   }
 
+  function isTokenExpired(rawToken) {
+    const claims = decodeTokenClaims(rawToken);
+    const created = Number(claims.created_at);
+    const expiresIn = Number(claims.expires_in);
+    if (created > 0 && expiresIn > 0) {
+      return Date.now() > created + expiresIn - 60_000;
+    }
+    if (Number(claims.exp) > 0) {
+      return Date.now() > Number(claims.exp) * 1000 - 60_000;
+    }
+    return false;
+  }
+
   async function handleCustomBoardsTokenChange(val) {
     setCustomBoardsToken(val);
     const clean = String(val || '').trim().replace(/^Bearer\s+/i, '');
@@ -1295,7 +1308,16 @@ export default function ContactSheetDialog({
     if (boardsAccountMode.startsWith('saved:')) {
       const id = boardsAccountMode.slice('saved:'.length);
       const saved = savedBoardsProfiles.find((p) => p.id === id);
+      if (customBoardsToken.trim()) {
+        const refreshed = await handleSaveBoardsProfile();
+        if (refreshed?.token) return refreshed.token;
+      }
       if (saved?.token) {
+        if (isTokenExpired(saved.token)) {
+          throw new Error(
+            `Your saved token for "${saved.name}" has expired — please paste a fresh token from Firefly Boards or Adobe Express in the Target IMS Org section.`
+          );
+        }
         callAction('prefs', {
           method: 'PUT',
           body: { defaultBoardsProfileId: id },
@@ -1306,31 +1328,6 @@ export default function ContactSheetDialog({
     if (boardsAccountMode === 'custom' && customBoardsToken.trim()) {
       const savedEntry = await handleSaveBoardsProfile();
       return savedEntry?.token || customBoardsToken.trim().replace(/^Bearer\s+/i, '');
-    }
-    if (boardsAccountMode.startsWith('cluster:')) {
-      const targetUserId = boardsAccountMode.slice('cluster:'.length);
-      try {
-        const clientId = authCtx?.apiKey || 'aem-assets-frontend-1';
-        const form = new URLSearchParams({
-          user_id: targetUserId,
-          explicit_profile_switch: 'true',
-        });
-        const res = await fetch(
-          `https://ims-na1.adobelogin.com/ims/check/v6/token?client_id=${encodeURIComponent(clientId)}`,
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'content-type': 'application/x-www-form-urlencoded' },
-            body: form.toString(),
-          }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.access_token) return data.access_token;
-        }
-      } catch {
-        // fall through to current token
-      }
     }
     return null;
   }
@@ -2749,34 +2746,37 @@ export default function ContactSheetDialog({
               </div>
             )}
 
-            {/* Firefly Boards Target Account / IMS Org (for customers with AEM in Org A and Firefly Boards in Org B) */}
+            {/* Firefly Boards / Adobe Express Target Account / IMS Org */}
             <div className="s2-field" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--s2-border-subtle)' }}>
-              <label className="s2-label">Firefly Boards Target IMS Org / Profile</label>
+              <label className="s2-label">Firefly Boards / Adobe Express Target IMS Org</label>
               <div style={{ display: 'flex', gap: 6 }}>
                 <select
                   className="s2-select"
                   value={boardsAccountMode}
-                  onChange={(e) => setBoardsAccountMode(e.target.value)}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    setBoardsAccountMode(nextVal);
+                    if (nextVal.startsWith('saved:')) {
+                      const sel = savedBoardsProfiles.find((p) => p.id === nextVal.slice('saved:'.length));
+                      if (sel && isTokenExpired(sel.token)) {
+                        setCustomBoardsOrgName(sel.name);
+                      }
+                    }
+                  }}
                 >
                   <option value="current">
                     Current AEM Org ({authCtx?.imsOrg?.replace('@AdobeOrg', '') || 'Default'}) + Auto-share link
                   </option>
                   {savedBoardsProfiles.length > 0 && (
-                    <optgroup label="Saved Firefly Boards Orgs">
-                      {savedBoardsProfiles.map((p) => (
-                        <option key={p.id} value={`saved:${p.id}`}>
-                          ★ {p.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {clusterProfiles.length > 0 && (
-                    <optgroup label="Account Cluster Profiles">
-                      {clusterProfiles.map((p) => (
-                        <option key={p.userId} value={`cluster:${p.userId}`}>
-                          Switch to {p.label}
-                        </option>
-                      ))}
+                    <optgroup label="Saved Target Orgs (Firefly Boards & Express)">
+                      {savedBoardsProfiles.map((p) => {
+                        const expired = isTokenExpired(p.token);
+                        return (
+                          <option key={p.id} value={`saved:${p.id}`}>
+                            ★ {p.name}{expired ? ' (Token expired — refresh below)' : ''}
+                          </option>
+                        );
+                      })}
                     </optgroup>
                   )}
                   <option value="custom">+ Add / Save Another IMS Org Token…</option>
@@ -2794,46 +2794,60 @@ export default function ContactSheetDialog({
                 )}
               </div>
 
-              {boardsAccountMode === 'custom' && (
-                <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'var(--s2-bg-base)', border: '1px solid var(--s2-border-subtle)' }}>
-                  <label className="s2-label">1. Paste Bearer Token from Target Firefly Boards Org</label>
-                  <input
-                    className="s2-input"
-                    type="password"
-                    placeholder="Paste Bearer token (auto-detects IMS Org name)…"
-                    value={customBoardsToken}
-                    onChange={(e) => handleCustomBoardsTokenChange(e.target.value)}
-                  />
-                  <div style={{ fontSize: 11, color: 'var(--s2-text-muted)', marginTop: 4 }}>
-                    Tip: In your Firefly Boards tab DevTools console, run{' '}
-                    <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 3 }}>
-                      copy(window.adobeIMS.getAccessToken().token)
-                    </code>
-                  </div>
-
-                  <label className="s2-label" style={{ marginTop: 8 }}>
-                    2. Org / Profile Name {detectingBoardsOrg ? '(Detecting org name…)' : '(Auto-detected or custom)'}
-                  </label>
-                  <div style={{ display: 'flex', gap: 6 }}>
+              {(() => {
+                const selectedSaved = boardsAccountMode.startsWith('saved:')
+                  ? savedBoardsProfiles.find((p) => p.id === boardsAccountMode.slice('saved:'.length))
+                  : null;
+                const selectedExpired = Boolean(selectedSaved && isTokenExpired(selectedSaved.token));
+                if (boardsAccountMode !== 'custom' && !selectedExpired) return null;
+                return (
+                  <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'var(--s2-bg-base)', border: '1px solid var(--s2-border-subtle)' }}>
+                    {selectedExpired && (
+                      <div className="s2-banner-warn" style={{ marginBottom: 8, padding: '6px 8px', fontSize: 11.5 }}>
+                        Saved token for <strong>{selectedSaved.name}</strong> has expired. Paste a fresh token below to update it.
+                      </div>
+                    )}
+                    <label className="s2-label">
+                      1. Paste Bearer Token from Target Firefly Boards or Adobe Express Tab
+                    </label>
                     <input
                       className="s2-input"
-                      type="text"
-                      placeholder="e.g. Adobe Corp / Creative Studio Org"
-                      value={customBoardsOrgName}
-                      onChange={(e) => setCustomBoardsOrgName(e.target.value)}
+                      type="password"
+                      placeholder="Paste Bearer token (auto-detects IMS Org name)…"
+                      value={customBoardsToken}
+                      onChange={(e) => handleCustomBoardsTokenChange(e.target.value)}
                     />
-                    <button
-                      type="button"
-                      className="s2-btn s2-btn-accent s2-btn-sm"
-                      style={{ height: 32 }}
-                      disabled={!customBoardsToken.trim()}
-                      onClick={handleSaveBoardsProfile}
-                    >
-                      Save Org
-                    </button>
+                    <div style={{ fontSize: 11, color: 'var(--s2-text-muted)', marginTop: 4 }}>
+                      Tip: In your Firefly Boards or Adobe Express tab DevTools console, run{' '}
+                      <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 3 }}>
+                        copy(window.adobeIMS.getAccessToken().token)
+                      </code>
+                    </div>
+
+                    <label className="s2-label" style={{ marginTop: 8 }}>
+                      2. Org / Profile Name {detectingBoardsOrg ? '(Detecting org name…)' : '(Auto-detected or custom)'}
+                    </label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        className="s2-input"
+                        type="text"
+                        placeholder="e.g. Adobe Corp / Creative Studio Org"
+                        value={customBoardsOrgName || (selectedSaved?.name ?? '')}
+                        onChange={(e) => setCustomBoardsOrgName(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="s2-btn s2-btn-accent s2-btn-sm"
+                        style={{ height: 32 }}
+                        disabled={!customBoardsToken.trim()}
+                        onClick={handleSaveBoardsProfile}
+                      >
+                        {selectedExpired ? 'Update Token' : 'Save Org'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div style={{ marginTop: 8 }}>
                 <label className="s2-label">Auto-grant Editor access to email / profile</label>

@@ -36,21 +36,30 @@ async function getFilesClient() {
   return null;
 }
 
+function sanitizeStateKey(rawKey) {
+  return String(rawKey || '')
+    .replace(/[^a-zA-Z0-9-_.]/g, '_')
+    .slice(0, 1024);
+}
+
 export async function saveJob(job) {
   const updated = { ...job, updatedAt: new Date().toISOString() };
   const state = await getStateClient();
   if (state) {
     try {
-      await state.put(`job:${job.id}`, JSON.stringify(updated), { ttl: SEVEN_DAYS_SEC });
-      return updated;
+      await state.put(sanitizeStateKey(`job.${job.id}`), JSON.stringify(updated), { ttl: SEVEN_DAYS_SEC });
     } catch {
       // Fall through to Files or local disk
     }
   }
   const files = await getFilesClient();
   if (files) {
-    await files.write(`jobs/${job.id}.json`, Buffer.from(JSON.stringify(updated), 'utf8'));
-    return updated;
+    try {
+      await files.write(`jobs/${job.id}.json`, Buffer.from(JSON.stringify(updated), 'utf8'));
+      return updated;
+    } catch {
+      // Fall through
+    }
   }
   const dir = path.join(LOCAL_ROOT, 'state');
   await fs.mkdir(dir, { recursive: true });
@@ -62,7 +71,7 @@ export async function loadJob(jobId) {
   const state = await getStateClient();
   if (state) {
     try {
-      const res = await state.get(`job:${jobId}`);
+      const res = await state.get(sanitizeStateKey(`job.${jobId}`));
       if (res?.value) return JSON.parse(res.value);
     } catch {
       // Fall through to Files or local disk
@@ -85,13 +94,39 @@ export async function loadJob(jobId) {
   }
 }
 
+export async function listRecentJobs(limit = 5) {
+  const files = await getFilesClient();
+  if (files) {
+    try {
+      const entries = await files.list('jobs/');
+      const genJobs = (entries || [])
+        .filter((e) => e.name?.includes('gen_'))
+        .sort((a, b) => String(b.lastModified || '').localeCompare(String(a.lastModified || '')))
+        .slice(0, limit);
+      const out = [];
+      for (const item of genJobs) {
+        try {
+          const buf = await files.read(item.name);
+          if (buf) out.push(JSON.parse(buf.toString('utf8')));
+        } catch {
+          // ignore
+        }
+      }
+      return out;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export async function writeFileObject(fileKey, data) {
   const buf = typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data);
   if (typeof data === 'string' && buf.byteLength < 55_000) {
     const state = await getStateClient();
     if (state) {
       try {
-        await state.put(`file:${fileKey}`, data, { ttl: SEVEN_DAYS_SEC });
+        await state.put(sanitizeStateKey(`file.${fileKey}`), data, { ttl: SEVEN_DAYS_SEC });
       } catch {
         // fall through
       }
@@ -113,7 +148,7 @@ export async function readFileObject(fileKey, asText = true) {
     const state = await getStateClient();
     if (state) {
       try {
-        const sRes = await state.get(`file:${fileKey}`);
+        const sRes = await state.get(sanitizeStateKey(`file.${fileKey}`));
         if (sRes?.value) return sRes.value;
       } catch {
         // fall through
@@ -167,7 +202,7 @@ export async function savePdfChunks(jobId, pdfBuffer) {
       const b64 = slice.toString('base64');
       if (state) {
         try {
-          await state.put(`pdf:${jobId}:${idx}`, b64, { ttl: 3600 });
+          await state.put(sanitizeStateKey(`pdf.${jobId}.${idx}`), b64, { ttl: 3600 });
           return;
         } catch {
           // fall through
@@ -185,7 +220,7 @@ export async function loadPdfChunk(jobId, chunkIdx) {
   const state = await getStateClient();
   if (state) {
     try {
-      const res = await state.get(`pdf:${jobId}:${chunkIdx}`);
+      const res = await state.get(sanitizeStateKey(`pdf.${jobId}.${chunkIdx}`));
       if (res?.value) return res.value;
     } catch {
       // fall through

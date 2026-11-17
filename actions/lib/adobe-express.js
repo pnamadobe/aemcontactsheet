@@ -813,18 +813,30 @@ export async function exportContactSheetToAdobeExpress({
   let resolvedCount = 0;
 
   for (const asset of allAssets) {
-    const webOriginal = /^(image\/jpeg|image\/jpg|image\/png|image\/webp)$/i.test(asset.mimeType || '');
-    const candidateUrl =
-      (webOriginal && asset.downloadUrl && /^https:\/\//i.test(asset.downloadUrl) ? asset.downloadUrl : null) ||
-      (asset.thumbnailUrl && /^https:\/\//i.test(asset.thumbnailUrl) ? asset.thumbnailUrl : null);
+    const assetMime = String(asset.format || asset.mimeType || asset.values?.['dc:format'] || '').toLowerCase();
+    const webOriginal = /^(image\/jpeg|image\/jpg|image\/png|image\/webp)$/i.test(assetMime);
+    const useDownloadUrl =
+      webOriginal && asset.downloadUrl && /^https:\/\//i.test(asset.downloadUrl);
+    const candidateUrl = useDownloadUrl
+      ? asset.downloadUrl
+      : asset.thumbnailUrl && /^https:\/\//i.test(asset.thumbnailUrl)
+      ? asset.thumbnailUrl
+      : null;
 
     const hasSignature =
       candidateUrl && (/[?&](sig|se|sv|token|signature)=/i.test(candidateUrl) || /aem-blob-/i.test(candidateUrl));
 
     if (candidateUrl && hasSignature) {
+      const inferredMime = useDownloadUrl
+        ? assetMime === 'image/jpg'
+          ? 'image/jpeg'
+          : assetMime
+        : /\.png(\?|$)/i.test(candidateUrl)
+        ? 'image/png'
+        : 'image/jpeg';
       assetUrlMap.set(asset.id, {
         url: candidateUrl,
-        mimeType: webOriginal ? asset.mimeType || 'image/jpeg' : 'image/jpeg',
+        mimeType: inferredMime || 'image/jpeg',
       });
     } else if (aem && typeof aem.fetchAssetThumbnailBuffer === 'function') {
       try {
@@ -920,8 +932,21 @@ export async function exportContactSheetToAdobeExpress({
   );
   form.append('contentAnalyzerRequests', JSON.stringify(contentAnalyzerRequests));
 
+  let tokenClientId = '';
+  try {
+    const parts = String(bearerToken || '').split('.');
+    if (parts.length >= 2) {
+      const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      tokenClientId = String(claims?.client_id || '');
+    }
+  } catch {
+    // ignore
+  }
+
   const effectiveApiKey =
-    !apiKey || apiKey === 'aem-assets-frontend-1' || apiKey === 'exc_app'
+    tokenClientId === 'projectx_webapp'
+      ? 'projectx_webapp'
+      : !apiKey || apiKey === 'aem-assets-frontend-1' || apiKey === 'exc_app'
       ? EXPRESS_API_KEY
       : apiKey;
 
@@ -937,7 +962,14 @@ export async function exportContactSheetToAdobeExpress({
 
   if (submitRes.status !== 202 && !submitRes.ok) {
     const errText = await submitRes.text().catch(() => '');
-    throw new Error(`Sensei Express export failed (${submitRes.status}): ${errText.slice(0, 240)}`);
+    const err = new Error(
+      submitRes.status === 401
+        ? 'Your saved token for the target IMS Org has expired — please paste a fresh token from Firefly Boards or Adobe Express.'
+        : `Sensei Express export failed (${submitRes.status}): ${errText.slice(0, 240)}`
+    );
+    err.code = submitRes.status === 401 ? 'TOKEN_EXPIRED' : `HTTP_${submitRes.status}`;
+    err.status = submitRes.status;
+    throw err;
   }
 
   const statusUrl = submitRes.headers.get('location') || submitRes.headers.get('Location');
