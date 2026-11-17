@@ -10,6 +10,7 @@
 import { paginate } from '../../packages/core/layout.js';
 import { renderHtml } from '../../packages/core/render.js';
 import { createAemClient } from '../lib/aem.js';
+import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
 import { buildZipBuffer } from '../lib/zip.js';
 import { convertHtmlZipToPdf, getServerToServerToken } from '../lib/pdf-services.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
@@ -80,6 +81,37 @@ export async function main(params = {}) {
       apiKey: auth.apiKey,
       fetchImpl,
     });
+
+    const outputFormat = params.outputFormat || config?.output?.format || 'pdf';
+    if (outputFormat === 'boards') {
+      job.phase = 'boards';
+      await saveJob(job);
+
+      const boardRes = await exportContactSheetToFireflyBoard({
+        model,
+        config,
+        aem,
+        bearerToken: auth.bearerToken,
+        fetchImpl,
+        onProgress: async (done, total) => {
+          job.progress = { done, total };
+          await saveJob(job);
+        },
+      });
+
+      job.status = boardRes.warnings.length ? 'succeeded_with_warnings' : 'succeeded';
+      job.phase = 'done';
+      job.warnings = boardRes.warnings;
+      job.result = {
+        outputFormat: 'boards',
+        boardId: boardRes.boardId,
+        boardUrl: boardRes.boardUrl,
+        placedCards: boardRes.placedCards,
+        assets: boardRes.totalAssets,
+      };
+      await saveJob(job);
+      return job;
+    }
 
     // Collect ordered assets from paginated blocks
     const orderedAssets = [];

@@ -248,7 +248,7 @@ export default function ContactSheetDialog({
     return model.fields.filter((f) => !active.has(f.key) && !f.technical);
   }, [model, config.fields]);
 
-  async function handleGeneratePdf() {
+  async function handleGenerate(outputFormat = 'pdf') {
     try {
       setPhase('generating');
       // Persist remembered output folder and logo to user preferences
@@ -266,6 +266,7 @@ export default function ContactSheetDialog({
           modelFileKey,
           model,
           config,
+          outputFormat,
           tier,
           aemHost: authCtx?.aemHost,
         },
@@ -276,12 +277,15 @@ export default function ContactSheetDialog({
         setPhase('done');
         guestConnection?.host?.toast?.display?.({
           variant: 'positive',
-          message: `Contact sheet "${config.header.title}" is ready.`,
+          message:
+            outputFormat === 'boards'
+              ? `Firefly Board "${config.header.title}" is ready.`
+              : `Contact sheet "${config.header.title}" is ready.`,
         });
         return;
       }
       if (genInit.status === 'failed') {
-        throw new Error(genInit.error?.message || 'PDF generation failed');
+        throw new Error(genInit.error?.message || 'Generation failed');
       }
 
       const jobId = genInit.jobId || genInit.id;
@@ -298,12 +302,15 @@ export default function ContactSheetDialog({
           setPhase('done');
           guestConnection?.host?.toast?.display?.({
             variant: 'positive',
-            message: `Contact sheet "${config.header.title}" is ready.`,
+            message:
+              outputFormat === 'boards'
+                ? `Firefly Board "${config.header.title}" is ready.`
+                : `Contact sheet "${config.header.title}" is ready.`,
           });
           break;
         }
         if (st.status === 'failed') {
-          throw new Error(st.error?.message || 'PDF generation failed');
+          throw new Error(st.error?.message || 'Generation failed');
         }
       }
     } catch (err) {
@@ -389,22 +396,44 @@ export default function ContactSheetDialog({
 
   if (phase === 'done') {
     const r = generateJob?.result || {};
+    const isBoards = r.outputFormat === 'boards' || Boolean(r.boardUrl);
     return (
       <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
-        <h3 style={{ color: '#047857' }}>Contact sheet ready</h3>
-        <p>
-          <strong>{r.fileName}</strong> · {r.pages} pages · {r.assets} assets · {formatBytes(r.bytes)}
-        </p>
-        {r.aemPath && (
-          <p style={{ fontSize: 13 }}>
-            Saved to AEM: <code>{r.aemPath}</code>
-          </p>
+        <h3 style={{ color: '#047857' }}>
+          {isBoards ? 'Firefly Board ready' : 'Contact sheet ready'}
+        </h3>
+        {isBoards ? (
+          <>
+            <p>
+              <strong>{config.header.title}</strong> · {r.placedCards ?? r.assets} asset cards placed on infinite canvas
+            </p>
+            <p style={{ fontSize: 13 }}>
+              Board URL: <a href={r.boardUrl} target="_blank" rel="noreferrer">{r.boardUrl}</a>
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              <strong>{r.fileName}</strong> · {r.pages} pages · {r.assets} assets · {formatBytes(r.bytes)}
+            </p>
+            {r.aemPath && (
+              <p style={{ fontSize: 13 }}>
+                Saved to AEM: <code>{r.aemPath}</code>
+              </p>
+            )}
+          </>
         )}
         {(generateJob?.warnings || []).map((w, i) => (
           <p key={i} style={{ color: '#b45309', fontSize: 13 }}>{w}</p>
         ))}
         <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
-          {readyDownloadUrl ? (
+          {isBoards && r.boardUrl ? (
+            <a href={r.boardUrl} target="_blank" rel="noreferrer">
+              <button style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}>
+                Open in Firefly Boards ↗
+              </button>
+            </a>
+          ) : readyDownloadUrl ? (
             <a href={readyDownloadUrl} target="_blank" rel="noreferrer">
               <button style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}>
                 Download PDF
@@ -415,7 +444,7 @@ export default function ContactSheetDialog({
               Preparing download link…
             </button>
           ) : null}
-          {r.aemPath && tier === 'author' && (
+          {!isBoards && r.aemPath && tier === 'author' && (
             <button
               onClick={async () => {
                 await guestConnection?.host?.modal?.closeDialog?.().catch(() => {});
@@ -465,8 +494,14 @@ export default function ContactSheetDialog({
           </button>
           <button onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>Cancel</button>
           <button
+            style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}
+            onClick={() => handleGenerate('boards')}
+          >
+            Send to Firefly Boards
+          </button>
+          <button
             style={{ background: '#1473e6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 4, fontWeight: 600 }}
-            onClick={handleGeneratePdf}
+            onClick={() => handleGenerate('pdf')}
           >
             Generate &amp; Save to AEM
           </button>

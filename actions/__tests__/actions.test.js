@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { buildZipBuffer } from '../lib/zip.js';
 import { renderNativePdfBuffer } from '../lib/pdf-native.js';
+import { exportContactSheetToFireflyBoard } from '../lib/firefly-boards.js';
 import { main as resolveWorkerMain } from '../resolve-worker/index.js';
 import { main as generateWorkerMain } from '../generate-worker/index.js';
 import { main as statusMain } from '../status/index.js';
@@ -209,4 +210,95 @@ test('renderNativePdfBuffer produces a valid multi-page PDF Buffer from real fix
   const pdfBuf = await renderNativePdfBuffer(paginated, { model });
   assert.ok(pdfBuf.byteLength > 1000);
   assert.equal(pdfBuf.subarray(0, 5).toString('utf8'), '%PDF-');
+});
+
+test('exportContactSheetToFireflyBoard creates a board and places header, group banners, and asset cards', async () => {
+  const rawWithThumbs = collegeRaw.slice(0, 5).map((item, idx) => ({
+    ...item,
+    thumbnailUrl: `https://author-p59602-e520244.adobeaemcloud.com/aem-blob-sig-${idx}.png`,
+  }));
+  const model = buildSheetModel({
+    rawAssets: rawWithThumbs,
+    sourceLabel: 'Collection: College Branded',
+    resolvedBy: 'pnam@adobe.com',
+  });
+  const config = createDefaultConfig({
+    header: { title: 'Hertz Fall Shoot Board', department: 'Brand Creative' },
+    fields: [
+      { key: 'common:title', label: 'Title', maxLines: 1, showLabel: false },
+      { key: 'product:team', label: 'Team', maxLines: 1, showLabel: true },
+    ],
+    sort: {
+      groupBy: { field: 'product:appareltype', dir: 'asc' },
+      keys: [{ field: 'repo:name', dir: 'asc' }],
+    },
+    layout: { columns: 3 },
+  });
+
+  const composeCalls = [];
+  const fakeBoardsFetch = async (urlStr, opts = {}) => {
+    if (urlStr.endsWith('/mcp')) {
+      return new Response(
+        'data: ' +
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    boardId: 'urn:aaid:sc:US:test-board-999',
+                    boardUrl: 'https://firefly.adobe.com/boards/id/urn:aaid:sc:US:test-board-999',
+                  }),
+                },
+              ],
+              isError: false,
+            },
+          }) +
+          '\n\n',
+        { status: 200 }
+      );
+    }
+    if (urlStr.endsWith('/compose')) {
+      const body = JSON.parse(opts.body);
+      composeCalls.push(body);
+      return new Response(
+        JSON.stringify({
+          boardId: body.boardId,
+          operationResults: body.operations.map((op) => ({
+            type: op.type,
+            ref: op.ref,
+            status: 'success',
+            createdEntityIds: ['ent-1'],
+          })),
+          refs: {},
+        }),
+        { status: 200 }
+      );
+    }
+    return new Response('Not found', { status: 404 });
+  };
+
+  const res = await exportContactSheetToFireflyBoard({
+    model,
+    config,
+    bearerToken: 'mock-ims-token',
+    fetchImpl: fakeBoardsFetch,
+  });
+
+  assert.equal(res.boardId, 'urn:aaid:sc:US:test-board-999');
+  assert.equal(res.boardUrl, 'https://firefly.adobe.com/boards/id/urn:aaid:sc:US:test-board-999');
+  assert.equal(res.placedCards, 5);
+  assert.ok(composeCalls.length >= 1);
+
+  const allOps = composeCalls.flatMap((c) => c.operations);
+  const headerOp = allOps.find((op) => op.ref === 'sheet_header');
+  assert.ok(headerOp);
+  assert.match(headerOp.name, /Hertz Fall Shoot Board/);
+
+  const cardOps = allOps.filter((op) => op.type === 'createArtboard' && op.ref?.startsWith('card_'));
+  assert.equal(cardOps.length, 5);
+  assert.match(cardOps[0].name, /#001/);
+  assert.match(cardOps[0].name, /Team:/);
 });

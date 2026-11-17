@@ -45,6 +45,7 @@ export async function main(params = {}) {
       modelFileKey,
       inlineModel: model || null,
       config,
+      outputFormat: params.outputFormat || config?.output?.format || 'pdf', // 'pdf' | 'boards'
       tier,
       aemHost,
       deliveryHost,
