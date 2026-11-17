@@ -14,7 +14,33 @@ export async function main(params = {}) {
       const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
       const fileName = params.fileName || 'contact-sheet.pdf';
 
-      // First try to get a pre-signed blob downloadUrl from AEM search (works for any file size)
+      // 1. Check direct original rendition endpoint for a 302 Location pre-signed blob URL (works immediately before search indexing!)
+      try {
+        const origRes = await fetch(
+          `${aemHost}/adobe/assets/${encodeURIComponent(params.downloadAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
+          {
+            method: 'GET',
+            redirect: 'manual',
+            headers: {
+              Authorization: `Bearer ${auth.bearerToken}`,
+              'x-api-key': auth.apiKey,
+              'x-gw-ims-org-id': auth.imsOrg,
+            },
+          }
+        );
+        const loc = origRes.headers?.get?.('location') || '';
+        if (loc && loc.startsWith('https://')) {
+          return jsonResponse(200, {
+            ready: true,
+            fileName,
+            downloadUrl: loc,
+          });
+        }
+      } catch {
+        // Fall through to search-assets
+      }
+
+      // 2. Try to get a pre-signed blob downloadUrl from AEM search
       try {
         const sRes = await fetch(
           `${aemHost}/adobe/experimental/aemmcpserver-expires-20991231/search-assets`,
@@ -28,7 +54,7 @@ export async function main(params = {}) {
             },
             body: JSON.stringify({
               termFilters: [{ key: 'repositoryMetadata.repo:name', value: fileName }],
-              limit: 5,
+              limit: 10,
             }),
           }
         );

@@ -361,16 +361,23 @@ export async function exportContactSheetToFireflyBoard({
   srcParts.push(`${paginated.totalAssets} assets`);
   headerLines.push(srcParts.join('   ·   '));
 
-  // Group operations into self-contained batches of <= 20 operations (`$ref` only resolves within the same `/compose` call!)
+  // Group operations into self-contained batches of <= 20 operations and <= 2 `addItemsToArtboard` image uploads per batch
   const batches = [];
   let currentBatch = [];
+  let currentMediaOps = 0;
 
   function pushOpPair(ops) {
-    if (currentBatch.length + ops.length > 20) {
+    const mediaInOps = ops.filter((op) => op.type === 'addItemsToArtboard').length;
+    if (
+      currentBatch.length + ops.length > 20 ||
+      (mediaInOps > 0 && currentMediaOps + mediaInOps > 2 && currentBatch.length > 0)
+    ) {
       batches.push(currentBatch);
       currentBatch = [];
+      currentMediaOps = 0;
     }
     currentBatch.push(...ops);
+    currentMediaOps += mediaInOps;
   }
 
   let cursorY = 0;
@@ -438,6 +445,7 @@ export async function exportContactSheetToFireflyBoard({
 
   // 5. Lay out groups and asset cards row-by-row, dynamically expanding row height to fit all printed metadata fields
   let cardCounter = 0;
+  const assetByCardRef = new Map();
 
   for (let gIdx = 0; gIdx < paginated.sorted.groups.length; gIdx++) {
     const group = paginated.sorted.groups[gIdx];
@@ -476,6 +484,7 @@ export async function exportContactSheetToFireflyBoard({
 
         cardCounter++;
         const ref = `card_${cardCounter}`;
+        assetByCardRef.set(ref, asset);
         const lines = buildAssetMetadataLines(
           asset,
           fields,
@@ -546,12 +555,50 @@ export async function exportContactSheetToFireflyBoard({
     batches.push(currentBatch);
   }
 
-  // 5. Execute `/compose` batches sequentially so grid order is preserved
+  // 6. Execute `/compose` batches sequentially.
+  // Within every batch, all `createArtboard` ops are placed BEFORE `addItemsToArtboard` ops so that
+  // artboard frames and metadata lines always commit before any image upload transaction begins.
+  // If any `addItemsToArtboard` op fails, it is automatically retried in an isolated 1-op `/compose` call.
   let placedCards = 0;
   const warnings = [...paginated.warnings];
 
+  async function buildFallbackMediaItem(asset) {
+    if (!asset) return null;
+    if (aem) {
+      try {
+        const { buffer } = await aem.fetchAssetThumbnailBuffer(asset, {
+          targetPx: 1600,
+          quality: 'print',
+        });
+        const dims = readImageDimensions(buffer);
+        if (dims) {
+          return {
+            type: 'rawBlob',
+            bytesBase64: buffer.toString('base64'),
+            mimeType: dims.mimeType,
+            width: dims.width,
+            height: dims.height,
+          };
+        }
+      } catch {
+        // fall through
+      }
+    }
+    if (asset.thumbnailUrl?.startsWith('https://')) {
+      return {
+        type: 'presignedUrl',
+        urls: [asset.thumbnailUrl],
+      };
+    }
+    return null;
+  }
+
   for (let bIdx = 0; bIdx < batches.length; bIdx++) {
-    const batchOps = batches[bIdx];
+    const rawBatchOps = batches[bIdx];
+    const createOps = rawBatchOps.filter((op) => op.type !== 'addItemsToArtboard');
+    const addMediaOps = rawBatchOps.filter((op) => op.type === 'addItemsToArtboard');
+    const batchOps = [...createOps, ...addMediaOps];
+
     const res = await composeFireflyBoard({
       boardId,
       operations: batchOps,
@@ -559,7 +606,83 @@ export async function exportContactSheetToFireflyBoard({
       docServiceUrl,
       fetchImpl,
     });
-    const createdCardsInBatch = (res?.operationResults || []).filter(
+
+    const opResults = res?.operationResults || [];
+    const entityIdByRef = new Map(Object.entries(res?.refs || {}));
+    for (let i = 0; i < batchOps.length; i++) {
+      const op = batchOps[i];
+      const opRes = opResults[i];
+      if (op?.ref && opRes?.createdEntityIds?.[0]) {
+        entityIdByRef.set(op.ref, opRes.createdEntityIds[0]);
+      }
+    }
+
+    // Check if any `addItemsToArtboard` operation failed (note: in `BoardSessionV2._placeItems`,
+    // a failed `addItemsToArtboard` can also leave an open transaction affecting subsequent `addItemsToArtboard` ops in the same batch).
+    const firstAddIdx = createOps.length;
+    let firstFailedAddOffset = -1;
+    for (let mIdx = 0; mIdx < addMediaOps.length; mIdx++) {
+      const r = opResults[firstAddIdx + mIdx];
+      if (r && r.status !== 'success') {
+        firstFailedAddOffset = mIdx;
+        break;
+      }
+    }
+
+    if (firstFailedAddOffset !== -1) {
+      for (let mIdx = firstFailedAddOffset; mIdx < addMediaOps.length; mIdx++) {
+        const mediaOp = addMediaOps[mIdx];
+        const cardRef = String(mediaOp.artboardId || '').replace(/^\$/, '');
+        const realArtboardId = entityIdByRef.get(cardRef);
+        if (!realArtboardId) continue;
+
+        let retrySucceeded = false;
+        try {
+          const retryRes = await composeFireflyBoard({
+            boardId,
+            operations: [
+              {
+                type: 'addItemsToArtboard',
+                artboardId: realArtboardId,
+                items: mediaOp.items,
+              },
+            ],
+            bearerToken,
+            docServiceUrl,
+            fetchImpl,
+          });
+          retrySucceeded = retryRes?.operationResults?.[0]?.status === 'success';
+        } catch {
+          retrySucceeded = false;
+        }
+
+        if (!retrySucceeded) {
+          const asset = assetByCardRef.get(cardRef);
+          const fallbackItem = await buildFallbackMediaItem(asset);
+          if (fallbackItem) {
+            try {
+              await composeFireflyBoard({
+                boardId,
+                operations: [
+                  {
+                    type: 'addItemsToArtboard',
+                    artboardId: realArtboardId,
+                    items: [fallbackItem],
+                  },
+                ],
+                bearerToken,
+                docServiceUrl,
+                fetchImpl,
+              });
+            } catch {
+              // ignore final fallback error
+            }
+          }
+        }
+      }
+    }
+
+    const createdCardsInBatch = opResults.filter(
       (r) => r.type === 'createArtboard' && r.ref?.startsWith('card_') && r.status === 'success'
     ).length;
     placedCards += createdCardsInBatch;

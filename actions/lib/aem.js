@@ -99,15 +99,22 @@ export function createAemClient({
       if (slash > 0) folderPaths.add(p.slice(0, slash));
     }
 
+    const targetIds = new Set(
+      needEnrich
+        .map((a) => a?.assetId || a?.id || a?.repositoryMetadata?.['repo:id'])
+        .filter(Boolean)
+    );
     const urlMap = new Map();
     for (const fp of [...folderPaths].slice(0, 6)) {
       try {
         let cursor = null;
         let fetched = 0;
         do {
+          // IMPORTANT: AEM's `search-assets` only signs `downloadUrl` and `thumbnailUrl` for the first 10 items per response!
+          // Always paginate with `limit: 10` so every page of 10 items receives signed URLs.
           const body = {
             termFilters: [{ key: 'repositoryMetadata.repo:ancestors', value: fp }],
-            limit: 50,
+            limit: 10,
           };
           if (cursor) body.cursor = cursor;
           const sRes = await requestJson(
@@ -127,7 +134,10 @@ export function createAemClient({
           }
           fetched += results.length;
           cursor = sRes?.cursor || null;
-        } while (cursor && fetched < Math.max(100, rawAssets.length + 25));
+          if (targetIds.size > 0 && [...targetIds].every((id) => urlMap.has(id))) {
+            break;
+          }
+        } while (cursor && fetched < Math.max(120, rawAssets.length + 30));
       } catch {
         // Non-fatal if search-assets endpoint is unavailable in test mocks
       }

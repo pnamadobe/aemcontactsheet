@@ -597,7 +597,7 @@ export default function ContactSheetDialog({
     }
   }
 
-  // Poll until a real, verified https:// download URL is ready before enabling the Download PDF button
+  // Poll until a real, verified download URL (pre-signed https:// or authenticated original rendition blob) is ready
   useEffect(() => {
     if (phase !== 'done') {
       setReadyDownloadUrl(null);
@@ -609,7 +609,7 @@ export default function ContactSheetDialog({
       setCheckingDownload(false);
       return;
     }
-    if (r.downloadUrl && r.downloadUrl.startsWith('https://')) {
+    if (r.downloadUrl && (r.downloadUrl.startsWith('https://') || r.downloadUrl.startsWith('data:application/pdf'))) {
       setReadyDownloadUrl(r.downloadUrl);
       setCheckingDownload(false);
       return;
@@ -620,16 +620,21 @@ export default function ContactSheetDialog({
     }
 
     let cancelled = false;
+    let createdBlobUrl = null;
     setCheckingDownload(true);
     (async () => {
-      for (let attempt = 0; attempt < 15 && !cancelled; attempt++) {
+      const aemBase = (authCtx?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      const fileName = r.fileName || 'contact-sheet.pdf';
+
+      for (let attempt = 0; attempt < 60 && !cancelled; attempt++) {
+        // 1. Check `/status?downloadAssetId=...` for a pre-signed https:// blob URL
         try {
           const check = await callAction('status', {
             method: 'GET',
             query: {
               downloadAssetId: r.aemAssetId,
-              fileName: r.fileName || 'contact-sheet.pdf',
-              aemHost: authCtx?.aemHost || '',
+              fileName,
+              aemHost: aemBase,
             },
           });
           if (check?.ready && check?.downloadUrl?.startsWith('https://')) {
@@ -642,13 +647,43 @@ export default function ContactSheetDialog({
         } catch {
           // keep polling
         }
+
+        // 2. Also try fetching `/adobe/assets/{id}/renditions/original/as/{fileName}` directly with the user's Bearer token
+        if (authCtx?.accessToken) {
+          try {
+            const origRes = await fetch(
+              `${aemBase}/adobe/assets/${encodeURIComponent(r.aemAssetId)}/renditions/original/as/${encodeURIComponent(fileName)}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${authCtx.accessToken}`,
+                  'x-api-key': authCtx.apiKey || 'aem-assets-frontend-1',
+                  'x-gw-ims-org-id': authCtx.imsOrg || '',
+                },
+              }
+            );
+            if (origRes.ok && !cancelled) {
+              const blob = await origRes.blob();
+              if (blob.size > 500 && !cancelled) {
+                createdBlobUrl = URL.createObjectURL(blob);
+                setReadyDownloadUrl(createdBlobUrl);
+                setCheckingDownload(false);
+                return;
+              }
+            }
+          } catch {
+            // keep polling
+          }
+        }
+
         await new Promise((res) => setTimeout(res, 1500));
       }
-      if (!cancelled) setCheckingDownload(false);
     })();
 
     return () => {
       cancelled = true;
+      if (createdBlobUrl) {
+        URL.revokeObjectURL(createdBlobUrl);
+      }
     };
   }, [phase, generateJob]);
 
@@ -1092,10 +1127,16 @@ export default function ContactSheetDialog({
                   Open in Firefly Boards ↗
                 </a>
               ) : readyDownloadUrl ? (
-                <a className="s2-btn s2-btn-accent" href={readyDownloadUrl} target="_blank" rel="noreferrer">
+                <a
+                  className="s2-btn s2-btn-accent"
+                  href={readyDownloadUrl}
+                  download={r.fileName || 'contact-sheet.pdf'}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Download PDF
                 </a>
-              ) : checkingDownload ? (
+              ) : !isBoards ? (
                 <button className="s2-btn" disabled>
                   Preparing download link…
                 </button>
