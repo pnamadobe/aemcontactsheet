@@ -31,6 +31,11 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
    - **Separate Editable Metadata Text Lines & Dynamic Grid Expansion:** Places each header line and each selected metadata field below an asset as its own stacked, individually editable text line (`height: 0.01` artboard so no white underline bar appears), with screen-adaptive spacing (`u = totalGridW / 1350`) and dynamic vertical row expansion supporting 10+ metadata fields per asset.
    - **Resilient Coediting Batching:** Orders all `createArtboard` ops before `addItemsToArtboard` ops in every 20-op `/compose` batch, adds a `550ms` inter-batch LES session cooldown, retries `503 LECCoeditingLimitExceeded` with exponential backoff, and retries any failed card media upload individually with fallback.
    - **Cross–IMS Org Support:** Discovers linked Adobe Account Cluster profiles (`/ims/organizations/v6` & `/ims/account_cluster/v2`), supports switching target Firefly Boards IMS Org profile (`/ims/check/v6/token`) or supplying a target org token while reading AEM assets with the AEM Org token, and automatically enables *"Anyone with the link can edit"* (`authenticated: editor`) + collaborator email invite via `https://invitations.adobe.io/api/v4/share/{boardUrn}?mode=direct_acl`.
+7. **Watermark Overlays & Standalone Watermark Presets (`packages/core/layout.js`, `packages/core/render.js`, `actions/lib/pdf-native.js`):**
+   - Custom watermark text (`CONFIDENTIAL`, `FPO — DO NOT DISTRIBUTE`, `DRAFT`), angle (`-90°` to `90°`, default `45°`), position (`Center`, `Top Left`, `Top Right`, `Bottom Left`, `Bottom Right`), opacity (`10%–90%`), and surface area coverage (`20%–90%`).
+   - Dual-contrast neutral grey rendering so watermarks remain legible on both pure white and pure black assets.
+   - Automatic font discovery from `/content/dam/fonts` and across DAM (`dc:format` search for `.ttf`, `.otf`, `.woff`, `.woff2`), rendered via `@font-face` in Live Preview and embedded via `@pdf-lib/fontkit` in vector PDFs.
+   - Standalone Watermark Presets (`actions/presets/index.js`) that can be saved and loaded independently of layout presets.
 
 ---
 
