@@ -1,17 +1,28 @@
 # Firefly Boards Integration Research (Boards MCP & `aura-doc-service`)
 
-_Compiled Nov 16, 2026 from `Horizon/hz` (`aura-doc-service`, `CanvasPlace`), `Adobe-AIFoundations/hz-aura-boards-mcp`, `Adobe-AIFoundations/mcp-federation-engine-deploy`, and AURA Wiki (`4057832152`, `4116170386`)._
+_Compiled Nov 16, 2026 from `Horizon/hz` (`aura-doc-service`, `CanvasPlace`), `Adobe-AIFoundations/hz-aura-boards-mcp`, `Adobe-AIFoundations/mcp-federation-engine-deploy`, and AURA Wiki (`4057832152`, `4116170386`). **Live-probed and verified against Production (`adobe-copilot-prod.adobe.io/mcp` and `hz-aura-doc-service.adobe.io`).**_
 
-## 1. Executive Summary
+## 1. Executive Summary & Live Verification
 
-- **Firefly Boards DOES have an internal server API (`aura-doc-service`) and MCP server (`hz-aura-boards-mcp`)** exposed via the **Adobe Federated MCP Gateway / Agent Gateway (AGW)** (`ff-boards-mcp`).
+- **Live-verified in Production (Nov 16, 2026):**
+  1. **Direct REST (`https://hz-aura-doc-service.adobe.io`):** Sending a standard Adobe IMS user Bearer token + `x-api-key: aura_webapp` works directly over public HTTPS (`POST /v2/create-new-board`, `POST /compose`, `POST /read-board`).
+  2. **Federated MCP Gateway (`https://adobe-copilot-prod.adobe.io/mcp`):** Does **not** have a source-IP block, accepts a standard Adobe IMS Bearer token, exchanges it via OBO, and exposes all 6 Boards MCP tools (`boards_create_new_board`, `boards_add_items_to_board`, `boards_edit`, `boards_read`, `boards_delete`, `create_firefly_board`).
 - **Two distinct tool surfaces exist:**
-  1. **Server-side MCP (`hz-aura-boards-mcp` → `aura-doc-service`):** Exposes 5 tools (`boards_create_new_board`, `boards_add_items_to_board`, `boards_edit`, `boards_read`, `boards_delete`) backed by `POST /v2/create-new-board`, `POST /compose`, etc. Works headlessly with the user's **Adobe IMS OAuth Bearer token**.
-  2. **Client-side in-app tool (`boards_canvas_place` in `CanvasPlace.tool.ts`):** Runs only inside an open Firefly Boards browser session via the in-app Aura Agent graph runtime. It supports `source: "text"` to create editable text nodes, whereas the server-side `/add-text` handler in `AtomicBoardV2RequestHandlers.ts:824` currently throws **HTTP 501 (`V2AddTextUnsupported`)**.
-- **How to ship "Send Contact Sheet to Firefly Boards" right now (despite `/add-text` = 501):**
-  - **Pattern 1 — Named Artboard Containers + Image Placement (Editable Titles Today):** `boards_edit` (`POST /compose`) supports `op: "create", kind: "artboard", name: "<Editable Text>"` with exact `at: { kind: "rect", rect: { x, y, width, height } }`. Each asset (or group) can be placed into a named artboard or positioned on a grid using the **pre-signed AEM `thumbnailUrl`** (`type: "presignedUrl"`) or **`type: "rawBlob"`**.
-  - **Pattern 2 — Rendered Composite Cards (`rawBlob`):** Render each contact-sheet cell (thumbnail + metadata caption lines below it) or each group as a crisp PNG card in our worker and pass `{ type: "rawBlob", bytesBase64, mimeType: "image/png", width, height }` with exact `(x, y, width, height)` grid coordinates via `boards_edit` (`POST /compose`). Every card is individually movable/arrangeable on the infinite canvas and shows all selected metadata below the preview.
-  - **Pattern 3 — Native Editable Text Nodes (once `aura-doc-service` enables `/add-text` or exposes `addText` in `/compose`):** Drop in editable text entities directly below each placed image.
+  1. **Server-side MCP / REST (`hz-aura-boards-mcp` → `aura-doc-service`):** Works headlessly from our App Builder actions using the signed-in user's IMS Bearer token.
+  2. **Client-side in-app tool (`boards_canvas_place` in `CanvasPlace.tool.ts`):** Runs only inside an open Firefly Boards browser session via the in-app Aura Agent graph runtime. It calls `textUtils.createTextWithDefaults({ x: 0, y: 0 }, parent)` + `textUtils.setText(textEntity, text)` (powered by `TextFoundationBrick` WASM text shaping), whereas `BoardSessionV2.addText()` in the Node service (`AtomicBoardV2RequestHandlers.ts:824`) is currently a stub that throws **HTTP 501 (`V2AddTextUnsupported`)** because `TextFoundationBrick` isn't wired in Node yet.
+
+---
+
+## 2. How to Place Images AND Metadata Text on Firefly Boards Right Now
+
+We traced all four entity types in `BoardSessionV2.ts` (`image`, `artboard`, `stack`, `text`) and their on-canvas rendering in `Horizon/hz`:
+
+| Approach | How it works in `POST /compose` (`boards_edit`) | How text appears on the Firefly Board | Pros / Cons |
+|---|---|---|---|
+| **A. Artboard-per-Asset Card + Group Stacks/Artboards (Editable Text Labels Today)** | Create a **Stack** (`createStack`, `name: "Group: SUV (18)"`) or header Artboard for each group, and/or create an **Artboard** (`createArtboard`, `name: "#001 · Vehicle Class: SUV · 2026"`, `placement: { kind: "rect", rect: { x, y, width, height } }`) and add the asset image into it (`addItemsToArtboard` with `presignedUrl` or `rawBlob`). | `ArtboardNameAtomicDecorationPlugin` renders `artboard.name` as an **editable on-canvas text label at the upper-left edge of the artboard**. `StackNameAtomicDecorationPlugin` renders `stack.name` as an **on-canvas name pill with a stack icon**. | **100% native Boards entities & editable labels today** with zero rasterized text. Caveat: `ArtboardNameTextTruncation` single-line truncates with `…` if the label is wider than the artboard. |
+| **B. Composite Contact-Sheet Card Image (`rawBlob`)** | Render each cell (thumbnail + multi-line metadata caption below it) as a crisp PNG card (`image/png` — note: `resolveItems.ts` uses `sharp` and accepts **only `image/png`, `image/jpeg`, `image/webp`**, NOT `image/svg+xml`, and requires `width`/`height` to **exact-match** the PNG header dimensions) and place it on the canvas or inside a group artboard at `(x, y)`. | Multi-line metadata (`Title`, `Vehicle Class`, `Description`, `#001`) is rendered directly beneath each thumbnail on its card, looking identical to the PDF contact sheet. | **Supports unlimited multi-line metadata & custom formatting** below every thumbnail; each card is still an independent draggable item on the board. Text is baked into the card bitmap rather than a text node. |
+| **C. Hybrid (Best of Both)** | Group assets into **named Group Artboards** (`createArtboard` with `name: "Vehicle Class: SUV (18 assets)"` — editable native text header) AND place either raw images or composite caption cards inside each group artboard (`addItemsToArtboard`). | Group headers are native editable Boards artboard titles; per-asset metadata is visible on every card. | Gives users both native Boards containers/titles and full multi-line per-asset metadata. |
+| **D. Native `addText` (Future / Upstream PR to `Horizon/hz`)** | Wire `TextFoundationBrick` (or a headless text archetype factory) into `BoardSessionV2.addText()` and `ComposeV2RequestHandler.ts` (which already has the `addText` case stubbed at line 349). | Creates standalone editable `TextNodeArchetype` nodes below each image. | Requires a change in `Horizon/hz` (`services/aura-doc-service`). |
 
 ---
 
