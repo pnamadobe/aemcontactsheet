@@ -125,24 +125,26 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
   - Converts the paginated contact sheet (`paginated.pages`, `geometry`, `THEME_PALETTES`) into a multi-page **Horizon JSON (`HzJSON` v1)** document where each contact sheet page is an `artboard` (`96 px/in`) containing independent, editable Express scene nodes:
     - Page background `rectangle` (`Clean White`, `Photographer Dark`, or `Neutral Proofing Grey` theme)
     - Sheet header (`Title`, centered `Brand Logo` bitmap, `Date`, `Prepared by`, `Source`, and divider rule)
-    - Section group banners with accent bars
-    - Thumbnail `rectangle` frames and `BitmapFill` nodes (`contain` or `cover`) referencing pre-signed AEM URLs or App Builder `Files` pre-signed URLs
+    - Section group banners (`group-band`) with accent bars
+    - Thumbnail `rectangle` frames and `BitmapFill` nodes (`contain` or `cover`) backed by embedded `data:image/...;base64,...` resources in `HzJSON` `resources` (uploaded directly as native ACP `rel: "resource"` components inside the Express document with zero external URL/CORS failures)
     - Approval status badge pills (`APPROVED`, `REJECTED`, `PENDING`), rotated watermark `text` overlays, and individual editable metadata caption `text` nodes
-  - Submits the `HzJSON` document to the **Sensei HzJSON Import Service** (`POST https://sensei.adobe.io/services/v2/predict`, Engine `Feature:autocrop:Service-f3c41ebbaca44b0384e506185c1cf583` — the same pipeline used by Firefly Boards' *"Open in Express"* action), polls `/services/v2/status/{requestId}`, shares the created `urn:aaid:sc:...` document via `invitations.adobe.io`, and opens **`https://new.express.adobe.com/id/{documentId}`**.
+    - Automatic `EXPRESS_TEXT_SCALE = 96 / 72` (`1.3333×`) bounds and fontSize normalization so right-aligned header/footer text and multi-column captions fit exact column boundaries without right-edge cutoff or vertical overlap
+  - Submits the `HzJSON` document to the **Sensei HzJSON Import Service** (`POST https://sensei.adobe.io/services/v2/predict`, Engine `Feature:autocrop:Service-f3c41ebbaca44b0384e506185c1cf583`), polls `/services/v2/status/{requestId}`, shares the created `urn:aaid:sc:...` document via `invitations.adobe.io` (`authenticated: editor` + `notification: { suppress: true }`), and provides the unencoded **`https://new.express.adobe.com/id/urn:aaid:sc:...`** URL with 1-click clipboard copy (`Copy Adobe Express Link`) to bypass Chromium's `Cross-Origin-Opener-Policy: same-origin` block on sandboxed iframe popups.
 - **Seamless Editable Vector PDF Fallback:**
-  - When the user's current token does not yet include Adobe Fonts / Express scopes, `generate-worker` automatically falls back to generating the vector multi-page PDF and surfaces a 1-click **Download & Open Adobe Express ↗** action so the user can drop the PDF into Adobe Express's native PDF importer (which converts every page, image, logo, badge, and text line into editable Express layers).
+  - When the user's current token does not yet include Adobe Fonts / Express scopes, `generate-worker` automatically falls back to generating the vector multi-page PDF and surfaces a 1-click **Download PDF & Copy Express Link** action so the user can drop the PDF into Adobe Express's native PDF importer (which converts every page, image, logo, badge, and text line into editable Express layers).
 
 ---
 
 ## Repository Structure & Documentation
 
 - `packages/core/`: `@contactsheet/core` shared library (`fields.js`, `model.js`, `sort.js`, `layout.js`, `render.js`) and unit tests (`packages/core/__tests__/core.test.js`).
-- `actions/`: Adobe I/O Runtime actions (`resolve`, `resolve-worker`, `generate`, `generate-worker`, `status`, `browse`, `presets`, `prefs`) and shared backend libraries (`actions/lib/aem.js`, `actions/lib/pdf-native.js`, `actions/lib/pdf-services.js`, `actions/lib/firefly-boards.js`, `actions/lib/store.js`, `actions/lib/zip.js`).
+- `actions/`: Adobe I/O Runtime actions (`resolve`, `resolve-worker`, `generate`, `generate-worker`, `status`, `browse`, `presets`, `prefs`) and shared backend libraries (`actions/lib/aem.js`, `actions/lib/pdf-native.js`, `actions/lib/pdf-services.js`, `actions/lib/firefly-boards.js`, `actions/lib/adobe-express.js`, `actions/lib/store.js`, `actions/lib/zip.js`).
 - `src/`: Unified UI extension entry (`src/shared-ui/unified-entry.js`) and Spectrum 2 React modal (`src/shared-ui/components/ContactSheetDialog.js`) for both `aem/assets/assetsview/1` and `aem/assets/contenthub/1`.
 - `docs/`:
   - [MVP Architecture & Design (`docs/mvp-architecture.md`)](docs/mvp-architecture.md)
   - [M0 Spike Findings (`docs/spike-findings.md`)](docs/spike-findings.md)
   - [Firefly Boards MCP & `aura-doc-service` Research (`docs/firefly-boards-mcp-research.md`)](docs/firefly-boards-mcp-research.md)
+  - [Adobe Express Export (`HzJSON` v1 + Sensei CPF) Research & Architecture (`docs/adobe-express-hzjson-research.md`)](docs/adobe-express-hzjson-research.md)
   - [Tier 1 Enhancements Plan (`docs/tier1-enhancements-plan.md`)](docs/tier1-enhancements-plan.md)
 - `research/`: [Competitor, Customer & Adobe Ecosystem Research (`research/contact-sheet-feature-research.md`)](research/contact-sheet-feature-research.md)
 
@@ -157,7 +159,7 @@ Target environment:
 - **AEM Content Hub (Delivery):** `https://delivery-p59602-e520244.adobeaemcloud.com`
 
 ```bash
-# Run all 16 unit and integration tests
+# Run all 17 unit and integration tests
 npm test
 
 # Clean build cache and deploy actions + content-hashed web assets to Production
