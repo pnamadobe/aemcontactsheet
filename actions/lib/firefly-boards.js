@@ -63,24 +63,29 @@ export function readImageDimensions(buf) {
   return null;
 }
 
-/** Build the editable on-canvas artboard title string for an asset card from the user's selected metadata fields. */
-export function buildAssetCardLabel(asset, fields = [], fieldDefs = new Map(), padDigits = 3, showSequence = true) {
-  const parts = [];
-  if (showSequence !== false) {
-    parts.push(`#${String(asset.sequence || 0).padStart(padDigits, '0')}`);
-  }
+/** Build an array of distinct, non-empty metadata line strings for an asset so each field gets its own text line on the board. */
+export function buildAssetMetadataLines(asset, fields = [], fieldDefs = new Map(), padDigits = 3, showSequence = true) {
+  const lines = [];
+  const seqPrefix = showSequence !== false ? `#${String(asset.sequence || 0).padStart(padDigits, '0')} · ` : '';
+
   for (let i = 0; i < fields.length; i++) {
     const fSpec = fields[i];
     const def = fieldDefs.get(fSpec.key) || { key: fSpec.key, label: fSpec.label || fSpec.key, type: 'text' };
     const val = formatFieldValue(asset.values?.[fSpec.key], def);
     if (!val) continue;
-    const prefix = fSpec.showLabel ? `${fSpec.label || def.label}: ` : '';
-    parts.push(`${prefix}${val}`);
+    const labelStr = fSpec.showLabel ? `${fSpec.label || def.label}: ` : '';
+    lines.push(`${lines.length === 0 ? seqPrefix : ''}${labelStr}${val}`.slice(0, 180));
   }
-  if (parts.length === 0) {
-    parts.push(asset.name || asset.id);
+
+  if (lines.length === 0) {
+    lines.push(`${seqPrefix}${asset.name || asset.id}`.slice(0, 180));
   }
-  return parts.join(' · ').slice(0, 180);
+  return lines;
+}
+
+/** Legacy single-line helper kept for backwards compatibility. */
+export function buildAssetCardLabel(asset, fields = [], fieldDefs = new Map(), padDigits = 3, showSequence = true) {
+  return buildAssetMetadataLines(asset, fields, fieldDefs, padDigits, showSequence).join(' · ').slice(0, 180);
 }
 
 /** Create a new Firefly Board via Federated MCP first, falling back to direct `aura-doc-service` V2 REST. */
@@ -224,30 +229,40 @@ export async function exportContactSheetToFireflyBoard({
   });
   const { boardId, boardUrl } = created;
 
-  // 2. Build header banner artboard operation
-  const headerParts = [header.title || 'Contact Sheet'];
-  if (header.date) headerParts.push(header.date);
-  if (header.department) headerParts.push(header.department);
-  if (header.preparedBy) headerParts.push(`Prepared by ${header.preparedBy}`);
-  if (header.project) headerParts.push(`Project: ${header.project}`);
-  if (model?.sourceLabel) headerParts.push(`Source: ${model.sourceLabel}`);
-  headerParts.push(`${paginated.totalAssets} assets`);
+  // 2. Build separate header text lines at the top of the board
+  const headerLines = [];
+  headerLines.push(header.title || 'Contact Sheet');
+  const subParts = [];
+  if (header.date) subParts.push(`Date: ${header.date}`);
+  if (header.department) subParts.push(`Department: ${header.department}`);
+  if (header.preparedBy) subParts.push(`Prepared by: ${header.preparedBy}`);
+  if (header.project) subParts.push(`Project: ${header.project}`);
+  if (subParts.length) headerLines.push(subParts.join('   ·   '));
+  if (header.notes) headerLines.push(`Notes: ${header.notes}`);
+  const srcParts = [];
+  if (model?.sourceLabel) srcParts.push(`Source: ${model.sourceLabel}`);
+  srcParts.push(`${paginated.totalAssets} assets`);
+  headerLines.push(srcParts.join('   ·   '));
 
   const allOperations = [];
   let cursorY = 0;
+  const headerLineStep = 28;
 
-  allOperations.push({
-    type: 'createArtboard',
-    ref: 'sheet_header',
-    name: headerParts.join(' · ').slice(0, 180),
-    width: totalGridW,
-    height: 90,
-    placement: {
-      kind: 'rect',
-      rect: { x: 0, y: cursorY, width: totalGridW, height: 90 },
-    },
+  headerLines.forEach((lineText, idx) => {
+    allOperations.push({
+      type: 'createArtboard',
+      ref: idx === 0 ? 'sheet_header' : `sheet_header_${idx}`,
+      name: lineText.slice(0, 180),
+      width: totalGridW,
+      height: 1,
+      placement: {
+        kind: 'rect',
+        rect: { x: 0, y: cursorY, width: totalGridW, height: 1 },
+      },
+    });
+    cursorY += headerLineStep;
   });
-  cursorY += 90 + 80;
+  cursorY += 48;
 
   // Optional header logo inside the header banner artboard
   if (header.logo?.assetId && aem) {
@@ -337,12 +352,17 @@ export async function exportContactSheetToFireflyBoard({
   pushOpPair(allOperations);
 
   let cardCounter = 0;
+  const fieldLineStep = 26;
+  const maxFieldsPerCard = Math.max(1, fields.length);
+  const metadataBlockH = Math.max(0, (maxFieldsPerCard - 1) * fieldLineStep + 28);
+  const effectiveRowStride = cardH + metadataBlockH + rowGap;
+
   for (let gIdx = 0; gIdx < paginated.sorted.groups.length; gIdx++) {
     const group = paginated.sorted.groups[gIdx];
     if (group.assets.length === 0) continue;
 
     if (paginated.sorted.grouped && group.title) {
-      if (gIdx > 0) cursorY += 40;
+      if (gIdx > 0) cursorY += 36;
       const gRef = `grp_${gIdx}`;
       pushOpPair([
         {
@@ -350,14 +370,14 @@ export async function exportContactSheetToFireflyBoard({
           ref: gRef,
           name: `${group.title} (${group.count} asset${group.count === 1 ? '' : 's'})`.slice(0, 180),
           width: totalGridW,
-          height: 64,
+          height: 1,
           placement: {
             kind: 'rect',
-            rect: { x: 0, y: cursorY, width: totalGridW, height: 64 },
+            rect: { x: 0, y: cursorY, width: totalGridW, height: 1 },
           },
         },
       ]);
-      cursorY += 64 + 56;
+      cursorY += 54;
     }
 
     for (let i = 0; i < group.assets.length; i++) {
@@ -365,18 +385,20 @@ export async function exportContactSheetToFireflyBoard({
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x = col * (cardW + colGap);
-      const y = cursorY + row * (cardH + rowGap);
+      const y = cursorY + row * effectiveRowStride;
 
       cardCounter++;
       const ref = `card_${cardCounter}`;
-      const label = buildAssetCardLabel(asset, fields, fieldDefs, padDigits, layout.sequenceNumbers !== false);
+      const lines = buildAssetMetadataLines(asset, fields, fieldDefs, padDigits, layout.sequenceNumbers !== false);
+      const primaryTitle = lines[0];
+      const extraLines = lines.slice(1);
       const mediaItem = resolvedMediaByAssetId.get(asset.id);
 
-      const pair = [
+      const cellOps = [
         {
           type: 'createArtboard',
           ref,
-          name: label,
+          name: primaryTitle,
           width: cardW,
           height: cardH,
           placement: {
@@ -386,17 +408,34 @@ export async function exportContactSheetToFireflyBoard({
         },
       ];
       if (mediaItem) {
-        pair.push({
+        cellOps.push({
           type: 'addItemsToArtboard',
           artboardId: `$${ref}`,
           items: [mediaItem],
         });
       }
-      pushOpPair(pair);
+
+      // Create a separate, individually editable text line below the image for each additional metadata field!
+      extraLines.forEach((lineStr, lIdx) => {
+        const lineY = y + cardH + 28 + lIdx * fieldLineStep;
+        cellOps.push({
+          type: 'createArtboard',
+          ref: `meta_${cardCounter}_${lIdx + 1}`,
+          name: lineStr,
+          width: cardW,
+          height: 1,
+          placement: {
+            kind: 'rect',
+            rect: { x, y: lineY, width: cardW, height: 1 },
+          },
+        });
+      });
+
+      pushOpPair(cellOps);
     }
 
     const totalRowsInGroup = Math.ceil(group.assets.length / cols);
-    cursorY += totalRowsInGroup * (cardH + rowGap);
+    cursorY += totalRowsInGroup * effectiveRowStride;
   }
 
   if (currentBatch.length > 0) {

@@ -300,5 +300,9 @@ test('exportContactSheetToFireflyBoard creates a board and places header, group 
   const cardOps = allOps.filter((op) => op.type === 'createArtboard' && op.ref?.startsWith('card_'));
   assert.equal(cardOps.length, 5);
   assert.match(cardOps[0].name, /#001/);
-  assert.match(cardOps[0].name, /Team:/);
+
+  // Secondary metadata fields are placed as separate text-line artboards (`meta_1_1`, etc.) below each image
+  const metaOps = allOps.filter((op) => op.type === 'createArtboard' && op.ref?.startsWith('meta_'));
+  assert.ok(metaOps.length >= 4);
+  assert.match(metaOps[0].name, /Team:/);
 });
