@@ -631,7 +631,7 @@ test('exportContactSheetToAdobeExpress builds multi-page HzJSON v1 and creates a
   });
 
   assert.equal(expressRes.documentId, 'urn:aaid:sc:US:express-doc-777');
-  assert.equal(expressRes.expressUrl, 'https://new.express.adobe.com/id/urn%3Aaaid%3Asc%3AUS%3Aexpress-doc-777');
+  assert.equal(expressRes.expressUrl, 'https://new.express.adobe.com/id/urn:aaid:sc:US:express-doc-777');
   assert.equal(expressRes.expressMode, 'direct');
   assert.equal(expressRes.sharedLinkEnabled, true);
   assert.equal(expressRes.placedAssets, 6);

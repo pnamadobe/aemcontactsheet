@@ -7,26 +7,14 @@ import { writeFileObject, getPresignedDownloadUrl } from './store.js';
 
 async function shareExpressDocument(
   documentId,
-  { bearerToken, apiKey = 'aura_webapp', shareWithEmails = [], fetchImpl = globalThis.fetch } = {}
+  { bearerToken, apiKey = 'projectx_webapp', shareWithEmails = [], fetchImpl = globalThis.fetch } = {}
 ) {
   if (!documentId || !bearerToken) return { shared: false, sharedWith: [] };
-  const recipients = [
+  const linkRecipients = [
     { recipient: 'all', role: 'viewer', canComment: true },
     { recipient: 'authenticated', role: 'editor', canComment: true },
   ];
-  const validEmails = [];
-  for (const em of shareWithEmails || []) {
-    const clean = String(em || '').trim();
-    if (clean.includes('@') && !validEmails.includes(clean)) {
-      validEmails.push(clean);
-      recipients.push({
-        recipient: `mailto:${clean}`,
-        role: 'editor',
-        canComment: true,
-        canShare: true,
-      });
-    }
-  }
+  let linkShared = false;
   try {
     const res = await fetchImpl(
       `https://invitations.adobe.io/api/v4/share/${encodeURIComponent(documentId)}?mode=direct_acl`,
@@ -37,13 +25,48 @@ async function shareExpressDocument(
           authorization: `Bearer ${bearerToken}`,
           'x-api-key': apiKey,
         },
-        body: JSON.stringify({ recipients }),
+        body: JSON.stringify({ recipients: linkRecipients }),
       }
     );
-    return { shared: res.ok, sharedWith: validEmails };
+    linkShared = res.ok;
   } catch {
-    return { shared: false, sharedWith: [] };
+    // ignore
   }
+
+  const validEmails = [];
+  for (const em of shareWithEmails || []) {
+    const clean = String(em || '').trim();
+    if (clean.includes('@') && !validEmails.includes(clean)) {
+      validEmails.push(clean);
+    }
+  }
+  if (validEmails.length > 0) {
+    try {
+      await fetchImpl(
+        `https://invitations.adobe.io/api/v4/share/${encodeURIComponent(documentId)}?mode=direct_acl`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${bearerToken}`,
+            'x-api-key': apiKey,
+          },
+          body: JSON.stringify({
+            recipients: validEmails.map((clean) => ({
+              recipient: `mailto:${clean}`,
+              role: 'editor',
+              canComment: true,
+              canShare: true,
+            })),
+            notification: { suppress: true },
+          }),
+        }
+      );
+    } catch {
+      // ignore if user is already owner/collaborator (409)
+    }
+  }
+  return { shared: linkShared, sharedWith: validEmails };
 }
 
 const SENSEI_PREDICT_URL =
@@ -1006,7 +1029,7 @@ export async function exportContactSheetToAdobeExpress({
       });
       return {
         documentId: parsed.documentId,
-        expressUrl: `${EXPRESS_BASE_URL.replace(/\/+$/, '')}/id/${encodeURIComponent(parsed.documentId)}`,
+        expressUrl: `${EXPRESS_BASE_URL.replace(/\/+$/, '')}/id/${parsed.documentId}`,
         expressMode: 'direct',
         sharedLinkEnabled: shareResult.shared,
         sharedWith: shareResult.sharedWith || [],

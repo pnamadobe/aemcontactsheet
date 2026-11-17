@@ -268,18 +268,6 @@ export async function exportContactSheetToFireflyBoard({
   // so the user can open and edit the board in Firefly Boards even if signed into a different IMS Org profile.
   if (fetchImpl === globalThis.fetch && boardId) {
     try {
-      const recipients = [
-        { recipient: 'all', role: 'viewer', canComment: true },
-        { recipient: 'authenticated', role: 'editor', canComment: true },
-      ];
-      if (shareEmail && String(shareEmail).includes('@')) {
-        recipients.push({
-          recipient: `mailto:${String(shareEmail).trim()}`,
-          role: 'editor',
-          canComment: true,
-          canShare: true,
-        });
-      }
       await fetchImpl(
         `https://invitations.adobe.io/api/v4/share/${encodeURIComponent(boardId)}?mode=direct_acl`,
         {
@@ -289,9 +277,38 @@ export async function exportContactSheetToFireflyBoard({
             authorization: `Bearer ${bearerToken}`,
             'x-api-key': 'aura_webapp',
           },
-          body: JSON.stringify({ recipients }),
+          body: JSON.stringify({
+            recipients: [
+              { recipient: 'all', role: 'viewer', canComment: true },
+              { recipient: 'authenticated', role: 'editor', canComment: true },
+            ],
+          }),
         }
       );
+      if (shareEmail && String(shareEmail).includes('@')) {
+        await fetchImpl(
+          `https://invitations.adobe.io/api/v4/share/${encodeURIComponent(boardId)}?mode=direct_acl`,
+          {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              authorization: `Bearer ${bearerToken}`,
+              'x-api-key': 'aura_webapp',
+            },
+            body: JSON.stringify({
+              recipients: [
+                {
+                  recipient: `mailto:${String(shareEmail).trim()}`,
+                  role: 'editor',
+                  canComment: true,
+                  canShare: true,
+                },
+              ],
+              notification: { suppress: true },
+            }),
+          }
+        );
+      }
     } catch {
       // non-fatal if org sharing policy restricts link access
     }
