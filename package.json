@@ -1,6 +1,8 @@
 {
   "name": "aem-contact-sheet",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Adobe App Builder extension for AEM Assets View and Content Hub to generate customizable PDF Contact Sheets.",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -16,7 +18,7 @@
     "build:demo": "node scripts/with-demo-config.js build",
     "deploy:demo": "node scripts/with-demo-config.js deploy prod",
     "deploy:demo:stage": "node scripts/with-demo-config.js deploy stage",
-    "deploy:all": "npm run deploy:exchange && npm run deploy:exchange:stage && npm run deploy:demo:stage && npm run deploy:demo",
+    "deploy:all": "npm run deploy:demo:stage && npm run deploy:demo && npm run deploy:exchange:stage && npm run deploy:exchange",
     "demo": "node scripts/build-demo.js"
   },
   "dependencies": {
