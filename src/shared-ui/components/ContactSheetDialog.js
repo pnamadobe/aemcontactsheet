@@ -1006,6 +1006,9 @@ export default function ContactSheetDialog({
               deliveryHost: prev?.deliveryHost || resolveRes.model.deliveryHost || '',
             }));
           }
+          if (resolveRes.model.source?.includeSubfolders) {
+            setIncludeSubfolders(true);
+          }
           setModel(resolveRes.model);
           setModelFileKey(resolveRes.result?.modelFileKey || null);
           setPhase('configure');
@@ -1263,6 +1266,15 @@ export default function ContactSheetDialog({
       ) {
         setModel(resolveRes.model);
         setModelFileKey(resolveRes.result?.modelFileKey || null);
+      } else if (resolveRes.jobId) {
+        const st = await callAction('status', {
+          method: 'GET',
+          query: { jobId: resolveRes.jobId, includeModel: true },
+        });
+        if (st?.model) {
+          setModel(st.model);
+          setModelFileKey(st.result?.modelFileKey || null);
+        }
       }
     } catch {
       // keep existing model if re-resolve fails

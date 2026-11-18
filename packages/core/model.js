@@ -180,6 +180,7 @@ export function normalizeAsset(raw, index = 0) {
   };
 
   for (const [k, rawVal] of Object.entries(meta)) {
+    if (k === 'xcm:machineKeywords') continue; // Skip verbose 25-item AI confidence arrays that bloat 500-asset models
     const norm = normalizeRawValue(rawVal, k);
     if (norm !== null) {
       values[k] = norm;
@@ -274,7 +275,8 @@ export function buildSheetModel({
 
   const totalFound = filtered.length;
   const truncated = totalFound > maxAssets;
-  const normalizedAll = filtered.map((raw, i) => normalizeAsset(raw, i));
+  const capped = filtered.slice(0, maxAssets);
+  const normalizedAll = capped.map((raw, i) => normalizeAsset(raw, i));
   const fields = discoverFields(normalizedAll, schemaFields);
 
   return {

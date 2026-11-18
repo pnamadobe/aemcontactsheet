@@ -112,7 +112,8 @@ export function createAemClient({
    */
   async function enrichAuthorSignedUrls(rawAssets, folderPathHint = null) {
     if (!Array.isArray(rawAssets) || rawAssets.length === 0) return rawAssets;
-    const needEnrich = rawAssets.filter((a) => !a.thumbnailUrl || !a.downloadUrl);
+    // Enrich up to the first 60 assets for immediate preview; remaining thumbnails resolve on-demand in batches
+    const needEnrich = rawAssets.slice(0, 60).filter((a) => !a.thumbnailUrl || !a.downloadUrl);
     if (needEnrich.length === 0) return rawAssets;
 
     const folderPaths = new Set();
@@ -129,43 +130,43 @@ export function createAemClient({
         .filter(Boolean)
     );
     const urlMap = new Map();
-    for (const fp of [...folderPaths].slice(0, 6)) {
-      try {
-        let cursor = null;
-        let fetched = 0;
-        do {
-          // IMPORTANT: AEM's `search-assets` only signs `downloadUrl` and `thumbnailUrl` for the first 10 items per response!
-          // Always paginate with `limit: 10` so every page of 10 items receives signed URLs.
-          const body = {
-            termFilters: [{ key: 'repositoryMetadata.repo:ancestors', value: fp }],
-            limit: 10,
-          };
-          if (cursor) body.cursor = cursor;
-          const sRes = await requestJson(
-            normAuthor,
-            '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
-            { method: 'POST', body }
-          );
-          const results = sRes?.results || [];
-          for (const item of results) {
-            const id = item?.assetId || item?.id;
-            if (id && (item.thumbnailUrl || item.downloadUrl)) {
-              urlMap.set(id, {
-                thumbnailUrl: item.thumbnailUrl,
-                downloadUrl: item.downloadUrl,
-              });
+    await Promise.all(
+      [...folderPaths].slice(0, 4).map(async (fp) => {
+        try {
+          let cursor = null;
+          let pages = 0;
+          do {
+            const body = {
+              termFilters: [{ key: 'repositoryMetadata.repo:ancestors', value: fp }],
+              limit: 10,
+            };
+            if (cursor) body.cursor = cursor;
+            const sRes = await requestJson(
+              normAuthor,
+              '/adobe/experimental/aemmcpserver-expires-20991231/search-assets',
+              { method: 'POST', body }
+            );
+            const results = sRes?.results || [];
+            for (const item of results) {
+              const id = item?.assetId || item?.id;
+              if (id && (item.thumbnailUrl || item.downloadUrl)) {
+                urlMap.set(id, {
+                  thumbnailUrl: item.thumbnailUrl,
+                  downloadUrl: item.downloadUrl,
+                });
+              }
             }
-          }
-          fetched += results.length;
-          cursor = sRes?.cursor || null;
-          if (targetIds.size > 0 && [...targetIds].every((id) => urlMap.has(id))) {
-            break;
-          }
-        } while (cursor && fetched < Math.max(120, rawAssets.length + 30));
-      } catch {
-        // Non-fatal if search-assets endpoint is unavailable in test mocks
-      }
-    }
+            pages++;
+            cursor = sRes?.cursor || null;
+            if (targetIds.size > 0 && [...targetIds].every((id) => urlMap.has(id))) {
+              break;
+            }
+          } while (cursor && pages < 3);
+        } catch {
+          // Non-fatal if search-assets endpoint is unavailable in test mocks
+        }
+      })
+    );
 
     if (urlMap.size > 0) {
       for (const a of rawAssets) {
@@ -183,21 +184,31 @@ export function createAemClient({
   /**
    * Bulk-resolve all assets under a folder using the verified S4 search endpoint (`repo:ancestors`).
    * Collects up to `maxScan` assets in pages of 100.
+   * If `includeSubfolders` is false and the folder has 0 direct child assets (only subfolders),
+   * automatically includes the descendant subfolder assets so parent shoot folders work immediately.
    */
-  async function resolveFolderAssets({ folderId, folderPath, includeSubfolders = false, maxScan = 1000 }) {
+  async function resolveFolderAssets({ folderId, folderPath, includeSubfolders = false, maxScan = 500 }) {
     let resolvedFolderId = folderId;
     let resolvedPath = folderPath;
     if (!resolvedFolderId || !resolvedPath) {
-      const info = await listFolder({ path: folderPath, folderId, types: 'FOLDER', limit: 1 });
-      resolvedFolderId = resolvedFolderId || info?.self?.folderId;
-      resolvedPath = resolvedPath || info?.self?.path || folderPath;
+      try {
+        const info = await listFolder({ path: folderPath, folderId, types: 'FOLDER', limit: 1 });
+        resolvedFolderId = resolvedFolderId || info?.self?.folderId;
+        resolvedPath = resolvedPath || info?.self?.path || folderPath;
+      } catch {
+        // Proceed with whichever identifier we have
+      }
     }
 
-    const allHits = [];
+    const ancestorTerms = [...new Set([resolvedFolderId, resolvedPath].filter(Boolean))];
+    const directHits = [];
+    const descendantHits = [];
     let cursor = null;
+    let pages = 0;
+
     do {
       const body = {
-        query: [{ term: { 'repositoryMetadata.repo:ancestors': [resolvedFolderId] } }],
+        query: [{ term: { 'repositoryMetadata.repo:ancestors': ancestorTerms } }],
         limit: 100,
       };
       if (cursor) body.cursor = cursor;
@@ -207,21 +218,33 @@ export function createAemClient({
       });
       const hits = res?.hits?.results || [];
       for (const h of hits) {
-        if (!includeSubfolders && resolvedPath) {
+        if (descendantHits.length < maxScan) {
+          descendantHits.push(h);
+        }
+        if (resolvedPath) {
           const assetPath = h?.repositoryMetadata?.['repo:path'] || '';
           const parentPath = assetPath.slice(0, assetPath.lastIndexOf('/')) || '/';
           if (parentPath !== resolvedPath) continue;
         }
-        allHits.push(h);
+        if (directHits.length < maxScan) {
+          directHits.push(h);
+        }
       }
       cursor = res?.cursor || null;
-    } while (cursor && allHits.length < maxScan);
+      pages++;
+      const targetList = includeSubfolders ? descendantHits : directHits;
+      if (targetList.length >= maxScan || pages >= 10) break;
+    } while (cursor);
+
+    const autoIncludedSubfolders = !includeSubfolders && directHits.length === 0 && descendantHits.length > 0;
+    const allHits = includeSubfolders || autoIncludedSubfolders ? descendantHits : directHits;
 
     await enrichAuthorSignedUrls(allHits, resolvedPath);
 
     return {
       folderId: resolvedFolderId,
       folderPath: resolvedPath,
+      autoIncludedSubfolders,
       assets: allHits,
     };
   }

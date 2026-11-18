@@ -222,7 +222,7 @@ export async function main(params = {}) {
       return jsonResponse(200, {
         assetId: params.assetId,
         name: fontName,
-        fontDataUrl: `data:${mime};base64,${buf.toString('base64')}`,
+        fontDataUrl: buf.byteLength <= 700_000 ? `data:${mime};base64,${buf.toString('base64')}` : null,
       });
     }
 

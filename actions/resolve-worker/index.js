@@ -59,6 +59,9 @@ export async function main(params = {}) {
       });
       rawAssets = res.assets;
       sourceLabel = res.folderPath || source.path || source.id;
+      if (res.autoIncludedSubfolders) {
+        source.includeSubfolders = true;
+      }
     } else if (source.kind === 'collection') {
       const res = await aem.resolveCollectionAssets({
         collectionId: source.id,
@@ -130,8 +133,25 @@ export async function main(params = {}) {
       truncated: model.truncated,
     };
     await saveJob(job);
-    if (params.returnModelInline && modelJsonStr.length < 900_000) {
-      return { ...job, inlineModel: model };
+    if (params.returnModelInline) {
+      if (modelJsonStr.length < 820_000) {
+        return { ...job, inlineModel: model };
+      }
+      // If 500 assets with extensive custom metadata exceed 820 KB, keep common + top 20 non-technical fields for the inline HTTP response
+      const keepKeys = new Set(
+        model.fields
+          .filter((f) => f.common || !f.technical)
+          .slice(0, 32)
+          .map((f) => f.key)
+      );
+      const slimModel = {
+        ...model,
+        assets: model.assets.map((a) => ({
+          ...a,
+          values: Object.fromEntries(Object.entries(a.values || {}).filter(([k]) => keepKeys.has(k))),
+        })),
+      };
+      return { ...job, inlineModel: slimModel };
     }
     return job;
   } catch (err) {
