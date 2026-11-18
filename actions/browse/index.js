@@ -254,16 +254,20 @@ export async function main(params = {}) {
           thumbnailUrl: r.thumbnailUrl || null,
           downloadUrl: r.downloadUrl || null,
         }));
-      images = await Promise.all(
-        images.map(async (img) => {
-          const dataUrl = await fetchSmallThumbDataUrl(img.assetId);
-          return {
-            ...img,
-            thumbnailUrl: dataUrl || img.thumbnailUrl,
-            downloadUrl: dataUrl || img.downloadUrl || img.thumbnailUrl,
-          };
-        })
+      const rawThumbs = await Promise.all(
+        images.map((img) => fetchSmallThumbDataUrl(img.assetId, { preferCompact: true }))
       );
+      let usedDataUrlChars = 0;
+      images = images.map((img, i) => {
+        const dataUrl = rawThumbs[i];
+        const canIncludeDataUrl = dataUrl && usedDataUrlChars + dataUrl.length <= 500_000;
+        if (canIncludeDataUrl) usedDataUrlChars += dataUrl.length;
+        return {
+          ...img,
+          thumbnailUrl: (canIncludeDataUrl ? dataUrl : null) || img.thumbnailUrl,
+          downloadUrl: img.downloadUrl || null,
+        };
+      });
       return jsonResponse(200, {
         self: { path: folderPath },
         folders: [],
@@ -335,16 +339,21 @@ export async function main(params = {}) {
         // non-fatal
       }
 
-      images = await Promise.all(
-        images.slice(0, 20).map(async (img) => {
-          const dataUrl = await fetchSmallThumbDataUrl(img.assetId);
-          return {
-            ...img,
-            thumbnailUrl: dataUrl || img.thumbnailUrl,
-            downloadUrl: dataUrl || img.downloadUrl || img.thumbnailUrl,
-          };
-        })
+      const subset = images.slice(0, 20);
+      const rawThumbs = await Promise.all(
+        subset.map((img) => fetchSmallThumbDataUrl(img.assetId, { preferCompact: true }))
       );
+      let usedDataUrlChars = 0;
+      images = subset.map((img, i) => {
+        const dataUrl = rawThumbs[i];
+        const canIncludeDataUrl = dataUrl && usedDataUrlChars + dataUrl.length <= 500_000;
+        if (canIncludeDataUrl) usedDataUrlChars += dataUrl.length;
+        return {
+          ...img,
+          thumbnailUrl: (canIncludeDataUrl ? dataUrl : null) || img.thumbnailUrl,
+          downloadUrl: img.downloadUrl || null,
+        };
+      });
     }
 
     return jsonResponse(200, {

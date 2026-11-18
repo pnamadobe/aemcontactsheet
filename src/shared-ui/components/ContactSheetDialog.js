@@ -1300,7 +1300,7 @@ export default function ContactSheetDialog({
     return '/content/dam';
   }
 
-  async function openBrowser(mode, startPath = '/content/dam', searchQ = '') {
+  async function openBrowser(mode, startPath = '/content/dam', searchQ = '', { isInitialOpen = false } = {}) {
     setPickerMode(mode);
     setPickerPath(startPath);
     setPickerLoading(true);
@@ -1316,8 +1316,9 @@ export default function ContactSheetDialog({
       });
       setPickerListing({ folders: data.folders || [], images: data.images || [] });
     } catch (err) {
-      // If startPath wasn't found, fall back to /content/dam
-      if (startPath !== '/content/dam') {
+      // Only fall back to /content/dam when initially opening the picker on a stale/deleted default path;
+      // never kick the user back to /content/dam when navigating folders inside the picker.
+      if (isInitialOpen && startPath !== '/content/dam') {
         try {
           setPickerPath('/content/dam');
           const fallbackData = await callAction('browse', {
@@ -1704,7 +1705,7 @@ export default function ContactSheetDialog({
                         setPickerMode(null);
                       } else {
                         setLogoSearchQuery('');
-                        openBrowser('logo', getDefaultLogoStartPath());
+                        openBrowser('logo', getDefaultLogoStartPath(), '', { isInitialOpen: true });
                       }
                     }}
                   >
@@ -1798,7 +1799,11 @@ export default function ContactSheetDialog({
                               type="button"
                               className="s2-picker-item"
                               onClick={() => {
-                                const previewUrl = img.downloadUrl || img.thumbnailUrl || null;
+                                const previewUrl =
+                                  (img.thumbnailUrl?.startsWith('data:') ? img.thumbnailUrl : null) ||
+                                  img.downloadUrl ||
+                                  img.thumbnailUrl ||
+                                  null;
                                 if (previewUrl) setLogoPreviewUrl(previewUrl);
                                 setConfig({
                                   ...config,
@@ -2422,7 +2427,9 @@ export default function ContactSheetDialog({
                       if (pickerMode === 'folder') {
                         setPickerMode(null);
                       } else {
-                        openBrowser('folder', config.output.targetFolder?.path || '/content/dam');
+                        openBrowser('folder', config.output.targetFolder?.path || '/content/dam', '', {
+                          isInitialOpen: true,
+                        });
                       }
                     }}
                   >
