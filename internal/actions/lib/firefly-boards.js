@@ -8,9 +8,9 @@
 //   - One Artboard Card per Asset arranged in a clean N-column grid (`#001 · Title · Field1: Val1 · Field2: Val2`)
 //     with the asset image placed inside via `addItemsToArtboard` (`presignedUrl` or `rawBlob`).
 
-import { COMMON_FIELDS, formatFieldValue } from '../../packages/core/fields.js';
-import { paginate } from '../../packages/core/layout.js';
-import { mapWithConcurrency } from './utils.js';
+import { COMMON_FIELDS, formatFieldValue } from '../../../packages/core/fields.js';
+import { paginate } from '../../../packages/core/layout.js';
+import { mapWithConcurrency } from '../../../actions/lib/utils.js';
 
 const DEFAULT_DOC_SERVICE_URL = 'https://hz-aura-doc-service.adobe.io';
 const DEFAULT_FEDERATED_MCP_URL = 'https://adobe-copilot-prod.adobe.io/mcp';

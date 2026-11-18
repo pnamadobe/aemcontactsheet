@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+// Runs an `aio app` command (e.g. `build` or `deploy`) using `internal/app.config.demo.yaml`
+// and `internal/ui/cloud-canvas-slot.js` (and selects `547DimSquid-767251-Production.json` on deploy),
+// then restores the clean Exchange files afterward.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, '..');
+const mainConfigPath = path.join(rootDir, 'app.config.yaml');
+const demoConfigPath = path.join(rootDir, 'internal', 'app.config.demo.yaml');
+const mainSlotPath = path.join(rootDir, 'src', 'shared-ui', 'cloud-canvas-slot.js');
+const demoSlotPath = path.join(rootDir, 'internal', 'ui', 'cloud-canvas-slot.js');
+const demoWorkspaceJson = path.join(rootDir, '547DimSquid-767251-Production.json');
+
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  console.error('Usage: node scripts/with-demo-config.js <build|deploy> [...aio args]');
+  process.exit(1);
+}
+
+const originalYaml = fs.readFileSync(mainConfigPath, 'utf8');
+const demoYaml = fs.readFileSync(demoConfigPath, 'utf8');
+const originalSlot = fs.readFileSync(mainSlotPath, 'utf8');
+const demoSlot = fs.readFileSync(demoSlotPath, 'utf8');
+
+let exitCode = 0;
+try {
+  if (args[0] === 'deploy' && fs.existsSync(demoWorkspaceJson)) {
+    console.log('🔹 Selecting internal demo workspace: 547DimSquid-767251-Production.json (Adobe Internal Peter Nam)…');
+    spawnSync('npx', ['aio', 'app', 'use', demoWorkspaceJson, '--merge', '--no-input'], {
+      cwd: rootDir,
+      stdio: 'inherit',
+    });
+  }
+
+  fs.writeFileSync(mainConfigPath, demoYaml, 'utf8');
+  fs.writeFileSync(mainSlotPath, demoSlot, 'utf8');
+  fs.rmSync(path.join(rootDir, '.parcel-cache'), { recursive: true, force: true });
+  fs.rmSync(path.join(rootDir, 'dist'), { recursive: true, force: true });
+
+  const res = spawnSync('npx', ['aio', 'app', ...args], {
+    cwd: rootDir,
+    stdio: 'inherit',
+  });
+  exitCode = res.status ?? 1;
+} finally {
+  fs.writeFileSync(mainConfigPath, originalYaml, 'utf8');
+  fs.writeFileSync(mainSlotPath, originalSlot, 'utf8');
+}
+
+process.exit(exitCode);

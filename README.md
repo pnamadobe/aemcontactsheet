@@ -1,12 +1,16 @@
-# AEM Assets Contact Sheets & Firefly Boards Exporter
+# AEM Assets Contact Sheets
 
-An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1`)** and **AEM Content Hub (`aem/assets/contenthub/1`)** that generates customizable, print-ready **PDF Contact Sheets** (saved back to AEM Assets and immediately downloadable) and exports high-resolution contact-sheet grids directly to **Adobe Firefly Boards** (infinite canvas).
+An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1`)** and **AEM Content Hub (`aem/assets/contenthub/1`)** that generates customizable, print-ready **PDF Contact Sheets** (saved back to AEM Assets and immediately downloadable).
+
+> **Two Build Profiles from One Codebase:**
+> - **Adobe Exchange Build (default — `app.config.yaml`):** Pure PDF Contact Sheet extension for **Adobe Plugin Developers** IMS Org / Adobe Exchange distribution. Verified by `npm run check:exchange` to contain zero internal-only endpoints or client IDs.
+> - **Internal Demo Build (`internal/app.config.demo.yaml`):** Adds direct **Adobe Firefly Boards** and **Adobe Express (`HzJSON` v1)** exports for internal customer demos (`npm run deploy:demo`).
 
 ## Demo Video & Overview
 
 - **Watch the Demo on YouTube:** [https://youtu.be/wgfEXvkFBYM](https://youtu.be/wgfEXvkFBYM)
 
-[![AEM Assets Contact Sheet & Firefly Boards Exporter Demo](docs/images/contact-sheet-modal.png)](https://youtu.be/wgfEXvkFBYM)
+[![AEM Assets Contact Sheets Demo](docs/images/contact-sheet-modal.png)](https://youtu.be/wgfEXvkFBYM)
 
 ---
 
@@ -14,14 +18,14 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
 
 ### 1. Dual Entry Points: AEM Assets View & Content Hub
 - **Unified Extension Bundle (`src/shared-ui/unified-entry.js`):** Single `register()` entry point supporting both **AEM Assets View** (`aem/assets/assetsview/1`: `headerMenu`, `actionBar`, `quickActions`) and **AEM Content Hub** (`aem/assets/contenthub/1`: `card` collection tiles, `selectionBar` multi-selection).
-- **Content Hub Fast Initialization:** Automatically detects `tier = delivery`, skips Assets View–only host RPC calls (`getCurrentUserProfile`, `getAemHost`) that would time out in Content Hub, decodes user claims from the IMS JWT, and normalizes `x-api-key` to `aem-assets-frontend-1` for Author archival uploads.
+- **Content Hub Fast Initialization:** Automatically detects `tier = delivery`, skips Assets View–only host RPC calls (`getCurrentUserProfile`, `getAemHost`) that would time out in Content Hub, decodes user claims from the IMS JWT, and normalizes `x-api-key` for Author archival uploads.
 - **Recursive Subfolder Toggle (`Include subfolders`):** When launched on any folder in Assets View, a top-bar **Include subfolders** checkbox pill dynamically re-resolves all descendant assets across nested subfolders (`repo:ancestors`) in place without losing your current configuration.
 
 ---
 
 ### 2. Adobe Spectrum 2 Native UI & Responsive Live Preview
 - **Spectrum 2 Inspector & Stage (`src/shared-ui/components/ContactSheetDialog.js`):**
-  - Clean `56px` Spectrum 2 top bar with AEM grid badge, source breadcrumb pill, asset count badge, preset selector, and action pills (**Print**, **Send to Firefly Boards**, **Save PDF to AEM**, **Cancel**).
+  - Clean `56px` Spectrum 2 top bar with AEM grid badge, source breadcrumb pill, asset count badge, preset selector, and action pills (**Print**, **Save PDF to AEM**, **Cancel**).
   - `360px` Left Inspector Rail paired with a responsive right-hand preview stage.
 - **Responsive Viewport Page Scaling (`packages/core/render.js`):**
   - Uses a `ResizeObserver` inside the preview iframe to compute `--cs-scale = (availableWidth - 64) / (pageWidthIn * 96)`, scaling any paper size (`Letter`, `A4`, `Legal`, `Tabloid`, `A3`, portrait or landscape) smoothly to the available canvas width after accounting for the left sidebar, with **Fit to width**, **75%**, and **100%** zoom controls.
@@ -37,7 +41,7 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
   - Opens inline directly underneath the **Brand Logo** field, starting in the current shoot's parent folder (e.g., `/content/dam/26H2/hertz` where `brand/hertz-logo-black.png` lives).
   - Includes a DAM-wide search input (`Search logo across DAM (e.g. hertz, logo)…`) and embeds AEM's pre-generated small thumbnails (`cq5dam.thumbnail.140.100.png` / `48.48.png`) as `data:` URLs next to each image filename.
 - **Centered & Top-Aligned Placement:**
-  - The selected Brand Logo is **horizontally centered and top-aligned** across the Live Preview (3-column CSS Grid `.header-center`), HTML-to-PDF (`packages/core/render.js`), native vector PDF (`actions/lib/pdf-native.js`), and Firefly Boards (`actions/lib/firefly-boards.js`), and is remembered per user (`prefs`).
+  - The selected Brand Logo is **horizontally centered and top-aligned** across the Live Preview (3-column CSS Grid `.header-center`), HTML-to-PDF (`packages/core/render.js`), and native vector PDF (`actions/lib/pdf-native.js`), and is remembered per user (`prefs`).
 
 ---
 
@@ -100,68 +104,95 @@ An Adobe App Builder application for **AEM Assets View (`aem/assets/assetsview/1
 
 ---
 
-### 8. Export to Adobe Firefly Boards (Infinite Canvas) & Cross–IMS Org Support
-- **Board Creation (`actions/lib/firefly-boards.js`):**
+## Internal Demo Integrations (`internal/` — Not Included in Adobe Exchange Build)
+
+When built or deployed with `npm run build:demo` or `npm run deploy:demo` (`scripts/with-demo-config.js`), the application swaps in `internal/app.config.demo.yaml` and `internal/ui/cloud-canvas-slot.js` to enable two internal demo-only cloud-canvas integrations:
+
+### 8. Export to Adobe Firefly Boards (Infinite Canvas) & Cross–IMS Org Support (`internal/actions/lib/firefly-boards.js`)
+- **Board Creation:**
   - Creates a new Firefly Board via the Adobe Federated MCP Gateway (`https://adobe-copilot-prod.adobe.io/mcp` → `boards_create_new_board`) or direct `aura-doc-service` V2 REST (`https://hz-aura-doc-service.adobe.io/v2/create-new-board`, `x-api-key: aura_webapp`).
 - **Full / Highest Resolution Images:**
-  - Enriches Author assets with pre-signed `downloadUrl`s (paginating `/adobe/experimental/aemmcpserver-expires-20991231/search-assets` with `limit: 10` so every page of 10 assets receives signed URLs) and passes full-resolution original JPEG/PNG/WebP URLs (`presignedUrl`) directly to `aura-doc-service`.
-  - For Content Hub (`delivery`) or non-web formats (PSD/TIFF), fetches high-resolution renditions (`targetPx: 2048, quality: 'print'` — up to `2048px` Dynamic Media JPEG or `1280px` Author web rendition).
-  - Sizes each card artboard to `placedWidth + 40` × `placedHeight + 40` to match `BoardSessionV2`'s `20px` padding and `2048px` proportional height cap.
+  - Enriches Author assets with pre-signed `downloadUrl`s and passes full-resolution original JPEG/PNG/WebP URLs (`presignedUrl`) directly to `aura-doc-service`.
+  - For Content Hub (`delivery`) or non-web formats (PSD/TIFF), fetches high-resolution renditions (`targetPx: 2048, quality: 'print'`).
 - **Separate Stacked Editable Metadata Lines & Dynamic Grid Expansion:**
-  - Places each header line, group banner, and metadata field below an asset as its own separate, individually editable text line (`height: 0.01` artboard so no white underline bar appears).
-  - Scales vertical spacing (`firstLineOffset = 38 * u`, `fieldLineStep = 30 * u`, `rowGap = 72 * u`, where `u = Math.max(1.6, totalGridW / 1350)`) to match Firefly Boards' fixed `20 screen px` (`14px` font) decoration height at bird's-eye zoom.
-  - Dynamically expands each grid row's height based on the number of printed metadata lines in that row (supporting 10–30+ metadata fields per asset without overlap).
-- **Resilient Coediting Batching:**
-  - Orders all `createArtboard` operations before `addItemsToArtboard` operations in every 20-op `/compose` batch, adds a `550ms` inter-batch LES session cooldown, retries `503 LECCoeditingLimitExceeded` with exponential backoff, and retries any failed card media upload individually with fallback.
-- **Cross–IMS Org Support (AEM in Org A, Firefly Boards in Org B):**
-  - **Account Cluster Switcher:** Queries `/ims/organizations/v6` and `/ims/account_cluster/v2` and exchanges tokens via `/ims/check/v6/token` when switching to another linked IMS Org profile.
-  - **Saved Target Org Profiles with Auto-Detected IMS Org Name:** When pasting a Bearer token from another Firefly Boards IMS Org (`copy(window.adobeIMS.getAccessToken().token)` in DevTools Console on `firefly.adobe.com/boards`), the UI automatically decodes the JWT and queries `/ims/organizations/v6` + `/ims/profile/v1` to populate the human-readable **IMS Org Name** (or lets you type a custom name) and saves it to your user preferences (`prefs.savedBoardsProfiles` + `localStorage`) so you can select `★ <Org Name>` from the dropdown without ever having to copy-paste it again.
-  - **Automatic Link & Collaborator Sharing:** Calls `POST https://invitations.adobe.io/api/v4/share/{boardUrn}?mode=direct_acl` (`authenticated: editor`, `all: viewer`, plus `mailto:{email}: editor`) so the board can be opened and edited across profiles.
+  - Places each header line, group banner, and metadata field below an asset as its own separate, individually editable text line (`height: 0.01` artboard so no white underline bar appears) and dynamically expands each grid row's height based on the number of printed metadata lines.
+- **Cross–IMS Org Support:**
+  - Auto-detects the human-readable IMS Org name when pasting a Bearer token from another Firefly Boards or Adobe Express tab (`copy(window.adobeIMS.getAccessToken().token)`) and persists saved target org profiles in `internal/actions/prefs/index.js`.
 
----
-
-### 9. Export to Adobe Express (`Open in Adobe Express`)
-- **Direct Multi-Page Horizon JSON (`HzJSON` v1) Export (`actions/lib/adobe-express.js`):**
-  - Converts the paginated contact sheet (`paginated.pages`, `geometry`, `THEME_PALETTES`) into a multi-page **Horizon JSON (`HzJSON` v1)** document where each contact sheet page is an `artboard` (`96 px/in`) containing independent, editable Express scene nodes:
-    - Page background `rectangle` (`Clean White`, `Photographer Dark`, or `Neutral Proofing Grey` theme)
-    - Sheet header (`Title`, centered `Brand Logo` bitmap, `Date`, `Prepared by`, `Source`, and divider rule)
-    - Section group banners (`group-band`) with accent bars
-    - Thumbnail `rectangle` frames and `BitmapFill` nodes (`contain` or `cover`) backed by embedded `data:image/...;base64,...` resources in `HzJSON` `resources` (uploaded directly as native ACP `rel: "resource"` components inside the Express document with zero external URL/CORS failures)
-    - Approval status badge pills (`APPROVED`, `REJECTED`, `PENDING`), rotated watermark `text` overlays, and individual editable metadata caption `text` nodes
-    - Automatic `EXPRESS_TEXT_SCALE = 96 / 72` (`1.3333×`) bounds and fontSize normalization so right-aligned header/footer text and multi-column captions fit exact column boundaries without right-edge cutoff or vertical overlap
-  - Submits the `HzJSON` document to the **Sensei HzJSON Import Service** (`POST https://sensei.adobe.io/services/v2/predict`, Engine `Feature:autocrop:Service-f3c41ebbaca44b0384e506185c1cf583`), polls `/services/v2/status/{requestId}`, shares the created `urn:aaid:sc:...` document via `invitations.adobe.io` (`authenticated: editor` + `notification: { suppress: true }`), and provides the unencoded **`https://new.express.adobe.com/id/urn:aaid:sc:...`** URL with 1-click clipboard copy (`Copy Adobe Express Link`) to bypass Chromium's `Cross-Origin-Opener-Policy: same-origin` block on sandboxed iframe popups.
-- **Seamless Editable Vector PDF Fallback:**
-  - When the user's current token does not yet include Adobe Fonts / Express scopes, `generate-worker` automatically falls back to generating the vector multi-page PDF and surfaces a 1-click **Download PDF & Copy Express Link** action so the user can drop the PDF into Adobe Express's native PDF importer (which converts every page, image, logo, badge, and text line into editable Express layers).
+### 9. Export to Adobe Express (`internal/actions/lib/adobe-express.js`)
+- **Direct Multi-Page Horizon JSON (`HzJSON` v1) Export:**
+  - Converts the paginated contact sheet (`paginated.pages`, `geometry`, `THEME_PALETTES`) into a multi-page **Horizon JSON (`HzJSON` v1)** document where each contact sheet page is an `artboard` (`96 px/in`) containing independent, editable Express scene nodes (page background, header, centered logo, section group banners, aspect-ratio-preserving thumbnail `BitmapFill` nodes backed by embedded `data:image/...;base64,...` resources, status badges, rotated watermarks, and `EXPRESS_TEXT_SCALE = 96 / 72` normalized captions).
+  - Submits the `HzJSON` document to Sensei CPF (`POST https://sensei.adobe.io/services/v2/predict`), shares the created `urn:aaid:sc:...` document via `invitations.adobe.io`, and provides a 1-click **Copy Adobe Express Link** button (`https://new.express.adobe.com/id/urn:aaid:sc:...`) with an automatic vector-PDF fallback if the token lacks Express scopes.
 
 ---
 
 ## Repository Structure & Documentation
 
 - `packages/core/`: `@contactsheet/core` shared library (`fields.js`, `model.js`, `sort.js`, `layout.js`, `render.js`) and unit tests (`packages/core/__tests__/core.test.js`).
-- `actions/`: Adobe I/O Runtime actions (`resolve`, `resolve-worker`, `generate`, `generate-worker`, `status`, `browse`, `presets`, `prefs`) and shared backend libraries (`actions/lib/aem.js`, `actions/lib/pdf-native.js`, `actions/lib/pdf-services.js`, `actions/lib/firefly-boards.js`, `actions/lib/adobe-express.js`, `actions/lib/store.js`, `actions/lib/zip.js`).
-- `src/`: Unified UI extension entry (`src/shared-ui/unified-entry.js`) and Spectrum 2 React modal (`src/shared-ui/components/ContactSheetDialog.js`) for both `aem/assets/assetsview/1` and `aem/assets/contenthub/1`.
+- `actions/`: Adobe Exchange I/O Runtime actions (`resolve`, `resolve-worker`, `generate`, `generate-worker`, `status`, `browse`, `presets`, `prefs`) and shared backend libraries (`actions/lib/aem.js`, `actions/lib/pdf-native.js`, `actions/lib/pdf-services.js`, `actions/lib/store.js`, `actions/lib/zip.js`).
+- `src/`: Unified UI extension entry (`src/shared-ui/unified-entry.js`), Exchange cloud-canvas stub (`src/shared-ui/cloud-canvas-slot.js`), and Spectrum 2 React modal (`src/shared-ui/components/ContactSheetDialog.js`) for both `aem/assets/assetsview/1` and `aem/assets/contenthub/1`.
+- `internal/`: Internal demo-only Firefly Boards & Adobe Express libraries (`internal/actions/lib/firefly-boards.js`, `internal/actions/lib/adobe-express.js`), action wrappers (`internal/actions/generate`, `internal/actions/generate-worker`, `internal/actions/prefs`), UI slot (`internal/ui/cloud-canvas-slot.js`), manifest (`internal/app.config.demo.yaml`), tests (`internal/__tests__/internal.test.js`), and research docs:
+  - [Firefly Boards MCP & `aura-doc-service` Research (`internal/firefly-boards-mcp-research.md`)](internal/firefly-boards-mcp-research.md)
+  - [Adobe Express Export (`HzJSON` v1 + Sensei CPF) Research & Architecture (`internal/adobe-express-hzjson-research.md`)](internal/adobe-express-hzjson-research.md)
 - `docs/`:
+  - [Adobe Exchange vs. Internal Demo Build Architecture & Deployment Guide (`docs/exchange-vs-demo-architecture.md`)](docs/exchange-vs-demo-architecture.md)
+  - [Administrator Setup & Configuration Guide (`docs/admin-setup-guide.md`)](docs/admin-setup-guide.md)
+  - [Privacy, Security & Data Handling (`docs/privacy-and-data-handling.md`)](docs/privacy-and-data-handling.md)
   - [MVP Architecture & Design (`docs/mvp-architecture.md`)](docs/mvp-architecture.md)
   - [M0 Spike Findings (`docs/spike-findings.md`)](docs/spike-findings.md)
-  - [Firefly Boards MCP & `aura-doc-service` Research (`docs/firefly-boards-mcp-research.md`)](docs/firefly-boards-mcp-research.md)
-  - [Adobe Express Export (`HzJSON` v1 + Sensei CPF) Research & Architecture (`docs/adobe-express-hzjson-research.md`)](docs/adobe-express-hzjson-research.md)
   - [Tier 1 Enhancements Plan (`docs/tier1-enhancements-plan.md`)](docs/tier1-enhancements-plan.md)
 - `research/`: [Competitor, Customer & Adobe Ecosystem Research (`research/contact-sheet-feature-research.md`)](research/contact-sheet-feature-research.md)
 
 ---
 
-## Testing & Deployment
+## Build Profiles: Adobe Exchange vs. Internal Demo
 
-Target environment:
-- **IMS Org:** `Adobe Internal Peter Nam` (`4A603BC061E191130A495FEF@AdobeOrg`, Org ID `767251`)
-- **App Builder Project:** `AEM Contact Sheet` (`547DimSquid`, Workspace: `Production`)
-- **AEM Author:** `https://author-p59602-e520244.adobeaemcloud.com`
-- **AEM Content Hub (Delivery):** `https://delivery-p59602-e520244.adobeaemcloud.com`
+| Component | Adobe Exchange Build (Default) | Internal Demo Build (`internal/` Overlay) |
+|---|---|---|
+| **Target IMS Org** | **Adobe Plugin Developers** (`aemcontactsheets-393012`) | **Adobe Internal Peter Nam** (`547DimSquid-767251`) |
+| **App Builder Manifest** | `app.config.yaml` | `internal/app.config.demo.yaml` |
+| **Supported Outputs** | `pdf` (Save to AEM + Download) | `pdf`, `boards` (Firefly Boards), `express` (Adobe Express) |
+| **`POST /generate` Action** | `actions/generate/index.js` | `internal/actions/generate/index.js` |
+| **`generate-worker` Action** | `actions/generate-worker/index.js` | `internal/actions/generate-worker/index.js` |
+| **`GET/PUT /prefs` Action** | `actions/prefs/index.js` (`lastOutputFolder`, `lastLogo`) | `internal/actions/prefs/index.js` (+ `savedBoardsProfiles`) |
+| **UI Cloud-Canvas Slot** | `src/shared-ui/cloud-canvas-slot.js` (no-op stub) | `internal/ui/cloud-canvas-slot.js` (Boards/Express buttons & Org switcher) |
+| **Automated Readiness Gate** | `scripts/check-exchange.js` (`npm run check:exchange`) | Swapped and restored via `scripts/with-demo-config.js` |
 
+See [docs/exchange-vs-demo-architecture.md](docs/exchange-vs-demo-architecture.md) for the full architectural diagram and forbidden-pattern audit list.
+
+---
+
+## Testing, Verification & Deployment Commands
+
+### 1. Run Unit & Integration Tests
 ```bash
-# Run all 17 unit and integration tests
+# Run public Adobe Exchange test suite (core + public actions + security/multi-tenancy)
 npm test
 
-# Clean build cache and deploy actions + content-hashed web assets to Production
-rm -rf dist .parcel-cache && aio app deploy --no-publish --no-log-forwarding-update
+# Run all unit & integration tests (core + public actions + internal Firefly Boards & Adobe Express)
+npm run test:all
+```
+
+### 2. Build & Deploy for Adobe Exchange (`Adobe Plugin Developers` — `aemcontactsheets-393012`)
+```bash
+# Clean build app.config.yaml + verify zero internal endpoints/keys/demo hosts in src/, actions/, packages/, and dist/
+npm run build:exchange
+
+# Run the standalone Exchange verification check at any time
+npm run check:exchange
+
+# Build, verify, and deploy to Adobe Plugin Developers Stage (aemcontactsheets-393012-Stage.json)
+npm run deploy:exchange:stage
+
+# Build, verify, and deploy to Adobe Plugin Developers Production (aemcontactsheets-393012-Production.json)
+npm run deploy:exchange
+```
+
+### 3. Build & Deploy Internal Customer Demo (`Adobe Internal Peter Nam` — `547DimSquid-767251`)
+```bash
+# Build with Firefly Boards & Adobe Express enabled (restores Exchange files afterward)
+npm run build:demo
+
+# Automatically selects 547DimSquid-767251-Production.json, deploys full demo build, and restores Exchange files
+npm run deploy:demo -- --no-publish --no-log-forwarding-update
 ```

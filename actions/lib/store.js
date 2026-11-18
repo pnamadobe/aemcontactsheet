@@ -94,7 +94,7 @@ export async function loadJob(jobId) {
   }
 }
 
-export async function listRecentJobs(limit = 5) {
+export async function listRecentJobs(limit = 5, { userHash = '', orgId = '' } = {}) {
   const files = await getFilesClient();
   if (files) {
     try {
@@ -102,12 +102,17 @@ export async function listRecentJobs(limit = 5) {
       const genJobs = (entries || [])
         .filter((e) => e.name?.includes('gen_'))
         .sort((a, b) => String(b.lastModified || '').localeCompare(String(a.lastModified || '')))
-        .slice(0, limit);
+        .slice(0, Math.max(limit * 4, 20));
       const out = [];
       for (const item of genJobs) {
+        if (out.length >= limit) break;
         try {
           const buf = await files.read(item.name);
-          if (buf) out.push(JSON.parse(buf.toString('utf8')));
+          if (!buf) continue;
+          const parsed = JSON.parse(buf.toString('utf8'));
+          if (userHash && parsed.userHash && parsed.userHash !== userHash) continue;
+          if (orgId && parsed.orgId && parsed.orgId !== orgId) continue;
+          out.push(parsed);
         } catch {
           // ignore
         }

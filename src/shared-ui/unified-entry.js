@@ -4,6 +4,21 @@ import { attach, register } from '@adobe/uix-guest';
 import { ASSETS_VIEW_EXTENSION_ID } from './constants.js';
 import ContactSheetDialog from './components/ContactSheetDialog.js';
 
+function getHostRepoParam() {
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get('repo') || sp.get('repoId') || '';
+  } catch {
+    return '';
+  }
+}
+
+function buildModalUrl(tier, source) {
+  const repo = getHostRepoParam();
+  const repoSuffix = repo ? `&repo=${encodeURIComponent(repo)}` : '';
+  return `/?t=${Date.now()}#contact-sheet-modal?tier=${tier}${repoSuffix}&source=${encodeURIComponent(JSON.stringify(source))}`;
+}
+
 function UnifiedRegistration() {
   useEffect(() => {
     const init = async () => {
@@ -28,7 +43,7 @@ function UnifiedRegistration() {
                       : { kind: 'folder', id: resource.id, path: resource.path, includeSubfolders: false };
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: buildModalUrl('author', source),
                       type: 'fullscreen',
                     });
                   },
@@ -79,7 +94,7 @@ function UnifiedRegistration() {
                     }
                     await guestConnection.host.modal.openDialog({
                       title: 'Create Contact Sheet',
-                      contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=author&source=${encodeURIComponent(JSON.stringify(source))}`,
+                      contentUrl: buildModalUrl('author', source),
                       type: 'fullscreen',
                     });
                   },
@@ -127,7 +142,7 @@ function UnifiedRegistration() {
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: buildModalUrl('delivery', source),
                   type: 'fullscreen',
                 });
               }
@@ -152,7 +167,7 @@ function UnifiedRegistration() {
                 };
                 await guestConnection.host.modal.openDialog({
                   title: 'Create Contact Sheet',
-                  contentUrl: `/?t=${Date.now()}#contact-sheet-modal?tier=delivery&source=${encodeURIComponent(JSON.stringify(source))}`,
+                  contentUrl: buildModalUrl('delivery', source),
                   type: 'fullscreen',
                 });
               }
@@ -205,7 +220,7 @@ function UnifiedModal({ defaultTier = 'author' }) {
       guestConnection={guestConnection}
       source={source}
       tier={tier}
-      actionBaseUrl="https://767251-547dimsquid.adobeioruntime.net/api/v1/web/contactsheet"
+      actionBaseUrl="/api/v1/web/contactsheet"
     />
   );
 }

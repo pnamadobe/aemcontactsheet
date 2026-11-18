@@ -8,7 +8,7 @@ _Compiled & live-verified Nov 17, 2026 against Production (`https://sensei.adobe
 
 To export a multi-page **AEM Assets Contact Sheet** as a native, editable multi-page **Adobe Express** document (`application/vnd.adobe.hz.express+dcx`), we use the same **Horizon JSON (`HzJSON` v1)** pipeline that powers Firefly Boards' *"Open in Express"* and Adobe Express's headless document importer:
 
-1. **Build `HzJSON` v1 (`actions/lib/adobe-express.js` → `buildContactSheetHzJson`):**
+1. **Build `HzJSON` v1 (`internal/actions/lib/adobe-express.js` → `buildContactSheetHzJson`):**
    - Converts each page in `paginated.pages` into an `HzJSON` `artboard` scene node (`96 px/in`) containing independent, editable Express elements:
      - Page background `rectangle` (`Clean White`, `Photographer Dark`, or `Neutral Proofing Grey` theme)
      - Sheet header (`Title`, centered `Brand Logo` bitmap, `Date`, `Prepared by`, `Source`, and divider rule)
@@ -35,7 +35,7 @@ To export a multi-page **AEM Assets Contact Sheet** as a native, editable multi-
 
 ## 2. Critical Implementation Details & Gotchas
 
-| Area | Finding | Resolution in `actions/lib/adobe-express.js` |
+| Area | Finding | Resolution in `internal/actions/lib/adobe-express.js` |
 |---|---|---|
 | **Text Scaling (`EXPRESS_TEXT_SCALE = 96 / 72`)** | On import, `hzjson-import-engine` applies an affine scale of `xscale: 1.333333, yscale: 1.333333` (`96 / 72`) to every `Text` scene node's `textGeometry.width`, `textGeometry.height`, and `fontSize`. Without pre-dividing by `96 / 72`, right-aligned header/footer text overflows past the right edge of the page and thumbnail captions overflow into adjacent columns. | `buildTextNode()` divides `width`, `height`, and `fontSize` by `EXPRESS_TEXT_SCALE = 96 / 72` (`4 / 3`) so the resulting on-canvas text frame matches the exact artboard pixel width. |
 | **Multi-Line Caption Clamping** | Long asset titles in a 1-line field wrap onto a second line in Express if not clamped to the column character width, colliding with the next metadata line below. | `buildContactSheetHzJson()` computes `maxCharsPerLine = Math.max(18, Math.floor(cellW / 5.6))`, truncates 1-line fields with `…`, and scales vertical step by `estimatedLines` when `maxLines > 1`. |

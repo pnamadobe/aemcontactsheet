@@ -1,7 +1,14 @@
 // GET /status?jobId=...&includeModel=true — poll resolve or generate job status (scoped to the calling user),
 // or proxy-download an AEM asset binary (`?downloadAssetId=urn:aaid:aem:...&fileName=...&aemHost=...`).
-import { errorResponse, extractAuth, jsonResponse } from '../lib/utils.js';
+import { errorResponse, extractAuth, jsonResponse, resolveAemHosts } from '../lib/utils.js';
 import { getPresignedDownloadUrl, listRecentJobs, loadJob, loadPdfChunk, readFileObject } from '../lib/store.js';
+
+function isJobOwnedByCaller(job, auth) {
+  if (!job) return false;
+  if (job.userHash && job.userHash !== auth.userHash) return false;
+  if (job.orgId && auth.imsOrg && job.orgId !== auth.imsOrg) return false;
+  return true;
+}
 
 export async function main(params = {}) {
   try {
@@ -11,12 +18,22 @@ export async function main(params = {}) {
     }
 
     if (params.mode === 'recentJobs') {
-      const jobs = await listRecentJobs(Number(params.limit) || 5);
+      const jobs = await listRecentJobs(Number(params.limit) || 5, {
+        userHash: auth.userHash,
+        orgId: auth.imsOrg,
+      });
       return jsonResponse(200, { jobs });
     }
 
-    // Fast chunked PDF binary retrieval from App Builder State (0-second wait without waiting for AEM Smart Tagging)
+    // Fast chunked PDF binary retrieval from App Builder State (scoped to the job owner)
     if (params.pdfJobId && params.chunk !== undefined) {
+      const parentJob = await loadJob(params.pdfJobId);
+      if (!parentJob) {
+        return errorResponse(404, 'JOB_NOT_FOUND', `Job ${params.pdfJobId} not found.`);
+      }
+      if (!isJobOwnedByCaller(parentJob, auth)) {
+        return errorResponse(403, 'FORBIDDEN', 'You do not have access to this job.');
+      }
       const chunkBase64 = await loadPdfChunk(params.pdfJobId, Number(params.chunk));
       if (!chunkBase64) {
         return errorResponse(404, 'CHUNK_NOT_FOUND', 'PDF chunk not found.');
@@ -25,7 +42,12 @@ export async function main(params = {}) {
     }
 
     if (params.downloadAssetId && params.sliceIndex !== undefined) {
-      const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      let aemHost;
+      try {
+        ({ aemHost } = resolveAemHosts(params));
+      } catch (hostErr) {
+        return errorResponse(hostErr.statusCode || 400, hostErr.code || 'INVALID_AEM_HOST', hostErr.message);
+      }
       const fileName = params.fileName || 'contact-sheet.pdf';
       const sliceIndex = Math.max(0, Number(params.sliceIndex) || 0);
       const sliceSize = Math.min(500_000, Math.max(100_000, Number(params.sliceSize) || 480_000));
@@ -62,7 +84,12 @@ export async function main(params = {}) {
     }
 
     if (params.downloadAssetId) {
-      const aemHost = (params.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      let aemHost;
+      try {
+        ({ aemHost } = resolveAemHosts(params));
+      } catch (hostErr) {
+        return errorResponse(hostErr.statusCode || 400, hostErr.code || 'INVALID_AEM_HOST', hostErr.message);
+      }
       const fileName = params.fileName || 'contact-sheet.pdf';
 
       // 1. Check `/adobe/assets/{id}/original/as/{fileName}` (originally uploaded binary — available immediately before microservices/indexing!)
@@ -155,7 +182,7 @@ export async function main(params = {}) {
       return errorResponse(404, 'JOB_NOT_FOUND', `Job ${jobId} not found.`);
     }
 
-    if (job.userHash && job.userHash !== auth.userHash) {
+    if (!isJobOwnedByCaller(job, auth)) {
       return errorResponse(403, 'FORBIDDEN', 'You do not have access to this job.');
     }
 

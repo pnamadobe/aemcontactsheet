@@ -5,8 +5,6 @@ import { readFileObject, writeFileObject } from '../lib/store.js';
 const DEFAULT_PREFS = {
   lastOutputFolder: { id: '', path: '/content/dam/contact-sheets' },
   lastLogo: null,
-  savedBoardsProfiles: [],
-  defaultBoardsProfileId: null,
 };
 
 export async function main(params = {}) {
@@ -18,39 +16,32 @@ export async function main(params = {}) {
 
     const fileKey = `prefs/${auth.imsOrg}/${auth.userHash}.json`;
     const raw = await readFileObject(fileKey, true);
-    const current = raw ? { ...DEFAULT_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_PREFS };
+    const parsed = raw ? JSON.parse(raw) : {};
+    const current = {
+      lastOutputFolder: parsed.lastOutputFolder ?? DEFAULT_PREFS.lastOutputFolder,
+      lastLogo: parsed.lastLogo ?? DEFAULT_PREFS.lastLogo,
+      ...(parsed.updatedAt ? { updatedAt: parsed.updatedAt } : {}),
+    };
     const method = (params.__ow_method || params.method || 'GET').toUpperCase();
 
     if (method === 'GET') {
-      if (Array.isArray(current.savedBoardsProfiles) && current.savedBoardsProfiles.length > 0 && !process.env.CONTACTSHEET_LOCAL_STORE) {
-        current.savedBoardsProfiles = await Promise.all(
-          current.savedBoardsProfiles.map(async (p) => {
-            if (!p?.token) return { ...p, tokenExpired: true };
-            try {
-              const r = await fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
-                headers: { Authorization: `Bearer ${p.token}` },
-              });
-              return { ...p, tokenExpired: r.status === 401 || r.status === 403 };
-            } catch {
-              return p;
-            }
-          })
-        );
-      }
       return jsonResponse(200, current);
     }
 
     if (method === 'PUT' || method === 'POST') {
       const updated = {
+        ...parsed,
         ...current,
         ...(params.lastOutputFolder !== undefined ? { lastOutputFolder: params.lastOutputFolder } : {}),
         ...(params.lastLogo !== undefined ? { lastLogo: params.lastLogo } : {}),
-        ...(params.savedBoardsProfiles !== undefined ? { savedBoardsProfiles: params.savedBoardsProfiles } : {}),
-        ...(params.defaultBoardsProfileId !== undefined ? { defaultBoardsProfileId: params.defaultBoardsProfileId } : {}),
         updatedAt: new Date().toISOString(),
       };
       await writeFileObject(fileKey, JSON.stringify(updated, null, 2));
-      return jsonResponse(200, updated);
+      return jsonResponse(200, {
+        lastOutputFolder: updated.lastOutputFolder,
+        lastLogo: updated.lastLogo,
+        updatedAt: updated.updatedAt,
+      });
     }
 
     return errorResponse(405, 'METHOD_NOT_ALLOWED', `Unsupported method ${method}`);

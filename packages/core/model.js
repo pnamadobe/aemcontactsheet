@@ -91,22 +91,24 @@ export function buildAssetDeepLink(asset, model = null) {
   const tier = model?.tier || 'author';
   const orgPrefix = model?.imsOrgSubdomain ? `/@${String(model.imsOrgSubdomain).toLowerCase().replace(/^@/, '')}` : '';
   if (tier === 'delivery') {
-    const repoHost = (model?.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com')
+    const repoHost = (model?.deliveryHost || '')
       .replace(/^https?:\/\//i, '')
       .replace(/\/+$/, '');
-    return `https://experience.adobe.com/?repoId=${encodeURIComponent(repoHost)}#${orgPrefix}/assets/contenthub/assets/${encodeURIComponent(asset?.id || '')}`;
+    const repoQuery = repoHost ? `?repoId=${encodeURIComponent(repoHost)}` : '';
+    return `https://experience.adobe.com/${repoQuery}#${orgPrefix}/assets/contenthub/assets/${encodeURIComponent(asset?.id || '')}`;
   }
-  const authorRepoHost = (model?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com')
+  const authorRepoHost = (model?.aemHost || '')
     .replace(/^https?:\/\//i, '')
     .replace(/\/+$/, '');
+  const repoQuery = authorRepoHost ? `?repoId=${encodeURIComponent(authorRepoHost)}` : '';
   if (asset?.path && asset.path.startsWith('/content/dam/')) {
     const encodedPath = asset.path
       .split('/')
       .map((seg) => encodeURIComponent(seg))
       .join('/');
-    return `https://experience.adobe.com/?repoId=${encodeURIComponent(authorRepoHost)}#${orgPrefix}/assets/detail${encodedPath}`;
+    return `https://experience.adobe.com/${repoQuery}#${orgPrefix}/assets/detail${encodedPath}`;
   }
-  return `https://experience.adobe.com/?repoId=${encodeURIComponent(authorRepoHost)}#${orgPrefix}/assets/go?action=asset-details&id=${encodeURIComponent(asset?.id || '')}`;
+  return `https://experience.adobe.com/${repoQuery}#${orgPrefix}/assets/go?action=asset-details&id=${encodeURIComponent(asset?.id || '')}`;
 }
 
 /**

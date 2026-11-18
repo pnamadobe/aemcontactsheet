@@ -1,10 +1,10 @@
 // Export a paginated Contact Sheet model to an editable multi-page Adobe Express document
 // via Horizon JSON (HzJSON v1) and the Sensei HzJSON Import Service (`Service-f3c41ebbaca44b0384e506185c1cf583`),
 // with automatic link/collaborator sharing via `invitations.adobe.io`.
-import { COMMON_FIELDS, formatFieldValue } from '../../packages/core/fields.js';
-import { THEME_PALETTES, computeWatermarkMetrics } from '../../packages/core/layout.js';
+import { COMMON_FIELDS, formatFieldValue } from '../../../packages/core/fields.js';
+import { THEME_PALETTES, computeWatermarkMetrics } from '../../../packages/core/layout.js';
 import { readImageDimensions } from './firefly-boards.js';
-import { mapWithConcurrency } from './utils.js';
+import { mapWithConcurrency } from '../../../actions/lib/utils.js';
 
 async function shareExpressDocument(
   documentId,

@@ -3,6 +3,7 @@
 // Built with Adobe Spectrum 2 / AEM Assets View design tokens and responsive viewport scaling.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useCloudCanvas } from '../cloud-canvas-slot.js';
 import {
   createDefaultConfig,
   formatBytes,
@@ -538,20 +539,6 @@ export default function ContactSheetDialog({
   const [logoSearchQuery, setLogoSearchQuery] = useState('');
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
-  const [clusterProfiles, setClusterProfiles] = useState([]);
-  const [savedBoardsProfiles, setSavedBoardsProfiles] = useState(() => {
-    try {
-      const raw = window.localStorage?.getItem('cs_saved_boards_profiles');
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [boardsAccountMode, setBoardsAccountMode] = useState('current'); // 'current' | 'saved:<id>' | 'cluster:<userId>' | 'custom'
-  const [customBoardsToken, setCustomBoardsToken] = useState('');
-  const [customBoardsOrgName, setCustomBoardsOrgName] = useState('');
-  const [detectingBoardsOrg, setDetectingBoardsOrg] = useState(false);
-  const [boardsShareEmail, setBoardsShareEmail] = useState('');
 
   const [config, setConfig] = useState(() => createDefaultConfig());
   const [addFieldKey, setAddFieldKey] = useState('');
@@ -571,7 +558,7 @@ export default function ContactSheetDialog({
     if (missing.length === 0) return;
 
     let cancelled = false;
-    const deliveryBase = (model.deliveryHost || 'https://delivery-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+    const deliveryBase = (model.deliveryHost || authCtx?.deliveryHost || '').replace(/\/+$/, '');
 
     (async () => {
       const batch = missing.slice(0, 80);
@@ -583,7 +570,7 @@ export default function ContactSheetDialog({
           const asset = batch[idx++];
           const seo = (asset.name || 'image').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-') || 'image';
           let resolvedOnDelivery = false;
-          if (tier === 'delivery' || asset.approved || asset.published) {
+          if (deliveryBase && (tier === 'delivery' || asset.approved || asset.published)) {
             try {
               const res = await fetch(
                 `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`,
@@ -656,6 +643,8 @@ export default function ContactSheetDialog({
     return arr;
   }
 
+  const cloudCanvas = useCloudCanvas({ authCtx, callAction, guestConnection });
+
   // Resolve a verified PDF download URL immediately (via inlinePdfBase64, State chunks, or AEM pre-signed URL)
   useEffect(() => {
     if (phase !== 'done') {
@@ -664,11 +653,7 @@ export default function ContactSheetDialog({
       return;
     }
     const r = generateJob?.result || {};
-    if (
-      r.outputFormat === 'boards' ||
-      r.boardUrl ||
-      (r.outputFormat === 'express' && r.expressMode === 'direct')
-    ) {
+    if (cloudCanvas.isCloudCanvasDirectResult(r)) {
       setCheckingDownload(false);
       return;
     }
@@ -735,7 +720,7 @@ export default function ContactSheetDialog({
         }
       }
 
-      const aemBase = (authCtx?.aemHost || 'https://author-p59602-e520244.adobeaemcloud.com').replace(/\/+$/, '');
+      const aemBase = (authCtx?.aemHost || model?.aemHost || '').replace(/\/+$/, '');
       const fileName = r.fileName || 'contact-sheet.pdf';
 
       for (let attempt = 0; attempt < 60 && !cancelled; attempt++) {
@@ -841,8 +826,9 @@ export default function ContactSheetDialog({
     let base = (actionBaseUrl || '').replace(/\/+$/, '');
     if (!base || base.startsWith('/')) {
       const m = window.location.hostname.match(/^([a-z0-9-]+)\.adobeio-static\.net$/i);
-      const ns = m ? m[1] : '767251-547dimsquid';
-      base = `https://${ns}.adobeioruntime.net/api/v1/web/contactsheet`;
+      base = m
+        ? `https://${m[1]}.adobeioruntime.net/api/v1/web/contactsheet`
+        : `${window.location.origin}/api/v1/web/contactsheet`;
     }
     const url = new URL(`${base}/${name}`);
     if (query) {
@@ -850,8 +836,16 @@ export default function ContactSheetDialog({
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
       }
     }
-    if (method === 'GET' && ctx?.userId && !url.searchParams.has('userId')) {
-      url.searchParams.set('userId', ctx.userId);
+    if (method === 'GET') {
+      if (ctx?.userId && !url.searchParams.has('userId')) {
+        url.searchParams.set('userId', ctx.userId);
+      }
+      if (ctx?.aemHost && !url.searchParams.has('aemHost')) {
+        url.searchParams.set('aemHost', ctx.aemHost);
+      }
+      if (ctx?.deliveryHost && !url.searchParams.has('deliveryHost')) {
+        url.searchParams.set('deliveryHost', ctx.deliveryHost);
+      }
     }
     const res = await fetch(url.toString(), {
       method,
@@ -861,7 +855,15 @@ export default function ContactSheetDialog({
         'x-api-key': ctx?.apiKey || 'aem-assets-frontend-1',
         'content-type': 'application/json',
       },
-      body: body ? JSON.stringify({ ...body, userId: ctx?.userId, userEmail: ctx?.email }) : undefined,
+      body: body
+        ? JSON.stringify({
+            aemHost: ctx?.aemHost,
+            deliveryHost: ctx?.deliveryHost,
+            ...body,
+            userId: ctx?.userId,
+            userEmail: ctx?.email,
+          })
+        : undefined,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -911,16 +913,36 @@ export default function ContactSheetDialog({
         ]);
 
         const claims = parseJwtClaims(ims?.accessToken);
-        const aemHost = discoveredHost || 'https://author-p59602-e520244.adobeaemcloud.com';
+        const hashParams = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
+        const searchParams = new URLSearchParams(window.location.search || '');
+        const rawRepo =
+          discoveredHost ||
+          hashParams.get('repo') ||
+          searchParams.get('repo') ||
+          searchParams.get('repoId') ||
+          '';
+        const normalizedRepo = rawRepo
+          ? (/^https?:\/\//i.test(rawRepo) ? rawRepo : `https://${rawRepo}`).replace(/\/+$/, '')
+          : '';
+        const isDeliveryRepo = /^https:\/\/delivery-p\d+-e\d+\.adobeaemcloud\.com$/i.test(normalizedRepo);
+        const aemHost = isDeliveryRepo
+          ? normalizedRepo.replace(/^https:\/\/delivery-/i, 'https://author-')
+          : normalizedRepo;
+        const deliveryHost = isDeliveryRepo
+          ? normalizedRepo
+          : aemHost
+          ? aemHost.replace(/^https:\/\/author-/i, 'https://delivery-')
+          : '';
 
         const ctx = {
           accessToken: ims?.accessToken,
-          imsOrg: ims?.imsOrg || claims.org || '4A603BC061E191130A495FEF@AdobeOrg',
+          imsOrg: ims?.imsOrg || claims.org || '',
           apiKey: apiKey || 'aem-assets-frontend-1',
           userId: profile?.userId || claims.user_id || claims.sub || profile?.email || 'user',
           email: profile?.email || claims.email || profile?.name || '',
           name: profile?.name || claims.name || profile?.email || '',
           aemHost,
+          deliveryHost,
         };
         if (cancelled) return;
         setAuthCtx(ctx);
@@ -928,43 +950,15 @@ export default function ContactSheetDialog({
         const [prefsRes, presetsRes, fontsRes, resolveRes] = await Promise.all([
           callAction('prefs', { method: 'GET' }, ctx).catch(() => null),
           callAction('presets', { method: 'GET' }, ctx).catch(() => ({ presets: [], watermarkPresets: [] })),
-          callAction('browse', { method: 'GET', query: { mode: 'fonts' } }, ctx).catch(() => ({ fonts: [] })),
-          callAction('resolve', { method: 'POST', body: { source, tier, aemHost } }, ctx),
+          callAction('browse', { method: 'GET', query: { mode: 'fonts', aemHost, deliveryHost } }, ctx).catch(() => ({ fonts: [] })),
+          callAction('resolve', { method: 'POST', body: { source, tier, aemHost, deliveryHost } }, ctx),
         ]);
 
         const loadedPresets = presetsRes?.presets || [];
         setPresets(loadedPresets);
         setWatermarkPresets(presetsRes?.watermarkPresets || []);
         setDamFonts(fontsRes?.fonts || []);
-        if (Array.isArray(prefsRes?.savedBoardsProfiles) && prefsRes.savedBoardsProfiles.length > 0) {
-          setSavedBoardsProfiles(prefsRes.savedBoardsProfiles);
-          try {
-            window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(prefsRes.savedBoardsProfiles));
-          } catch {
-            // ignore
-          }
-          const defId = prefsRes.defaultBoardsProfileId || prefsRes.savedBoardsProfiles[0]?.id;
-          if (defId && prefsRes.savedBoardsProfiles.some((p) => p.id === defId)) {
-            setBoardsAccountMode(`saved:${defId}`);
-          }
-        } else if (savedBoardsProfiles.length > 0) {
-          // Sync existing localStorage profiles up to server prefs and auto-select the default saved org
-          const defId = prefsRes?.defaultBoardsProfileId || savedBoardsProfiles[0]?.id;
-          if (defId && savedBoardsProfiles.some((p) => p.id === defId)) {
-            setBoardsAccountMode(`saved:${defId}`);
-          }
-          callAction(
-            'prefs',
-            {
-              method: 'PUT',
-              body: {
-                savedBoardsProfiles,
-                defaultBoardsProfileId: defId,
-              },
-            },
-            ctx
-          ).catch(() => {});
-        }
+        cloudCanvas.syncFromPrefs(prefsRes, ctx);
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
         setConfig((prev) => {
@@ -993,6 +987,13 @@ export default function ContactSheetDialog({
           (resolveRes.status === 'succeeded' || resolveRes.status === 'succeeded_with_warnings') &&
           resolveRes.model
         ) {
+          if (resolveRes.model.aemHost || resolveRes.model.deliveryHost) {
+            setAuthCtx((prev) => ({
+              ...prev,
+              aemHost: prev?.aemHost || resolveRes.model.aemHost || '',
+              deliveryHost: prev?.deliveryHost || resolveRes.model.deliveryHost || '',
+            }));
+          }
           setModel(resolveRes.model);
           setModelFileKey(resolveRes.result?.modelFileKey || null);
           setPhase('configure');
@@ -1012,6 +1013,13 @@ export default function ContactSheetDialog({
             if (!resolvedModel && st.modelUrl) {
               const mRes = await fetch(st.modelUrl);
               resolvedModel = await mRes.json();
+            }
+            if (resolvedModel?.aemHost || resolvedModel?.deliveryHost) {
+              setAuthCtx((prev) => ({
+                ...prev,
+                aemHost: prev?.aemHost || resolvedModel.aemHost || '',
+                deliveryHost: prev?.deliveryHost || resolvedModel.deliveryHost || '',
+              }));
             }
             setModel(resolvedModel);
             setModelFileKey(st.result?.modelFileKey);
@@ -1129,275 +1137,6 @@ export default function ContactSheetDialog({
     return model.fields.filter((f) => !active.has(f.key) && !f.technical);
   }, [model, config.fields]);
 
-  // Discover linked Adobe IMS Orgs / Account Cluster profiles so users whose Creativity & Productivity
-  // (Firefly Boards) entitlement is in a different IMS Org than AEM can target that Org directly.
-  useEffect(() => {
-    if (!authCtx?.accessToken) return;
-    setBoardsShareEmail((prev) => prev || authCtx.email || '');
-    let cancelled = false;
-    (async () => {
-      try {
-        const [orgsRes, clusterRes] = await Promise.all([
-          fetch('https://ims-na1.adobelogin.com/ims/organizations/v6', {
-            headers: { Authorization: `Bearer ${authCtx.accessToken}` },
-          })
-            .then((r) => (r.ok ? r.json() : []))
-            .catch(() => []),
-          fetch('https://ims-na1.adobelogin.com/ims/account_cluster/v2', {
-            headers: { Authorization: `Bearer ${authCtx.accessToken}` },
-          })
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null),
-        ]);
-        if (cancelled) return;
-        const orgNameById = new Map();
-        const orgList = Array.isArray(orgsRes) ? orgsRes : orgsRes?.organizations || [];
-        for (const o of orgList) {
-          const ident = o?.orgRef?.ident ? `${o.orgRef.ident}@${o.orgRef.authSrc || 'AdobeOrg'}` : o?.orgId;
-          if (ident && o?.orgName) orgNameById.set(ident.toLowerCase(), o.orgName);
-        }
-        const accounts = clusterRes?.data || clusterRes?.accounts || [];
-        const mapped = accounts
-          .filter((acc) => acc?.userId && acc.userId !== authCtx.userId)
-          .map((acc) => {
-            const orgId = acc.owningOrgId || '';
-            const orgName =
-              orgNameById.get(orgId.toLowerCase()) ||
-              acc.orgName ||
-              acc.displayName ||
-              orgId ||
-              acc.userId;
-            return {
-              userId: acc.userId,
-              orgId,
-              label: `${orgName}${acc.email ? ` (${acc.email})` : ''}`,
-            };
-          });
-        setClusterProfiles(mapped);
-      } catch {
-        // non-fatal
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authCtx]);
-
-  function decodeTokenClaims(rawToken) {
-    try {
-      const clean = String(rawToken || '').trim().replace(/^Bearer\s+/i, '');
-      const parts = clean.split('.');
-      if (parts.length < 2) return {};
-      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      return JSON.parse(atob(b64));
-    } catch {
-      return {};
-    }
-  }
-
-  const [invalidatedProfileIds, setInvalidatedProfileIds] = useState({});
-  const [copiedExpressLink, setCopiedExpressLink] = useState(false);
-
-  function copyTextToClipboard(text) {
-    try {
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(text).catch(() => {});
-      }
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-      setCopiedExpressLink(true);
-      setTimeout(() => setCopiedExpressLink(false), 5000);
-    } catch {
-      // ignore
-    }
-  }
-
-  useEffect(() => {
-    if (!Array.isArray(savedBoardsProfiles) || savedBoardsProfiles.length === 0) return;
-    const nextInvalid = {};
-    for (const p of savedBoardsProfiles) {
-      if (p?.tokenExpired) {
-        nextInvalid[p.id] = true;
-      }
-    }
-    if (Object.keys(nextInvalid).length > 0) {
-      setInvalidatedProfileIds((prev) => ({ ...prev, ...nextInvalid }));
-    }
-  }, [savedBoardsProfiles]);
-
-  function isTokenExpired(rawToken, profileId = null) {
-    if (profileId && invalidatedProfileIds[profileId]) return true;
-    const found = profileId ? savedBoardsProfiles.find((p) => p.id === profileId) : null;
-    if (found?.tokenExpired) return true;
-    const claims = decodeTokenClaims(rawToken);
-    const created = Number(claims.created_at);
-    const expiresIn = Number(claims.expires_in);
-    if (created > 0 && expiresIn > 0) {
-      return Date.now() > created + expiresIn - 60_000;
-    }
-    if (Number(claims.exp) > 0) {
-      return Date.now() > Number(claims.exp) * 1000 - 60_000;
-    }
-    return false;
-  }
-
-  async function handleCustomBoardsTokenChange(val) {
-    setCustomBoardsToken(val);
-    const clean = String(val || '').trim().replace(/^Bearer\s+/i, '');
-    if (clean.split('.').length < 2) return;
-
-    const claims = decodeTokenClaims(clean);
-    const fallbackName = claims.org
-      ? `${claims.org.replace('@AdobeOrg', '')}${claims.email ? ` (${claims.email})` : ''}`
-      : claims.email || claims.name || 'Firefly Boards Org';
-    if (!customBoardsOrgName) {
-      setCustomBoardsOrgName(fallbackName);
-    }
-
-    setDetectingBoardsOrg(true);
-    try {
-      const [orgsRes, profRes] = await Promise.all([
-        fetch('https://ims-na1.adobelogin.com/ims/organizations/v6', {
-          headers: { Authorization: `Bearer ${clean}` },
-        })
-          .then((r) => (r.ok ? r.json() : []))
-          .catch(() => []),
-        fetch('https://ims-na1.adobelogin.com/ims/profile/v1', {
-          headers: { Authorization: `Bearer ${clean}` },
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null),
-      ]);
-      const orgList = Array.isArray(orgsRes) ? orgsRes : orgsRes?.organizations || [];
-      const targetOrgId = String(claims.org || '').toLowerCase();
-      let resolvedOrgName = '';
-      for (const o of orgList) {
-        const ident = o?.orgRef?.ident ? `${o.orgRef.ident}@${o.orgRef.authSrc || 'AdobeOrg'}` : o?.orgId || '';
-        if (targetOrgId && ident.toLowerCase() === targetOrgId && o?.orgName) {
-          resolvedOrgName = o.orgName;
-          break;
-        }
-      }
-      if (!resolvedOrgName && orgList.length === 1 && orgList[0]?.orgName) {
-        resolvedOrgName = orgList[0].orgName;
-      }
-      const emailStr = profRes?.email || claims.email || '';
-      if (resolvedOrgName) {
-        setCustomBoardsOrgName(`${resolvedOrgName}${emailStr ? ` (${emailStr})` : ''}`);
-      } else if (profRes?.displayName && !claims.org) {
-        setCustomBoardsOrgName(`${profRes.displayName} (Personal)`);
-      }
-    } catch {
-      // keep fallbackName
-    } finally {
-      setDetectingBoardsOrg(false);
-    }
-  }
-
-  async function handleSaveBoardsProfile() {
-    const cleanToken = customBoardsToken.trim().replace(/^Bearer\s+/i, '');
-    if (!cleanToken) return null;
-    const claims = decodeTokenClaims(cleanToken);
-    const existingSaved = boardsAccountMode.startsWith('saved:')
-      ? savedBoardsProfiles.find((p) => p.id === boardsAccountMode.slice('saved:'.length))
-      : null;
-    const name =
-      customBoardsOrgName.trim() ||
-      existingSaved?.name ||
-      (claims.org ? claims.org.replace('@AdobeOrg', '') : '') ||
-      claims.email ||
-      'Firefly Boards Org';
-    const id = existingSaved?.id || `bprof_${(claims.org || name).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32)}`;
-    const entry = {
-      id,
-      name,
-      orgId: claims.org || '',
-      email: claims.email || '',
-      token: cleanToken,
-      tokenExpired: false,
-      updatedAt: new Date().toISOString(),
-    };
-    setInvalidatedProfileIds((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    const nextList = [...savedBoardsProfiles.filter((p) => p.id !== id && p.name !== name), entry];
-    setSavedBoardsProfiles(nextList);
-    setBoardsAccountMode(`saved:${id}`);
-    setCustomBoardsToken('');
-    setCustomBoardsOrgName('');
-    try {
-      window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(nextList));
-    } catch {
-      // ignore
-    }
-    callAction('prefs', {
-      method: 'PUT',
-      body: {
-        savedBoardsProfiles: nextList,
-        defaultBoardsProfileId: id,
-      },
-    }).catch(() => {});
-    guestConnection?.host?.toast?.display?.({
-      variant: 'positive',
-      message: `Saved Firefly Boards org "${name}".`,
-    });
-    return entry;
-  }
-
-  async function handleRemoveSavedBoardsProfile(id) {
-    const nextList = savedBoardsProfiles.filter((p) => p.id !== id);
-    setSavedBoardsProfiles(nextList);
-    setBoardsAccountMode(nextList[0] ? `saved:${nextList[0].id}` : 'current');
-    try {
-      window.localStorage?.setItem('cs_saved_boards_profiles', JSON.stringify(nextList));
-    } catch {
-      // ignore
-    }
-    callAction('prefs', {
-      method: 'PUT',
-      body: {
-        savedBoardsProfiles: nextList,
-        defaultBoardsProfileId: nextList[0]?.id || null,
-      },
-    }).catch(() => {});
-  }
-
-  async function resolveBoardsBearerToken() {
-    if (boardsAccountMode.startsWith('saved:')) {
-      const id = boardsAccountMode.slice('saved:'.length);
-      const saved = savedBoardsProfiles.find((p) => p.id === id);
-      if (customBoardsToken.trim()) {
-        const refreshed = await handleSaveBoardsProfile();
-        if (refreshed?.token) return refreshed.token;
-      }
-      if (saved?.token) {
-        if (isTokenExpired(saved.token, saved.id)) {
-          throw new Error(
-            `Your saved token for "${saved.name}" has expired or was logged out — please paste a fresh token from Firefly Boards or Adobe Express in the Target IMS Org section.`
-          );
-        }
-        callAction('prefs', {
-          method: 'PUT',
-          body: { defaultBoardsProfileId: id },
-        }).catch(() => {});
-        return saved.token;
-      }
-    }
-    if (boardsAccountMode === 'custom' && customBoardsToken.trim()) {
-      const savedEntry = await handleSaveBoardsProfile();
-      return savedEntry?.token || customBoardsToken.trim().replace(/^Bearer\s+/i, '');
-    }
-    return null;
-  }
-
   async function handleGenerate(outputFormat = 'pdf') {
     try {
       setActiveOutputFormat(outputFormat);
@@ -1425,8 +1164,8 @@ export default function ContactSheetDialog({
         },
       }).catch(() => {});
 
-      const isCloudCanvas = outputFormat === 'boards' || outputFormat === 'express';
-      const boardsBearerToken = isCloudCanvas ? await resolveBoardsBearerToken() : null;
+      const { outputFormat: effectiveFormat, extraBody } =
+        await cloudCanvas.prepareGeneratePayload(outputFormat);
 
       const genInit = await callAction('generate', {
         method: 'POST',
@@ -1434,11 +1173,11 @@ export default function ContactSheetDialog({
           modelFileKey,
           model,
           config: slimConfig,
-          outputFormat,
-          boardsBearerToken,
-          boardsShareEmail: isCloudCanvas ? boardsShareEmail.trim() || null : null,
+          outputFormat: effectiveFormat,
+          ...extraBody,
           tier,
           aemHost: authCtx?.aemHost,
+          deliveryHost: authCtx?.deliveryHost,
         },
       });
 
@@ -1447,12 +1186,7 @@ export default function ContactSheetDialog({
         setPhase('done');
         guestConnection?.host?.toast?.display?.({
           variant: 'positive',
-          message:
-            outputFormat === 'boards'
-              ? `Firefly Board "${config.header.title}" is ready.`
-              : outputFormat === 'express'
-              ? `Adobe Express document "${config.header.title}" is ready.`
-              : `Contact sheet "${config.header.title}" is ready.`,
+          message: cloudCanvas.getToastMessage(outputFormat, config.header.title),
         });
         return;
       }
@@ -1474,12 +1208,7 @@ export default function ContactSheetDialog({
           setPhase('done');
           guestConnection?.host?.toast?.display?.({
             variant: 'positive',
-            message:
-              outputFormat === 'boards'
-                ? `Firefly Board "${config.header.title}" is ready.`
-                : outputFormat === 'express'
-                ? `Adobe Express document "${config.header.title}" is ready.`
-                : `Contact sheet "${config.header.title}" is ready.`,
+            message: cloudCanvas.getToastMessage(outputFormat, config.header.title),
           });
           break;
         }
@@ -1501,7 +1230,12 @@ export default function ContactSheetDialog({
       const updatedSource = { ...source, includeSubfolders: checked };
       const resolveRes = await callAction('resolve', {
         method: 'POST',
-        body: { source: updatedSource, tier, aemHost: authCtx?.aemHost },
+        body: {
+          source: updatedSource,
+          tier,
+          aemHost: authCtx?.aemHost,
+          deliveryHost: authCtx?.deliveryHost,
+        },
       });
       if (
         (resolveRes.status === 'succeeded' || resolveRes.status === 'succeeded_with_warnings') &&
@@ -1666,35 +1400,26 @@ export default function ContactSheetDialog({
 
   if (phase === 'generating') {
     const p = generateJob?.progress || { done: 0, total: paginated?.totalAssets || 0 };
+    const totalCount = p.total || paginated?.totalAssets || 0;
     const pct = p.total ? Math.max(15, Math.round((p.done / p.total) * 100)) : 45;
+    const progOverride = cloudCanvas.getProgressOverride(activeOutputFormat, p.done, totalCount);
     return (
       <div className="s2-shell">
         <style>{SPECTRUM_CSS}</style>
         <div className="s2-state-screen">
           <div className="s2-state-card">
             <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>
-              {activeOutputFormat === 'boards'
-                ? 'Building Firefly Board…'
-                : activeOutputFormat === 'express'
-                ? 'Building Adobe Express document…'
-                : 'Generating contact sheet PDF…'}
+              {progOverride?.heading || 'Generating contact sheet PDF…'}
             </h3>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
-              {activeOutputFormat === 'boards'
-                ? `Placing asset cards and metadata lines on canvas (${p.done} / ${p.total || paginated?.totalAssets || 0})…`
-                : activeOutputFormat === 'express'
-                ? `Creating multi-page editable Adobe Express project (${p.done} / ${p.total || paginated?.totalAssets || 0})…`
-                : `Rendering high-resolution pages and uploading to AEM Assets (${p.done} / ${p.total || paginated?.totalAssets || 0})…`}
+              {progOverride?.detail || `Rendering high-resolution pages and uploading to AEM Assets (${p.done} / ${totalCount})…`}
             </p>
             <div className="s2-progress-track">
               <div
                 className="s2-progress-fill"
                 style={{
                   width: `${pct}%`,
-                  background:
-                    activeOutputFormat === 'boards' || activeOutputFormat === 'express'
-                      ? 'var(--s2-purple)'
-                      : 'var(--s2-accent)',
+                  background: progOverride?.barColor || 'var(--s2-accent)',
                 }}
               />
             </div>
@@ -1714,97 +1439,53 @@ export default function ContactSheetDialog({
 
   if (phase === 'done') {
     const r = generateJob?.result || {};
-    const isBoards = r.outputFormat === 'boards' || Boolean(r.boardUrl);
-    const isExpress = r.outputFormat === 'express' || Boolean(r.expressUrl);
-    const isExpressDirect = isExpress && r.expressMode === 'direct';
+    const customCard = cloudCanvas.renderCompletionCard({
+      r,
+      config,
+      warnings: generateJob?.warnings || [],
+      readyDownloadUrl,
+      tier,
+      onBack: () => setPhase('configure'),
+      onClose: () => guestConnection?.host?.modal?.closeDialog?.(),
+      formatBytes,
+    });
+    if (customCard) {
+      return (
+        <div className="s2-shell">
+          <style>{SPECTRUM_CSS}</style>
+          <div className="s2-state-screen">{customCard}</div>
+        </div>
+      );
+    }
     return (
       <div className="s2-shell">
         <style>{SPECTRUM_CSS}</style>
         <div className="s2-state-screen">
           <div className="s2-state-card">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', borderRadius: 999, background: 'var(--s2-positive-subtle)', color: 'var(--s2-positive)', fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
-              ✓{' '}
-              {isBoards
-                ? 'Firefly Board Created'
-                : isExpressDirect
-                ? 'Adobe Express Document Created'
-                : isExpress
-                ? 'Ready for Adobe Express'
-                : r.aemPath
-                ? 'Saved to AEM Assets'
-                : 'Contact Sheet Ready for Download'}
+              ✓ {r.aemPath ? 'Saved to AEM Assets' : 'Contact Sheet Ready for Download'}
             </div>
             <h3 style={{ margin: '0 0 6px', fontSize: 19 }}>
               {config.header.title || r.fileName}
             </h3>
-            {isBoards ? (
-              <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
-                {r.placedCards ?? r.assets} asset cards with separate editable metadata lines placed on your Firefly Board.
-              </p>
-            ) : isExpressDirect ? (
-              <>
-                <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
-                  {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets converted into a multi-page editable Adobe Express document.
-                </p>
-                {r.expressUrl && (
-                  <div className="s2-asset-selector-row" style={{ marginBottom: 14, gap: 8 }}>
-                    <span className="s2-asset-selector-path" style={{ userSelect: 'all' }} title={r.expressUrl}>
-                      {r.expressUrl}
-                    </span>
-                    <button
-                      type="button"
-                      className="s2-btn s2-btn-sm"
-                      onClick={() => copyTextToClipboard(r.expressUrl)}
-                    >
-                      {copiedExpressLink ? '✓ Copied' : 'Copy Link'}
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
-                  {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets · {formatBytes(r.bytes)}
-                </p>
-                {isExpress && (
-                  <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--s2-text-secondary)', lineHeight: 1.45 }}>
-                    Click <strong>Download PDF &amp; Copy Express Link</strong> below, paste (<code>Cmd+V</code>) into a new browser tab, and drop the PDF into{' '}
-                    <strong>Start from your content</strong> in Adobe Express.
-                  </p>
-                )}
-                {r.aemPath && (
-                  <div className="s2-asset-selector-row" style={{ marginBottom: 14 }}>
-                    <span className="s2-asset-selector-path" title={r.aemPath}>{r.aemPath}</span>
-                  </div>
-                )}
-              </>
+            <p style={{ margin: '0 0 10px', fontSize: 13.5, color: 'var(--s2-text-secondary)' }}>
+              {r.pages} {r.pages === 1 ? 'page' : 'pages'} · {r.assets} assets · {formatBytes(r.bytes)}
+            </p>
+            {r.aemPath && (
+              <div className="s2-asset-selector-row" style={{ marginBottom: 14 }}>
+                <span className="s2-asset-selector-path" title={r.aemPath}>{r.aemPath}</span>
+              </div>
             )}
 
             {(generateJob?.warnings || []).map((w, i) => (
               <div key={i} className="s2-banner-warn" style={{ margin: '0 0 12px' }}>{w}</div>
             ))}
 
-            {copiedExpressLink && (
-              <div
-                style={{
-                  margin: '0 0 12px',
-                  padding: '8px 12px',
-                  borderRadius: 6,
-                  background: 'var(--s2-positive-subtle)',
-                  color: 'var(--s2-positive)',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                }}
-              >
-                ✓ Adobe Express link copied to clipboard! Open a new browser tab (Cmd+T) and paste (Cmd+V).
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button className="s2-btn s2-btn-quiet" onClick={() => setPhase('configure')}>
                 Back to editor
               </button>
-              {!isBoards && !isExpressDirect && r.aemPath && tier === 'author' && (
+              {r.aemPath && tier === 'author' && (
                 <button
                   className="s2-btn"
                   onClick={async () => {
@@ -1815,45 +1496,21 @@ export default function ContactSheetDialog({
                   Open in AEM
                 </button>
               )}
-              {isBoards && r.boardUrl ? (
-                <a className="s2-btn s2-btn-boards" href={r.boardUrl} target="_blank" rel="noreferrer">
-                  Open in Firefly Boards ↗
-                </a>
-              ) : isExpressDirect && r.expressUrl ? (
-                <button
-                  type="button"
-                  className="s2-btn s2-btn-boards"
-                  onClick={() => copyTextToClipboard(r.expressUrl)}
+              {readyDownloadUrl ? (
+                <a
+                  className="s2-btn s2-btn-accent"
+                  href={readyDownloadUrl}
+                  download={r.fileName || 'contact-sheet.pdf'}
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  {copiedExpressLink ? '✓ Express Link Copied (Paste in New Tab)' : 'Copy Adobe Express Link'}
-                </button>
-              ) : readyDownloadUrl ? (
-                <>
-                  <a
-                    className="s2-btn s2-btn-accent"
-                    href={readyDownloadUrl}
-                    download={r.fileName || 'contact-sheet.pdf'}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Download PDF
-                  </a>
-                  <a
-                    className="s2-btn s2-btn-boards"
-                    href={readyDownloadUrl}
-                    download={r.fileName || 'contact-sheet.pdf'}
-                    onClick={() => {
-                      copyTextToClipboard(r.expressUrl || 'https://new.express.adobe.com/');
-                    }}
-                  >
-                    {copiedExpressLink ? '✓ Downloaded & Express Link Copied!' : 'Download PDF & Copy Express Link'}
-                  </a>
-                </>
-              ) : !isBoards ? (
+                  Download PDF
+                </a>
+              ) : (
                 <button className="s2-btn" disabled>
                   Preparing download link…
                 </button>
-              ) : null}
+              )}
               <button className="s2-btn" onClick={() => guestConnection?.host?.modal?.closeDialog?.()}>
                 Done
               </button>
@@ -1948,16 +1605,7 @@ export default function ContactSheetDialog({
           >
             Print
           </button>
-          <button
-            className="s2-btn"
-            style={{ borderColor: '#6e56cf', color: '#5b3fd1', fontWeight: 600 }}
-            onClick={() => handleGenerate('express')}
-          >
-            Open in Adobe Express
-          </button>
-          <button className="s2-btn s2-btn-boards" onClick={() => handleGenerate('boards')}>
-            Send to Firefly Boards
-          </button>
+          {cloudCanvas.renderTopBarButtons(handleGenerate)}
           <button className="s2-btn s2-btn-accent" onClick={() => handleGenerate('pdf')}>
             Save PDF to AEM
           </button>
@@ -2848,120 +2496,7 @@ export default function ContactSheetDialog({
               </div>
             )}
 
-            {/* Firefly Boards / Adobe Express Target Account / IMS Org */}
-            <div className="s2-field" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--s2-border-subtle)' }}>
-              <label className="s2-label">Firefly Boards / Adobe Express Target IMS Org</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <select
-                  className="s2-select"
-                  value={boardsAccountMode}
-                  onChange={(e) => {
-                    const nextVal = e.target.value;
-                    setBoardsAccountMode(nextVal);
-                    if (nextVal.startsWith('saved:')) {
-                      const sel = savedBoardsProfiles.find((p) => p.id === nextVal.slice('saved:'.length));
-                      if (sel && isTokenExpired(sel.token, sel.id)) {
-                        setCustomBoardsOrgName(sel.name);
-                      }
-                    }
-                  }}
-                >
-                  <option value="current">
-                    Current AEM Org ({authCtx?.imsOrg?.replace('@AdobeOrg', '') || 'Default'}) + Auto-share link
-                  </option>
-                  {savedBoardsProfiles.length > 0 && (
-                    <optgroup label="Saved Target Orgs (Firefly Boards & Express)">
-                      {savedBoardsProfiles.map((p) => {
-                        const expired = isTokenExpired(p.token, p.id);
-                        return (
-                          <option key={p.id} value={`saved:${p.id}`}>
-                            ★ {p.name}{expired ? ' (Token expired — refresh below)' : ''}
-                          </option>
-                        );
-                      })}
-                    </optgroup>
-                  )}
-                  <option value="custom">+ Add / Save Another IMS Org Token…</option>
-                </select>
-                {boardsAccountMode.startsWith('saved:') && (
-                  <button
-                    type="button"
-                    className="s2-btn s2-btn-sm"
-                    style={{ height: 32 }}
-                    title="Remove saved org token"
-                    onClick={() => handleRemoveSavedBoardsProfile(boardsAccountMode.slice('saved:'.length))}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {(() => {
-                const selectedSaved = boardsAccountMode.startsWith('saved:')
-                  ? savedBoardsProfiles.find((p) => p.id === boardsAccountMode.slice('saved:'.length))
-                  : null;
-                const selectedExpired = Boolean(selectedSaved && isTokenExpired(selectedSaved.token, selectedSaved.id));
-                if (boardsAccountMode !== 'custom' && !selectedExpired) return null;
-                return (
-                  <div style={{ marginTop: 8, padding: 10, borderRadius: 6, background: 'var(--s2-bg-base)', border: '1px solid var(--s2-border-subtle)' }}>
-                    {selectedExpired && (
-                      <div className="s2-banner-warn" style={{ marginBottom: 8, padding: '6px 8px', fontSize: 11.5 }}>
-                        Saved token for <strong>{selectedSaved.name}</strong> has expired. Paste a fresh token below to update it.
-                      </div>
-                    )}
-                    <label className="s2-label">
-                      1. Paste Bearer Token from Target Firefly Boards or Adobe Express Tab
-                    </label>
-                    <input
-                      className="s2-input"
-                      type="password"
-                      placeholder="Paste Bearer token (auto-detects IMS Org name)…"
-                      value={customBoardsToken}
-                      onChange={(e) => handleCustomBoardsTokenChange(e.target.value)}
-                    />
-                    <div style={{ fontSize: 11, color: 'var(--s2-text-muted)', marginTop: 4 }}>
-                      Tip: In your Firefly Boards or Adobe Express tab DevTools console, run{' '}
-                      <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 3 }}>
-                        copy(window.adobeIMS.getAccessToken().token)
-                      </code>
-                    </div>
-
-                    <label className="s2-label" style={{ marginTop: 8 }}>
-                      2. Org / Profile Name {detectingBoardsOrg ? '(Detecting org name…)' : '(Auto-detected or custom)'}
-                    </label>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <input
-                        className="s2-input"
-                        type="text"
-                        placeholder="e.g. Adobe Corp / Creative Studio Org"
-                        value={customBoardsOrgName || (selectedSaved?.name ?? '')}
-                        onChange={(e) => setCustomBoardsOrgName(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="s2-btn s2-btn-accent s2-btn-sm"
-                        style={{ height: 32 }}
-                        disabled={!customBoardsToken.trim()}
-                        onClick={handleSaveBoardsProfile}
-                      >
-                        {selectedExpired ? 'Update Token' : 'Save Org'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div style={{ marginTop: 8 }}>
-                <label className="s2-label">Auto-grant Editor access to email / profile</label>
-                <input
-                  className="s2-input"
-                  type="email"
-                  placeholder="e.g. user@company.com (can open in any IMS Org)"
-                  value={boardsShareEmail}
-                  onChange={(e) => setBoardsShareEmail(e.target.value)}
-                />
-              </div>
-            </div>
+            {cloudCanvas.renderInspectorSection()}
           </section>
         </aside>
 

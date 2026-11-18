@@ -1,5 +1,5 @@
 // POST /resolve — validate source, create a resolve job record, and asynchronously invoke resolve-worker.
-import { errorResponse, extractAuth, jsonResponse, newJobId } from '../lib/utils.js';
+import { errorResponse, extractAuth, jsonResponse, newJobId, resolveAemHosts } from '../lib/utils.js';
 import { saveJob } from '../lib/store.js';
 import { invokeWorkerAsync } from '../lib/invoke.js';
 import { main as resolveWorkerMain } from '../resolve-worker/index.js';
@@ -17,8 +17,13 @@ export async function main(params = {}) {
     }
 
     const tier = params.tier || 'author';
-    const aemHost = params.aemHost || params.DEFAULT_AEM_HOST || 'https://author-p59602-e520244.adobeaemcloud.com';
-    const deliveryHost = params.deliveryHost || params.DEFAULT_DELIVERY_HOST || 'https://delivery-p59602-e520244.adobeaemcloud.com';
+    let aemHost;
+    let deliveryHost;
+    try {
+      ({ aemHost, deliveryHost } = resolveAemHosts(params));
+    } catch (hostErr) {
+      return errorResponse(hostErr.statusCode || 400, hostErr.code || 'INVALID_AEM_HOST', hostErr.message);
+    }
     const jobId = newJobId('res');
     const now = new Date().toISOString();
 

@@ -1,6 +1,6 @@
 // GET /browse — lightweight folder browser and logo image picker (S10).
 // Supports listing subfolders, creating a new destination folder, and listing image assets for the header logo picker.
-import { errorResponse, extractAuth, jsonResponse } from '../lib/utils.js';
+import { errorResponse, extractAuth, jsonResponse, resolveAemHosts } from '../lib/utils.js';
 import { createAemClient } from '../lib/aem.js';
 
 export async function main(params = {}) {
@@ -10,8 +10,13 @@ export async function main(params = {}) {
       return errorResponse(401, 'UNAUTHORIZED', 'Missing IMS Bearer token.');
     }
 
-    const aemHost = params.aemHost || params.DEFAULT_AEM_HOST || 'https://author-p59602-e520244.adobeaemcloud.com';
-    const deliveryHost = params.deliveryHost || params.DEFAULT_DELIVERY_HOST || 'https://delivery-p59602-e520244.adobeaemcloud.com';
+    let aemHost;
+    let deliveryHost;
+    try {
+      ({ aemHost, deliveryHost } = resolveAemHosts(params));
+    } catch (hostErr) {
+      return errorResponse(hostErr.statusCode || 400, hostErr.code || 'INVALID_AEM_HOST', hostErr.message);
+    }
     const aem = createAemClient({
       aemHost,
       deliveryHost,

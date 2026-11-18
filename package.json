@@ -8,6 +8,13 @@
   ],
   "scripts": {
     "test": "node --test packages/core/__tests__/*.test.js actions/__tests__/*.test.js",
+    "test:all": "node --test packages/core/__tests__/*.test.js actions/__tests__/*.test.js internal/__tests__/*.test.js",
+    "build:exchange": "rm -rf .parcel-cache dist && CONTACTSHEET_INTERNAL_FEATURES=false npx aio app build && node scripts/check-exchange.js",
+    "check:exchange": "node scripts/check-exchange.js",
+    "deploy:exchange": "node scripts/deploy-exchange.js prod",
+    "deploy:exchange:stage": "node scripts/deploy-exchange.js stage",
+    "build:demo": "node scripts/with-demo-config.js build",
+    "deploy:demo": "node scripts/with-demo-config.js deploy",
     "demo": "node scripts/build-demo.js"
   },
   "dependencies": {
