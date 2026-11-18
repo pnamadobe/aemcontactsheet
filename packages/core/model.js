@@ -9,7 +9,131 @@ import {
 
 export function isPreviousContactSheet(rawAsset) {
   const creatorTool = rawAsset?.assetMetadata?.['xmp:CreatorTool'];
-  return creatorTool === CONTACT_SHEET_CREATOR_TOOL;
+  if (creatorTool === CONTACT_SHEET_CREATOR_TOOL) return true;
+  const name = String(rawAsset?.repositoryMetadata?.['repo:name'] || rawAsset?.name || '');
+  return /^contact-sheet[_-]\d{4}-\d{2}-\d{2}.*\.pdf$/i.test(name);
+}
+
+const IGNORED_EXTENSIONS = new Set([
+  // Spreadsheets, data feeds, logs & configs
+  'csv',
+  'tsv',
+  'json',
+  'txt',
+  'log',
+  'xml',
+  'yaml',
+  'yml',
+  'md',
+  'ini',
+  'cfg',
+  'conf',
+  'properties',
+  'lst',
+  'xmp',
+  // Archives & ad-server packages (e.g. CM360 HTML5 banner ZIPs)
+  'zip',
+  'tar',
+  'gz',
+  'tgz',
+  'bz2',
+  '7z',
+  'rar',
+  // Font binaries
+  'ttf',
+  'otf',
+  'ttc',
+  'woff',
+  'woff2',
+  'eot',
+  'dfont',
+  // Web code & scripts
+  'html',
+  'htm',
+  'css',
+  'js',
+  'mjs',
+  'cjs',
+  'ts',
+  'jsx',
+  'tsx',
+  'sh',
+  'py',
+  // Audio-only files
+  'mp3',
+  'wav',
+  'aac',
+  'flac',
+  'ogg',
+  'm4a',
+  'wma',
+  'aiff',
+  // Office documents & spreadsheets
+  'xls',
+  'xlsx',
+  'doc',
+  'docx',
+  // Project / sidecar files without static DAM renditions
+  'aep',
+  'prproj',
+  'sesx',
+  'aae',
+  'ds_store',
+]);
+
+const IGNORED_MIME_PREFIXES = ['text/', 'audio/', 'font/'];
+
+const IGNORED_MIME_TYPES = new Set([
+  'application/json',
+  'application/ld+json',
+  'application/vnd.adobecloud.template+json',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/gzip',
+  'application/x-tar',
+  'application/xml',
+  'application/javascript',
+  'application/x-javascript',
+  'application/x-font-ttf',
+  'application/x-font-otf',
+  'application/x-font-woff',
+  'application/font-woff',
+  'application/font-woff2',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.audiograph',
+]);
+
+/**
+ * Returns true if the raw AEM asset is a non-visual/ancillary file type (e.g. CSV data feed,
+ * JSON job manifest, log file, HTML5 banner ZIP archive, font binary, audio file, or DM template)
+ * that should be excluded from visual contact sheets.
+ */
+export function isExcludedNonVisualAsset(rawAsset) {
+  const repo = rawAsset?.repositoryMetadata || {};
+  const meta = rawAsset?.assetMetadata || {};
+  const name = String(repo['repo:name'] || rawAsset?.name || '').trim();
+  const lowerName = name.toLowerCase();
+
+  if (lowerName.startsWith('.')) return true;
+
+  const dotIdx = lowerName.lastIndexOf('.');
+  if (dotIdx > 0 && dotIdx < lowerName.length - 1) {
+    const ext = lowerName.slice(dotIdx + 1);
+    if (IGNORED_EXTENSIONS.has(ext)) return true;
+  }
+
+  const fmt = String(meta['dc:format'] || repo['dc:format'] || rawAsset?.format || '')
+    .trim()
+    .toLowerCase();
+  if (fmt) {
+    if (IGNORED_MIME_TYPES.has(fmt)) return true;
+    if (IGNORED_MIME_PREFIXES.some((prefix) => fmt.startsWith(prefix))) return true;
+  }
+
+  return false;
 }
 
 export function normalizeAsset(raw, index = 0) {
@@ -128,16 +252,24 @@ export function buildSheetModel({
   const warnings = [];
   const filtered = [];
   let skippedSheets = 0;
+  let skippedNonVisual = 0;
 
   for (const raw of rawAssets) {
     if (isPreviousContactSheet(raw)) {
       skippedSheets++;
       continue;
     }
+    if (isExcludedNonVisualAsset(raw)) {
+      skippedNonVisual++;
+      continue;
+    }
     filtered.push(raw);
   }
   if (skippedSheets > 0) {
     warnings.push(`Excluded ${skippedSheets} previously generated contact sheet PDF(s).`);
+  }
+  if (skippedNonVisual > 0) {
+    warnings.push(`Excluded ${skippedNonVisual} non-visual file(s) (CSV, JSON, TXT, ZIP, fonts, audio).`);
   }
 
   const totalFound = filtered.length;

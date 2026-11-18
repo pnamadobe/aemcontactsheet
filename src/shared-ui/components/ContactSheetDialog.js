@@ -1596,16 +1596,6 @@ export default function ContactSheetDialog({
 
           <div className="s2-divider-v" />
 
-          <button
-            className="s2-btn"
-            onClick={() => {
-              const win = iframeRef.current?.contentWindow;
-              win?.focus();
-              win?.print();
-            }}
-          >
-            Print
-          </button>
           {cloudCanvas.renderTopBarButtons(handleGenerate)}
           <button className="s2-btn s2-btn-accent" onClick={() => handleGenerate('pdf')}>
             Save PDF to AEM

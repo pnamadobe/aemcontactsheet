@@ -227,3 +227,52 @@ test('smart-crop author fixture resolves 36 assets and formats tags and dimensio
   assert.equal(humanizeFieldKey('hertz:modelYear'), 'Model Year');
   assert.equal(humanizeFieldKey('brand:sku_id'), 'SKU ID');
 });
+
+test('buildSheetModel excludes non-visual DAM files (CSV, JSON, TXT, ZIP, fonts, audio, DM templates, HTML/DOCX)', () => {
+  const mixedRaw = [
+    ...collegeRaw.slice(0, 2),
+    {
+      assetId: 'urn:aaid:aem:csv-1',
+      repositoryMetadata: { 'repo:name': 'dune-pagemap.csv', 'dc:format': 'text/csv' },
+    },
+    {
+      assetId: 'urn:aaid:aem:json-1',
+      repositoryMetadata: { 'repo:name': '_idapi-job.json', 'dc:format': 'application/json' },
+    },
+    {
+      assetId: 'urn:aaid:aem:txt-1',
+      repositoryMetadata: { 'repo:name': '_run_log.txt', 'dc:format': 'text/plain' },
+    },
+    {
+      assetId: 'urn:aaid:aem:zip-1',
+      repositoryMetadata: { 'repo:name': 'APP_CARD_890x1335_beach-couple.zip', 'dc:format': 'application/zip' },
+    },
+    {
+      assetId: 'urn:aaid:aem:font-1',
+      repositoryMetadata: { 'repo:name': 'Gotham-Black.otf', 'dc:format': 'application/x-font-otf' },
+    },
+    {
+      assetId: 'urn:aaid:aem:lst-1',
+      repositoryMetadata: { 'repo:name': 'AdobeFnt23.lst', 'dc:format': 'application/octet-stream' },
+    },
+    {
+      assetId: 'urn:aaid:aem:mp3-1',
+      repositoryMetadata: { 'repo:name': 'notification 1.mp3', 'dc:format': 'audio/mpeg' },
+    },
+    {
+      assetId: 'urn:aaid:aem:dm-1',
+      repositoryMetadata: {
+        'repo:name': 'citiaadvantagecard-letsgo_WEB_MED_RECT',
+        'dc:format': 'application/vnd.adobecloud.template+json',
+      },
+    },
+    {
+      assetId: 'urn:aaid:aem:aep-1',
+      repositoryMetadata: { 'repo:name': 'electoral district highlight.aep', 'dc:format': 'application/vnd.audiograph' },
+    },
+  ];
+
+  const model = buildSheetModel({ rawAssets: mixedRaw, sourceLabel: '/content/dam/26H2/hbo/content-automation' });
+  assert.equal(model.assets.length, 2);
+  assert.ok(model.warnings.some((w) => /Excluded 9 non-visual file\(s\)/.test(w)));
+});
