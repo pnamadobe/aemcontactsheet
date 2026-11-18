@@ -120,10 +120,11 @@ export async function renderNativePdfBuffer(
   let embeddedLogo = null;
   if (logoEntry?.buffer) {
     try {
-      embeddedLogo =
-        logoEntry.ext === 'png'
-          ? await pdfDoc.embedPng(logoEntry.buffer)
-          : await pdfDoc.embedJpg(logoEntry.buffer);
+      const isPngLogo =
+        (logoEntry.buffer[0] === 0x89 && logoEntry.buffer[1] === 0x50) || logoEntry.ext === 'png';
+      embeddedLogo = isPngLogo
+        ? await pdfDoc.embedPng(logoEntry.buffer)
+        : await pdfDoc.embedJpg(logoEntry.buffer);
     } catch {
       embeddedLogo = null;
     }

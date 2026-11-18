@@ -139,10 +139,31 @@ export async function main(params = {}) {
     const logoRef = paginated.config.header?.logo;
     if (logoRef?.assetId) {
       try {
-        const { buffer, ext } = await aem.fetchAssetThumbnailBuffer(
-          { id: logoRef.assetId, name: logoRef.path?.split('/').pop() || 'logo.png', approved: logoRef.tier === 'delivery' },
-          { targetPx: 600, quality: 'print' }
-        );
+        const logoName = logoRef.path?.split('/').pop() || 'logo.png';
+        const isPngLogo = /\.png$/i.test(logoName);
+        let buffer = null;
+        let ext = isPngLogo ? 'png' : 'jpg';
+        if (isPngLogo) {
+          try {
+            buffer = await aem.fetchAssetOriginalBuffer(logoRef.assetId, logoName);
+            ext = 'png';
+          } catch {
+            buffer = null;
+          }
+        }
+        if (!buffer) {
+          const fetched = await aem.fetchAssetThumbnailBuffer(
+            {
+              id: logoRef.assetId,
+              name: logoName,
+              format: isPngLogo ? 'image/png' : undefined,
+              approved: logoRef.tier === 'delivery',
+            },
+            { targetPx: 600, quality: 'print' }
+          );
+          buffer = fetched.buffer;
+          ext = fetched.ext;
+        }
         logoZipPath = `img/logo.${ext}`;
         logoEntry = { buffer, ext };
         if (useZipPipeline) {

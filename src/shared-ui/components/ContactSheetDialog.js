@@ -578,8 +578,13 @@ export default function ContactSheetDialog({
           let resolvedOnDelivery = false;
           if (deliveryBase && (tier === 'delivery' || asset.approved || asset.published)) {
             try {
+              const isPng =
+                String(asset.format || '').toLowerCase().includes('png') || /\.png$/i.test(asset.name || '');
+              const deliveryUrl = isPng
+                ? `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.png?width=350`
+                : `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`;
               const res = await fetch(
-                `${deliveryBase}/adobe/assets/${encodeURIComponent(asset.id)}/as/${seo}.jpg?width=350&quality=75`,
+                deliveryUrl,
                 {
                   headers: {
                     Authorization: `Bearer ${authCtx.accessToken}`,

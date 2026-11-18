@@ -390,24 +390,30 @@ export function createAemClient({
   async function fetchAssetThumbnailBuffer(asset, { targetPx = 350, quality = 'screen' } = {}) {
     const seoName = (asset.name || 'image').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-') || 'image';
     const jpgQuality = quality === 'print' ? 82 : 75;
+    const isPngAsset =
+      String(asset.format || '').toLowerCase().includes('png') || /\.png$/i.test(asset.name || '');
 
     if (asset.approved || asset.published) {
       try {
+        const deliveryExt = isPngAsset ? 'png' : 'jpg';
+        const deliveryMime = isPngAsset ? 'image/png' : 'image/jpeg';
+        const query = isPngAsset
+          ? { width: targetPx }
+          : { width: targetPx, quality: jpgQuality };
         const buf = await requestBuffer(
           normDelivery,
-          `/adobe/assets/${encodeURIComponent(asset.id)}/as/${seoName}.jpg`,
-          { query: { width: targetPx, quality: jpgQuality } }
+          `/adobe/assets/${encodeURIComponent(asset.id)}/as/${seoName}.${deliveryExt}`,
+          { query }
         );
-        return { buffer: buf, ext: 'jpg', mime: 'image/jpeg' };
+        return { buffer: buf, ext: deliveryExt, mime: deliveryMime };
       } catch {
         // Fall through to Author static renditions
       }
     }
 
     // Author static rendition path:
-    // Use `asset.thumbnailUrl` (pre-signed blob URL for `cq5dam.thumbnail.319.319.png` ~60–110 KB) for Screen quality
-    // so 71 assets is ~5 MB instead of 65 MB!
-    if (quality === 'screen' && asset.thumbnailUrl) {
+    // Use `asset.thumbnailUrl` (pre-signed blob URL for `cq5dam.thumbnail.319.319.png` ~60–110 KB, which preserves PNG alpha transparency!)
+    if ((quality === 'screen' || isPngAsset) && asset.thumbnailUrl) {
       try {
         const res = await fetchImpl(asset.thumbnailUrl);
         if (res.ok) {
@@ -419,10 +425,24 @@ export function createAemClient({
       }
     }
 
+    // For PNG assets in print quality (or without thumbnailUrl), preserve alpha transparency by preferring PNG renditions
+    // (and original PNG if <= 4 MB) over `cq5dam.web.1280.1280.jpeg` (which flattens alpha onto a solid background).
+    if (isPngAsset && quality === 'print' && (!asset.size || asset.size <= 4_000_000)) {
+      try {
+        const origBuf = await fetchAssetOriginalBuffer(asset.id, asset.name || `${seoName}.png`);
+        if (origBuf && origBuf[0] === 0x89 && origBuf[1] === 0x50) {
+          return { buffer: origBuf, ext: 'png', mime: 'image/png' };
+        }
+      } catch {
+        // fall through to PNG rendition
+      }
+    }
+
     const candidates =
-      quality === 'screen'
+      isPngAsset || quality === 'screen'
         ? [
             { name: 'cq5dam.thumbnail.319.319.png', ext: 'png', mime: 'image/png' },
+            { name: 'cq5dam.thumbnail.140.100.png', ext: 'png', mime: 'image/png' },
             { name: 'cq5dam.web.1280.1280.jpeg', ext: 'jpg', mime: 'image/jpeg' },
           ]
         : [
