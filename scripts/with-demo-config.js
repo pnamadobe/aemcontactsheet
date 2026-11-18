@@ -14,12 +14,17 @@ const mainConfigPath = path.join(rootDir, 'app.config.yaml');
 const demoConfigPath = path.join(rootDir, 'internal', 'app.config.demo.yaml');
 const mainSlotPath = path.join(rootDir, 'src', 'shared-ui', 'cloud-canvas-slot.js');
 const demoSlotPath = path.join(rootDir, 'internal', 'ui', 'cloud-canvas-slot.js');
-const demoWorkspaceJson = path.join(rootDir, '547DimSquid-767251-Production.json');
+const rawArgs = process.argv.slice(2);
+const envArg = rawArgs[1] === 'stage' ? 'Stage' : 'Production';
+const args =
+  rawArgs[1] === 'stage' || rawArgs[1] === 'prod'
+    ? [rawArgs[0], ...rawArgs.slice(2)]
+    : rawArgs;
+const demoWorkspaceJson = path.join(rootDir, `547DimSquid-767251-${envArg}.json`);
 const preloadPath = path.join(__dirname, 'use-ow-basic-auth.cjs');
 
-const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.error('Usage: node scripts/with-demo-config.js <build|deploy> [...aio args]');
+  console.error('Usage: node scripts/with-demo-config.js <build|deploy> [prod|stage] [...aio args]');
   process.exit(1);
 }
 
@@ -31,7 +36,7 @@ const demoSlot = fs.readFileSync(demoSlotPath, 'utf8');
 let exitCode = 0;
 try {
   if (args[0] === 'deploy' && fs.existsSync(demoWorkspaceJson)) {
-    console.log('🔹 Selecting internal demo workspace: 547DimSquid-767251-Production.json (Adobe Internal Peter Nam)…');
+    console.log(`🔹 Selecting internal demo workspace: 547DimSquid-767251-${envArg}.json (Adobe Internal Peter Nam)…`);
     spawnSync('npx', ['aio', 'app', 'use', demoWorkspaceJson, '--merge', '--no-input'], {
       cwd: rootDir,
       stdio: 'inherit',
