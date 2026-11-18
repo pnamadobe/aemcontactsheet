@@ -42,4 +42,38 @@ const deployRes = spawnSync('npx', ['aio', 'app', 'deploy', '--no-build', ...def
     NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preloadPath}`.trim(),
   },
 });
-process.exit(deployRes.status ?? 1);
+if (deployRes.status !== 0) process.exit(deployRes.status ?? 1);
+
+// When deployed with `--no-publish` (before Exchange App Registry publication),
+// remove the `headless-v2` App Registry pre-check from the sequence so cross-org `?ext=` testing works immediately.
+if (fs.existsSync(workspaceJson) && defaultFlags.includes('--no-publish')) {
+  const ns = JSON.parse(fs.readFileSync(workspaceJson, 'utf8'))?.project?.workspace?.details?.runtime?.namespaces?.[0];
+  if (ns?.name && ns?.auth) {
+    const auth = 'Basic ' + Buffer.from(ns.auth).toString('base64');
+    for (const act of ['resolve', 'generate', 'status', 'browse', 'presets', 'prefs']) {
+      try {
+        const getRes = await fetch(`https://adobeioruntime.net/api/v1/namespaces/${ns.name}/actions/contactsheet/${act}`, {
+          headers: { Authorization: auth },
+        });
+        const data = await getRes.json();
+        if (data.exec?.components?.length > 1) {
+          data.exec.components = [`/${ns.name}/contactsheet/__secured_${act}`];
+          await fetch(`https://adobeioruntime.net/api/v1/namespaces/${ns.name}/actions/contactsheet/${act}?overwrite=true`, {
+            method: 'PUT',
+            headers: { Authorization: auth, 'content-type': 'application/json' },
+            body: JSON.stringify({
+              exec: data.exec,
+              annotations: data.annotations,
+              parameters: data.parameters,
+              limits: data.limits,
+            }),
+          });
+        }
+      } catch {
+        // non-fatal
+      }
+    }
+  }
+}
+
+process.exit(0);
