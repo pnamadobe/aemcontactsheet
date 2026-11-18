@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
+const preloadPath = path.join(__dirname, 'use-ow-basic-auth.cjs');
 
 const envArg = process.argv[2] === 'stage' ? 'Stage' : 'Production';
 const extraArgs = process.argv[2] === 'stage' || process.argv[2] === 'prod' ? process.argv.slice(3) : process.argv.slice(2);
@@ -29,8 +30,16 @@ const buildRes = spawnSync('npm', ['run', 'build:exchange'], {
 });
 if (buildRes.status !== 0) process.exit(buildRes.status ?? 1);
 
-const deployRes = spawnSync('npx', ['aio', 'app', 'deploy', '--no-build', ...extraArgs], {
+// Ensure all actions deploy cleanly to the selected target namespace
+fs.rmSync(path.join(rootDir, 'dist', 'last-deployed-actions.json'), { force: true });
+
+const defaultFlags = extraArgs.length > 0 ? extraArgs : ['--no-publish', '--no-log-forwarding-update'];
+const deployRes = spawnSync('npx', ['aio', 'app', 'deploy', '--no-build', ...defaultFlags], {
   cwd: rootDir,
   stdio: 'inherit',
+  env: {
+    ...process.env,
+    NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preloadPath}`.trim(),
+  },
 });
 process.exit(deployRes.status ?? 1);

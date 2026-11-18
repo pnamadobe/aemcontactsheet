@@ -15,6 +15,7 @@ const demoConfigPath = path.join(rootDir, 'internal', 'app.config.demo.yaml');
 const mainSlotPath = path.join(rootDir, 'src', 'shared-ui', 'cloud-canvas-slot.js');
 const demoSlotPath = path.join(rootDir, 'internal', 'ui', 'cloud-canvas-slot.js');
 const demoWorkspaceJson = path.join(rootDir, '547DimSquid-767251-Production.json');
+const preloadPath = path.join(__dirname, 'use-ow-basic-auth.cjs');
 
 const args = process.argv.slice(2);
 if (args.length === 0) {
@@ -42,9 +43,18 @@ try {
   fs.rmSync(path.join(rootDir, '.parcel-cache'), { recursive: true, force: true });
   fs.rmSync(path.join(rootDir, 'dist'), { recursive: true, force: true });
 
-  const res = spawnSync('npx', ['aio', 'app', ...args], {
+  const effectiveArgs =
+    args[0] === 'deploy' && args.length === 1
+      ? ['deploy', '--no-publish', '--no-log-forwarding-update']
+      : args;
+
+  const res = spawnSync('npx', ['aio', 'app', ...effectiveArgs], {
     cwd: rootDir,
     stdio: 'inherit',
+    env: {
+      ...process.env,
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preloadPath}`.trim(),
+    },
   });
   exitCode = res.status ?? 1;
 } finally {
