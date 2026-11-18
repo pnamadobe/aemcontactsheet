@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -72,4 +73,18 @@ if (violations.length > 0) {
   process.exit(1);
 }
 
-console.log(`✅ Exchange Readiness Check PASSED (${filesToScan.length} files scanned across app.config.yaml, src/, actions/, packages/, and dist/).`);
+// Also verify `npm pack --dry-run --json` (used by `aio app pack` to create `dist/app.zip`) never includes `internal/`
+try {
+  const packOut = JSON.parse(execSync('npm pack --dry-run --json', { cwd: rootDir, encoding: 'utf8' }));
+  const packedFiles = (packOut?.[0]?.files || []).map((f) => f.path);
+  const forbiddenPacked = packedFiles.filter((p) => p.startsWith('internal/') || p.includes('firefly-boards') || p.includes('adobe-express'));
+  if (forbiddenPacked.length > 0) {
+    console.error('❌ Exchange Readiness Check FAILED — `aio app pack` would include internal files in dist/app.zip:', forbiddenPacked);
+    process.exit(1);
+  }
+} catch (err) {
+  console.error('❌ Failed verifying npm pack file list:', err.message);
+  process.exit(1);
+}
+
+console.log(`✅ Exchange Readiness Check PASSED (${filesToScan.length} files scanned across app.config.yaml, src/, actions/, packages/, and dist/; zero internal files in app.zip pack list).`);
