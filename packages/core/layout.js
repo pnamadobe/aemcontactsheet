@@ -160,6 +160,7 @@ export function createDefaultConfig(overrides = {}) {
     output: {
       quality: 'screen',
       fileName: `contact-sheet_${today}.pdf`,
+      useCustomFolder: false,
       targetFolder: { id: '', path: '/content/dam/contact-sheets' },
       ...(overrides.output || {}),
     },

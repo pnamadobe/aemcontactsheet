@@ -982,8 +982,9 @@ export default function ContactSheetDialog({
                 ? { id: '', path: resolvedAssetFolder }
                 : null;
         const presetTargetFolder = defaultPreset?.config?.output?.targetFolder;
-        const hasPresetTargetFolder =
-          Boolean(presetTargetFolder?.path) && presetTargetFolder.path !== '/content/dam/contact-sheets';
+        const presetUseCustomFolder =
+          Boolean(defaultPreset?.config?.output?.useCustomFolder) &&
+          Boolean(presetTargetFolder?.path);
 
         setConfig((prev) => {
           const base = defaultPreset ? { ...prev, ...defaultPreset.config } : prev;
@@ -1001,7 +1002,8 @@ export default function ContactSheetDialog({
             },
             output: {
               ...base.output,
-              targetFolder: hasPresetTargetFolder
+              useCustomFolder: presetUseCustomFolder,
+              targetFolder: presetUseCustomFolder
                 ? presetTargetFolder
                 : currentFolderTarget || base.output.targetFolder,
             },
@@ -1165,6 +1167,29 @@ export default function ContactSheetDialog({
     return model.fields.filter((f) => !active.has(f.key) && !f.technical);
   }, [model, config.fields]);
 
+  const defaultCurrentFolder = useMemo(() => {
+    if (source?.kind === 'folder' && source?.path) {
+      return { id: source.id || '', path: source.path };
+    }
+    const firstSelItem = source?.items?.[0];
+    const firstSelPath = firstSelItem?.path || '';
+    const isSingleSelectedFolder =
+      source?.kind === 'selection' &&
+      source?.items?.length === 1 &&
+      (firstSelItem?.type === 'folder' || (firstSelPath && !firstSelPath.split('/').pop().includes('.')));
+    if (isSingleSelectedFolder && firstSelPath) {
+      return { id: firstSelItem.id || '', path: firstSelPath };
+    }
+    if (firstSelPath.startsWith('/content/dam/') && firstSelPath.lastIndexOf('/') > '/content/dam'.length) {
+      return { id: '', path: firstSelPath.slice(0, firstSelPath.lastIndexOf('/')) };
+    }
+    const resolvedFolder = model?.assets?.[0]?.folderPath || '';
+    if (resolvedFolder.startsWith('/content/dam/')) {
+      return { id: '', path: resolvedFolder };
+    }
+    return { id: '', path: '/content/dam/contact-sheets' };
+  }, [source, model]);
+
   async function handleGenerate(outputFormat = 'pdf') {
     try {
       setActiveOutputFormat(outputFormat);
@@ -1176,18 +1201,25 @@ export default function ContactSheetDialog({
             tier: config.header.logo.tier,
           }
         : null;
+      const effectiveTargetFolder = config.output.useCustomFolder
+        ? config.output.targetFolder
+        : defaultCurrentFolder;
       const slimConfig = {
         ...config,
         header: {
           ...config.header,
           logo: slimLogo,
         },
+        output: {
+          ...config.output,
+          targetFolder: effectiveTargetFolder,
+        },
       };
 
       callAction('prefs', {
         method: 'PUT',
         body: {
-          lastOutputFolder: config.output.targetFolder,
+          lastOutputFolder: effectiveTargetFolder,
           lastLogo: slimLogo,
         },
       }).catch(() => {});
@@ -1630,14 +1662,24 @@ export default function ContactSheetDialog({
               if (found) {
                 const presetFolder = found.config?.output?.targetFolder;
                 const keepPresetFolder =
-                  Boolean(presetFolder?.path) && presetFolder.path !== '/content/dam/contact-sheets';
+                  Boolean(found.config?.output?.useCustomFolder) && Boolean(presetFolder?.path);
                 setConfig((c) => ({
                   ...c,
                   ...found.config,
                   output: {
                     ...c.output,
                     ...(found.config?.output || {}),
-                    targetFolder: keepPresetFolder ? presetFolder : c.output.targetFolder,
+                    useCustomFolder: keepPresetFolder,
+                    targetFolder: keepPresetFolder ? presetFolder : defaultCurrentFolder,
+                  },
+                }));
+              } else {
+                setConfig((c) => ({
+                  ...c,
+                  output: {
+                    ...c.output,
+                    useCustomFolder: false,
+                    targetFolder: defaultCurrentFolder,
                   },
                 }));
               }
@@ -2464,29 +2506,73 @@ export default function ContactSheetDialog({
                 <div className="s2-asset-selector-row">
                   <span
                     className="s2-asset-selector-path"
-                    title={config.output.targetFolder?.path || '/content/dam/contact-sheets'}
+                    title={
+                      (config.output.useCustomFolder
+                        ? config.output.targetFolder?.path
+                        : defaultCurrentFolder.path) || '/content/dam/contact-sheets'
+                    }
                   >
-                    {config.output.targetFolder?.path || '/content/dam/contact-sheets'}
+                    {(config.output.useCustomFolder
+                      ? config.output.targetFolder?.path
+                      : defaultCurrentFolder.path) || '/content/dam/contact-sheets'}
                   </span>
-                  <button
-                    type="button"
-                    className="s2-btn s2-btn-sm"
-                    onClick={() => {
-                      if (pickerMode === 'folder') {
+                  {config.output.useCustomFolder && (
+                    <button
+                      type="button"
+                      className="s2-btn s2-btn-sm"
+                      onClick={() => {
+                        if (pickerMode === 'folder') {
+                          setPickerMode(null);
+                        } else {
+                          openBrowser(
+                            'folder',
+                            config.output.targetFolder?.path || defaultCurrentFolder.path || '/content/dam',
+                            '',
+                            { isInitialOpen: true }
+                          );
+                        }
+                      }}
+                    >
+                      {pickerMode === 'folder' ? 'Close' : 'Browse'}
+                    </button>
+                  )}
+                </div>
+                <label className="s2-checkbox-label" style={{ marginTop: 6 }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(config.output.useCustomFolder)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setConfig({
+                        ...config,
+                        output: {
+                          ...config.output,
+                          useCustomFolder: checked,
+                          targetFolder: checked
+                            ? config.output.targetFolder?.path &&
+                              config.output.targetFolder.path !== '/content/dam/contact-sheets'
+                              ? config.output.targetFolder
+                              : defaultCurrentFolder
+                            : defaultCurrentFolder,
+                        },
+                      });
+                      if (!checked && pickerMode === 'folder') {
                         setPickerMode(null);
-                      } else {
-                        openBrowser('folder', config.output.targetFolder?.path || '/content/dam', '', {
-                          isInitialOpen: true,
-                        });
+                      } else if (checked) {
+                        openBrowser(
+                          'folder',
+                          defaultCurrentFolder.path || '/content/dam',
+                          '',
+                          { isInitialOpen: true }
+                        );
                       }
                     }}
-                  >
-                    {pickerMode === 'folder' ? 'Close' : 'Browse'}
-                  </button>
-                </div>
+                  />
+                  Choose a different AEM folder
+                </label>
 
                 {/* Inline Folder Picker Drawer */}
-                {pickerMode === 'folder' && (
+                {config.output.useCustomFolder && pickerMode === 'folder' && (
                   <div className="s2-picker-drawer" style={{ margin: '8px 0 0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <strong style={{ fontSize: 12 }}>Select destination folder</strong>
@@ -2538,7 +2624,11 @@ export default function ContactSheetDialog({
                         onClick={() => {
                           setConfig({
                             ...config,
-                            output: { ...config.output, targetFolder: { id: '', path: pickerPath } },
+                            output: {
+                              ...config.output,
+                              useCustomFolder: true,
+                              targetFolder: { id: '', path: pickerPath },
+                            },
                           });
                           setPickerMode(null);
                         }}
