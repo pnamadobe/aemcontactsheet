@@ -527,8 +527,14 @@ export default function ContactSheetDialog({
   const [modelFileKey, setModelFileKey] = useState(null);
   const [presets, setPresets] = useState([]);
   const [selectedPresetId, setSelectedPresetId] = useState('');
+  const [showSavePresetInput, setShowSavePresetInput] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetIsDefault, setNewPresetIsDefault] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
   const [watermarkPresets, setWatermarkPresets] = useState([]);
   const [selectedWatermarkPresetId, setSelectedWatermarkPresetId] = useState('');
+  const [showSaveWmPresetInput, setShowSaveWmPresetInput] = useState(false);
+  const [newWmPresetName, setNewWmPresetName] = useState('');
   const [damFonts, setDamFonts] = useState([]);
   const [watermarkFontDataUrl, setWatermarkFontDataUrl] = useState(null);
   const [pickerMode, setPickerMode] = useState(null); // null | 'folder' | 'logo'
@@ -1329,38 +1335,95 @@ export default function ContactSheetDialog({
   }
 
   async function handleSavePreset() {
-    const name = window.prompt('Preset name:');
-    if (!name) return;
-    const isDefault = window.confirm('Set as your default preset?');
-    const res = await callAction('presets', {
-      method: 'PUT',
-      body: { preset: { name, isDefault, config } },
-    });
-    setPresets(res.presets || []);
-    setSelectedPresetId(res.preset?.id || '');
+    const trimmed = newPresetName.trim();
+    if (!trimmed) return;
+    setSavingPreset(true);
+    try {
+      const slimLogo = config.header.logo
+        ? {
+            assetId: config.header.logo.assetId,
+            path: config.header.logo.path,
+            tier: config.header.logo.tier,
+          }
+        : null;
+      const presetConfig = {
+        ...config,
+        header: {
+          ...config.header,
+          logo: slimLogo,
+        },
+      };
+      const res = await callAction('presets', {
+        method: 'PUT',
+        body: { preset: { name: trimmed, isDefault: newPresetIsDefault, config: presetConfig } },
+      });
+      setPresets(res.presets || []);
+      setSelectedPresetId(res.preset?.id || '');
+      setShowSavePresetInput(false);
+      setNewPresetName('');
+      guestConnection?.host?.toast?.display?.({
+        variant: 'positive',
+        message: `Saved preset "${trimmed}"${newPresetIsDefault ? ' (Default)' : ''}.`,
+      });
+    } catch (err) {
+      guestConnection?.host?.toast?.display?.({
+        variant: 'negative',
+        message: err.message || 'Could not save preset.',
+      });
+    } finally {
+      setSavingPreset(false);
+    }
+  }
+
+  async function handleDeleteSelectedPreset() {
+    if (!selectedPresetId) return;
+    const found = presets.find((p) => p.id === selectedPresetId);
+    try {
+      const res = await callAction('presets', {
+        method: 'DELETE',
+        body: { id: selectedPresetId },
+      });
+      setPresets(res.presets || []);
+      setSelectedPresetId('');
+      guestConnection?.host?.toast?.display?.({
+        variant: 'positive',
+        message: `Removed preset "${found?.name || ''}".`,
+      });
+    } catch {
+      // ignore
+    }
   }
 
   async function handleSaveWatermarkPreset() {
-    const name = window.prompt('Watermark preset name:', config.watermark?.text || 'Custom Watermark');
-    if (!name) return;
-    const res = await callAction('presets', {
-      method: 'PUT',
-      body: {
-        watermarkPreset: {
-          name,
-          watermark: {
-            ...config.watermark,
-            enabled: true,
+    const trimmed = newWmPresetName.trim();
+    if (!trimmed) return;
+    try {
+      const res = await callAction('presets', {
+        method: 'PUT',
+        body: {
+          watermarkPreset: {
+            name: trimmed,
+            watermark: {
+              ...config.watermark,
+              enabled: true,
+            },
           },
         },
-      },
-    });
-    setWatermarkPresets(res.watermarkPresets || []);
-    setSelectedWatermarkPresetId(res.watermarkPreset?.id || '');
-    guestConnection?.host?.toast?.display?.({
-      variant: 'positive',
-      message: `Saved watermark preset "${name}".`,
-    });
+      });
+      setWatermarkPresets(res.watermarkPresets || []);
+      setSelectedWatermarkPresetId(res.watermarkPreset?.id || '');
+      setShowSaveWmPresetInput(false);
+      setNewWmPresetName('');
+      guestConnection?.host?.toast?.display?.({
+        variant: 'positive',
+        message: `Saved watermark preset "${trimmed}".`,
+      });
+    } catch (err) {
+      guestConnection?.host?.toast?.display?.({
+        variant: 'negative',
+        message: err.message || 'Could not save watermark preset.',
+      });
+    }
   }
 
   function getDefaultLogoStartPath() {
@@ -1690,9 +1753,84 @@ export default function ContactSheetDialog({
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
-          <button className="s2-btn s2-btn-quiet" onClick={handleSavePreset}>
-            Save preset
-          </button>
+          {selectedPresetId && !showSavePresetInput && (
+            <button
+              type="button"
+              className="s2-btn s2-btn-quiet s2-btn-sm"
+              title="Delete selected preset"
+              onClick={handleDeleteSelectedPreset}
+            >
+              ✕
+            </button>
+          )}
+          {showSavePresetInput ? (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: 'var(--s2-bg-base)',
+                border: '1px solid var(--s2-border)',
+              }}
+            >
+              <input
+                className="s2-input"
+                style={{ width: 140, height: 26, fontSize: 12, border: 'none', background: 'transparent', padding: '0 4px' }}
+                type="text"
+                placeholder="Preset name…"
+                autoFocus
+                value={newPresetName}
+                onChange={(e) => setNewPresetName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newPresetName.trim()) {
+                    handleSavePreset();
+                  } else if (e.key === 'Escape') {
+                    setShowSavePresetInput(false);
+                  }
+                }}
+              />
+              <label className="s2-checkbox-label" style={{ fontSize: 11.5, whiteSpace: 'nowrap' }}>
+                <input
+                  type="checkbox"
+                  checked={newPresetIsDefault}
+                  onChange={(e) => setNewPresetIsDefault(e.target.checked)}
+                />
+                Default
+              </label>
+              <button
+                type="button"
+                className="s2-btn s2-btn-accent s2-btn-sm"
+                style={{ height: 24, padding: '0 10px' }}
+                disabled={!newPresetName.trim() || savingPreset}
+                onClick={handleSavePreset}
+              >
+                {savingPreset ? '…' : 'Save'}
+              </button>
+              <button
+                type="button"
+                className="s2-btn s2-btn-quiet s2-btn-sm"
+                style={{ height: 24, padding: '0 6px' }}
+                onClick={() => setShowSavePresetInput(false)}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="s2-btn s2-btn-quiet"
+              onClick={() => {
+                const existing = presets.find((p) => p.id === selectedPresetId);
+                setNewPresetName(existing?.name || '');
+                setNewPresetIsDefault(Boolean(existing?.isDefault));
+                setShowSavePresetInput(true);
+              }}
+            >
+              Save preset
+            </button>
+          )}
 
           <div className="s2-divider-v" />
 
@@ -2182,11 +2320,52 @@ export default function ContactSheetDialog({
                 type="button"
                 className="s2-btn s2-btn-sm"
                 style={{ height: 32 }}
-                onClick={handleSaveWatermarkPreset}
+                onClick={() => {
+                  setNewWmPresetName(config.watermark?.text || 'Custom Watermark');
+                  setShowSaveWmPresetInput((prev) => !prev);
+                }}
               >
                 Save preset
               </button>
             </div>
+
+            {showSaveWmPresetInput && (
+              <div className="s2-field" style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                <input
+                  className="s2-input"
+                  style={{ height: 28, fontSize: 12 }}
+                  type="text"
+                  placeholder="Watermark preset name…"
+                  autoFocus
+                  value={newWmPresetName}
+                  onChange={(e) => setNewWmPresetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newWmPresetName.trim()) {
+                      handleSaveWatermarkPreset();
+                    } else if (e.key === 'Escape') {
+                      setShowSaveWmPresetInput(false);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="s2-btn s2-btn-accent s2-btn-sm"
+                  style={{ height: 28 }}
+                  disabled={!newWmPresetName.trim()}
+                  onClick={handleSaveWatermarkPreset}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="s2-btn s2-btn-quiet s2-btn-sm"
+                  style={{ height: 28 }}
+                  onClick={() => setShowSaveWmPresetInput(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {config.watermark?.enabled && (
               <>
