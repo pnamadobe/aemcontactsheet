@@ -961,11 +961,29 @@ export default function ContactSheetDialog({
         cloudCanvas.syncFromPrefs(prefsRes, ctx);
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
-        const firstSelPath = source?.items?.[0]?.path || '';
-        const selectionParentPath =
-          firstSelPath.startsWith('/content/dam/') && firstSelPath.lastIndexOf('/') > '/content/dam'.length
+        const firstSelItem = source?.items?.[0];
+        const firstSelPath = firstSelItem?.path || '';
+        const isSingleSelectedFolder =
+          source?.kind === 'selection' &&
+          source?.items?.length === 1 &&
+          (firstSelItem?.type === 'folder' || (firstSelPath && !firstSelPath.split('/').pop().includes('.')));
+        const selectionFolderPath = isSingleSelectedFolder
+          ? firstSelPath
+          : firstSelPath.startsWith('/content/dam/') && firstSelPath.lastIndexOf('/') > '/content/dam'.length
             ? firstSelPath.slice(0, firstSelPath.lastIndexOf('/'))
             : '';
+        const resolvedAssetFolder = resolveRes?.model?.assets?.[0]?.folderPath || '';
+        const currentFolderTarget =
+          source?.kind === 'folder' && source?.path
+            ? { id: source.id || '', path: source.path }
+            : selectionFolderPath
+              ? { id: '', path: selectionFolderPath }
+              : resolvedAssetFolder.startsWith('/content/dam/')
+                ? { id: '', path: resolvedAssetFolder }
+                : null;
+        const presetTargetFolder = defaultPreset?.config?.output?.targetFolder;
+        const hasPresetTargetFolder =
+          Boolean(presetTargetFolder?.path) && presetTargetFolder.path !== '/content/dam/contact-sheets';
 
         setConfig((prev) => {
           const base = defaultPreset ? { ...prev, ...defaultPreset.config } : prev;
@@ -983,14 +1001,9 @@ export default function ContactSheetDialog({
             },
             output: {
               ...base.output,
-              targetFolder:
-                prefsRes?.lastOutputFolder?.id && prefsRes?.lastOutputFolder?.path
-                  ? prefsRes.lastOutputFolder
-                  : source?.kind === 'folder' && source?.path
-                    ? { id: source.id || '', path: source.path }
-                    : selectionParentPath
-                      ? { id: '', path: selectionParentPath }
-                      : prefsRes?.lastOutputFolder || base.output.targetFolder,
+              targetFolder: hasPresetTargetFolder
+                ? presetTargetFolder
+                : currentFolderTarget || base.output.targetFolder,
             },
           };
         });
@@ -1614,7 +1627,20 @@ export default function ContactSheetDialog({
               const id = e.target.value;
               setSelectedPresetId(id);
               const found = presets.find((p) => p.id === id);
-              if (found) setConfig((c) => ({ ...c, ...found.config }));
+              if (found) {
+                const presetFolder = found.config?.output?.targetFolder;
+                const keepPresetFolder =
+                  Boolean(presetFolder?.path) && presetFolder.path !== '/content/dam/contact-sheets';
+                setConfig((c) => ({
+                  ...c,
+                  ...found.config,
+                  output: {
+                    ...c.output,
+                    ...(found.config?.output || {}),
+                    targetFolder: keepPresetFolder ? presetFolder : c.output.targetFolder,
+                  },
+                }));
+              }
             }}
           >
             <option value="">Preset: Default</option>
