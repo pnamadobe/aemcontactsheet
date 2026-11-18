@@ -961,13 +961,23 @@ export default function ContactSheetDialog({
         cloudCanvas.syncFromPrefs(prefsRes, ctx);
         const defaultPreset = loadedPresets.find((p) => p.isDefault);
 
+        const firstSelPath = source?.items?.[0]?.path || '';
+        const selectionParentPath =
+          firstSelPath.startsWith('/content/dam/') && firstSelPath.lastIndexOf('/') > '/content/dam'.length
+            ? firstSelPath.slice(0, firstSelPath.lastIndexOf('/'))
+            : '';
+
         setConfig((prev) => {
           const base = defaultPreset ? { ...prev, ...defaultPreset.config } : prev;
           return {
             ...base,
             header: {
               ...base.header,
-              title: source?.name || source?.path?.split('/').pop() || 'Contact Sheet',
+              title:
+                source?.name ||
+                source?.path?.split('/').pop() ||
+                resolveRes?.model?.sourceLabel ||
+                'Contact Sheet',
               preparedBy: ctx.name || base.header.preparedBy,
               logo: prefsRes?.lastLogo ?? base.header.logo ?? null,
             },
@@ -978,7 +988,9 @@ export default function ContactSheetDialog({
                   ? prefsRes.lastOutputFolder
                   : source?.kind === 'folder' && source?.path
                     ? { id: source.id || '', path: source.path }
-                    : prefsRes?.lastOutputFolder || base.output.targetFolder,
+                    : selectionParentPath
+                      ? { id: '', path: selectionParentPath }
+                      : prefsRes?.lastOutputFolder || base.output.targetFolder,
             },
           };
         });
@@ -1222,8 +1234,16 @@ export default function ContactSheetDialog({
     }
   }
 
+  const hasFolderInSource =
+    source?.kind === 'folder' ||
+    (source?.kind === 'selection' &&
+      Array.isArray(source?.items) &&
+      source.items.some(
+        (it) => it?.type === 'folder' || (it?.path && !it.path.split('/').pop().includes('.'))
+      ));
+
   async function handleToggleSubfolders(checked) {
-    if (source?.kind !== 'folder') return;
+    if (!hasFolderInSource) return;
     setIncludeSubfolders(checked);
     setResolvingSubfolders(true);
     try {
@@ -1549,7 +1569,7 @@ export default function ContactSheetDialog({
                 ? 'Updating…'
                 : `${model?.totalFound} ${model?.totalFound === 1 ? 'asset' : 'assets'}`}
             </span>
-            {source?.kind === 'folder' && (
+            {hasFolderInSource && (
               <label
                 className="s2-checkbox-label"
                 style={{

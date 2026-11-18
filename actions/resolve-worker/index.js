@@ -68,13 +68,28 @@ export async function main(params = {}) {
       rawAssets = res.assets;
       sourceLabel = `Collection: ${res.collectionTitle || source.name || source.id}`;
     } else if (source.kind === 'selection') {
+      const selItems = source.items || [];
       rawAssets = await aem.resolveSelectionAssets({
-        items: source.items || [],
+        items: selItems,
         tier,
         includeSubfolders: Boolean(source.includeSubfolders),
         onProgress,
       });
-      sourceLabel = `Selection (${rawAssets.length} items)`;
+      const folderNames = selItems
+        .filter((it) => it?.type === 'folder' || (it?.path && !it.path.split('/').pop().includes('.')))
+        .map((it) => it.path?.split('/').filter(Boolean).pop())
+        .filter(Boolean);
+      const fileCount = selItems.length - folderNames.length;
+      if (folderNames.length > 0 && fileCount === 0) {
+        sourceLabel =
+          folderNames.length <= 3
+            ? folderNames.join(' + ')
+            : `${folderNames.slice(0, 2).join(' + ')} + ${folderNames.length - 2} more folders`;
+      } else if (folderNames.length > 0 && fileCount > 0) {
+        sourceLabel = `${folderNames.slice(0, 2).join(' + ')} + ${fileCount} ${fileCount === 1 ? 'file' : 'files'}`;
+      } else {
+        sourceLabel = `Selection (${selItems.length} ${selItems.length === 1 ? 'item' : 'items'})`;
+      }
     } else {
       throw new Error(`Unsupported source kind: ${source.kind}`);
     }

@@ -422,3 +422,79 @@ test('Security & multi-tenancy: SSRF host allowlist, Author<->Delivery derivatio
   assert.equal(unsupportedFmt.statusCode, 400);
   assert.equal(unsupportedFmt.body.error.code, 'UNSUPPORTED_OUTPUT_FORMAT');
 });
+
+test('Multi-folder and mixed folder+file selection expands urn:aaid:aem folder IDs and deduplicates assets', async () => {
+  const folderAAssets = collegeRaw.slice(0, 2).map((a, idx) => ({
+    ...a,
+    assetId: `urn:aaid:aem:folderA-${idx}`,
+    repositoryMetadata: {
+      ...a.repositoryMetadata,
+      'repo:id': `urn:aaid:aem:folderA-${idx}`,
+      'repo:path': `/content/dam/26H2/hbo/${a.repositoryMetadata['repo:name']}`,
+    },
+  }));
+  const folderBAssets = collegeRaw.slice(2, 4).map((a, idx) => ({
+    ...a,
+    assetId: `urn:aaid:aem:folderB-${idx}`,
+    repositoryMetadata: {
+      ...a.repositoryMetadata,
+      'repo:id': `urn:aaid:aem:folderB-${idx}`,
+      'repo:path': `/content/dam/26H2/citibank/${a.repositoryMetadata['repo:name']}`,
+    },
+  }));
+  const extraFileAsset = {
+    ...collegeRaw[4],
+    assetId: 'urn:aaid:aem:extra-file-1',
+    repositoryMetadata: {
+      ...collegeRaw[4].repositoryMetadata,
+      'repo:id': 'urn:aaid:aem:extra-file-1',
+      'repo:path': '/content/dam/26H2/standalone-shot.jpg',
+    },
+  };
+
+  const fakeMultiSelectFetch = async (urlStr, opts = {}) => {
+    const u = new URL(urlStr);
+    if (u.pathname.endsWith('/assets/search') && opts.method === 'POST') {
+      const body = JSON.parse(opts.body);
+      const anc = body?.query?.[0]?.term?.['repositoryMetadata.repo:ancestors']?.[0];
+      if (anc === 'urn:aaid:aem:folder-hbo') {
+        return new Response(JSON.stringify({ hits: { results: folderAAssets }, cursor: null }), { status: 200 });
+      }
+      if (anc === 'urn:aaid:aem:folder-citi') {
+        return new Response(JSON.stringify({ hits: { results: folderBAssets }, cursor: null }), { status: 200 });
+      }
+    }
+    if (u.pathname.includes('/urn%3Aaaid%3Aaem%3Aextra-file-1/metadata')) {
+      return new Response(JSON.stringify(extraFileAsset), { status: 200 });
+    }
+    if (u.pathname.includes('/urn%3Aaaid%3Aaem%3AfolderA-0/metadata')) {
+      return new Response(JSON.stringify(folderAAssets[0]), { status: 200 });
+    }
+    return new Response(JSON.stringify({ results: [] }), { status: 200 });
+  };
+
+  const resJob = await resolveWorkerMain({
+    jobId: 'res_multiselect_1',
+    source: {
+      kind: 'selection',
+      includeSubfolders: false,
+      items: [
+        { id: 'urn:aaid:aem:folder-hbo', path: '/content/dam/26H2/hbo' },
+        { id: 'urn:aaid:aem:folder-citi', path: '/content/dam/26H2/citibank' },
+        { id: 'urn:aaid:aem:extra-file-1', path: '/content/dam/26H2/standalone-shot.jpg' },
+        // Duplicate of an asset already inside folder-hbo — should be deduplicated
+        { id: 'urn:aaid:aem:folderA-0', path: `/content/dam/26H2/hbo/${folderAAssets[0].repositoryMetadata['repo:name']}` },
+      ],
+    },
+    tier: 'author',
+    aemHost: 'https://author-p59602-e520244.adobeaemcloud.com',
+    deliveryHost: 'https://delivery-p59602-e520244.adobeaemcloud.com',
+    auth: mockAuth,
+    fetchImpl: fakeMultiSelectFetch,
+    returnModelInline: true,
+  });
+
+  assert.equal(resJob.status, 'succeeded');
+  assert.equal(resJob.inlineModel.assets.length, 5);
+  assert.equal(resJob.inlineModel.sourceLabel, 'hbo + citibank + 2 files');
+});

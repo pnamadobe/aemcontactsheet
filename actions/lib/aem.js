@@ -274,39 +274,85 @@ export function createAemClient({
     return { collectionTitle, assets };
   }
 
-  /** Resolve an explicit list of selected items (expanding any selected folders). */
+  /** Resolve an explicit list of selected items (expanding any selected folders, including mixed folder + file selections). */
   async function resolveSelectionAssets({ items = [], tier = 'author', includeSubfolders = false, onProgress = null }) {
     const base = tier === 'delivery' ? normDelivery : normAuthor;
     const expandedIds = [];
     const preloadedAssets = [];
 
     for (const item of items) {
-      if (item.type === 'folder' || (item.path && !item.path.split('/').pop().includes('.') && !item.id?.includes('aaid'))) {
-        const folderRes = await resolveFolderAssets({
-          folderId: item.id,
-          folderPath: item.path,
-          includeSubfolders,
-        });
-        preloadedAssets.push(...folderRes.assets);
-      } else if (item.id) {
-        expandedIds.push(item.id);
+      const itemType = String(item?.type || '').toLowerCase();
+      const baseName = String(item?.path || '').split('/').pop() || '';
+      const isLikelyFolder =
+        itemType === 'folder' ||
+        (Boolean(item?.path) && !baseName.includes('.'));
+
+      if (isLikelyFolder) {
+        try {
+          const folderRes = await resolveFolderAssets({
+            folderId: item.id,
+            folderPath: item.path,
+            includeSubfolders,
+          });
+          preloadedAssets.push(...folderRes.assets);
+          continue;
+        } catch {
+          // If it turned out to be an extensionless asset, fall through to asset metadata fetch
+        }
+      }
+      if (item?.id) {
+        expandedIds.push({ id: item.id, path: item.path });
       }
     }
 
     const hydrated = await mapWithConcurrency(
       expandedIds,
       8,
-      async (assetId) => {
+      async (entry) => {
         try {
-          return await requestJson(base, `/adobe/assets/${encodeURIComponent(assetId)}/metadata`);
+          return await requestJson(base, `/adobe/assets/${encodeURIComponent(entry.id)}/metadata`);
         } catch {
+          // Fallback: if a folder had a dot in its name (e.g. `v1.0`), try resolving as a folder
+          if (tier === 'author' && (entry.id || entry.path)) {
+            try {
+              const folderRes = await resolveFolderAssets({
+                folderId: entry.id,
+                folderPath: entry.path,
+                includeSubfolders,
+              });
+              return folderRes.assets;
+            } catch {
+              return null;
+            }
+          }
           return null;
         }
       },
       onProgress
     );
 
-    const combined = [...preloadedAssets, ...hydrated.filter(Boolean)];
+    const flatHydrated = [];
+    for (const h of hydrated) {
+      if (!h) continue;
+      if (Array.isArray(h)) {
+        flatHydrated.push(...h);
+      } else {
+        flatHydrated.push(h);
+      }
+    }
+
+    // Deduplicate by assetId while preserving selection order (in case a user selected both a folder and a file inside it)
+    const seenIds = new Set();
+    const combined = [];
+    for (const raw of [...preloadedAssets, ...flatHydrated]) {
+      const id = raw?.assetId || raw?.id || raw?.repositoryMetadata?.['repo:id'];
+      if (id) {
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+      }
+      combined.push(raw);
+    }
+
     if (tier === 'author') {
       await enrichAuthorSignedUrls(combined);
     }

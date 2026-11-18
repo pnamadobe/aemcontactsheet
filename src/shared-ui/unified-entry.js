@@ -89,7 +89,8 @@ function UnifiedRegistration() {
                       source = {
                         kind: 'selection',
                         origin: context,
-                        items: resources.map((r) => ({ id: r.id, path: r.path })),
+                        includeSubfolders: false,
+                        items: resources.map((r) => ({ id: r.id, path: r.path, type: r.type })),
                       };
                     }
                     await guestConnection.host.modal.openDialog({
